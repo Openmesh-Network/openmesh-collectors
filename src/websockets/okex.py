@@ -48,9 +48,9 @@ async def main():
     okex = OkexSocket()
     await okex.connect()
     print("Connected")
-    await okex.subscribe_to_ob("BTC-USDT")
+    await okex.subscribe_to_ob("ADA-USDT")
     print("Subscribed to order book")
-    await okex.subscribe_to_trades("BTC-USDT")
+    await okex.subscribe_to_trades("ADA-USDT")
     print("Subscribed to trades")
     while True:
         data = json.loads(await okex.receive())
