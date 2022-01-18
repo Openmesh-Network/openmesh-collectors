@@ -17,7 +17,7 @@ class Table():
 
     INITIAL_CAPACITY = 10 # Initial height of array upon init.
 
-    def __init__(self, colnames: list):
+    def __init__(self, colnames: list, dtype: list):
         """
         Table
 
@@ -28,34 +28,34 @@ class Table():
 
         :param colnames: List containing the column names of the table.
         """
-        if colnames is None:
+        if colnames is None or dtype is None:
+            print(f"colnames or dtype cannot be none.")
             return
         elif len(colnames) == 0:
             return
         
         self.colnames = colnames
+        self.dtype = dtype
         self.width = len(colnames)
         self.height = 0
         self.capacity = self.INITIAL_CAPACITY
-        self.col_map = {}
-        for ind, name in enumerate(colnames):
-            self.col_map[name] = ind
+        self.table = np.zeros(self.capacity, dtype = dtype)
 
-        self.table = np.zeros((self.capacity, self.width), dtype=None)
+        np.set_printoptions(precision=2, suppress=True, linewidth=0)
     
     def get_cell(self, col: str, row: int):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
         elif row >= self.height:
             raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
-        return self.table[row, self.col_map[col]]
+        return self.table[row][col]
     
     def set_cell(self, col: str, row: int, data):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
         elif row >= self.height:
             raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
-        self.table[row, self.col_map[col]] = data
+        self.table[row][col] = data
     
     def get_row(self, row: int):
         if row >= self.height:
@@ -95,7 +95,8 @@ class Table():
         self.height -= 1
         self.capacity -= 1
     
-    def print_table(self):
+    def dump(self):
+        print(self.colnames)
         print(self.table)
         print("\n")
     
@@ -103,7 +104,7 @@ class Table():
         if len(data) != self.width:
             raise ValueError(f"Data list width {len(data)} is not equal to table width {self.width}")
         for i in range(len(data)):
-            self.table[row, i] = data[i]
+            self.table[row][i] = data[i]
     
     def _set_dict(self, row: int, data: dict):
         if len(data.keys()) != self.width:
@@ -114,21 +115,87 @@ class Table():
                 raise KeyError(f"Column name {key} not a column in this table")
 
         for key in self.colnames:
-            self.table[row, self.col_map[key]] = data[key]
+            self.table[row][key] = data[key]
              
     def _expand_table(self):
-        extension = np.zeros((self.capacity, self.width), dtype = None)
+        extension = np.zeros(self.capacity, dtype = self.dtype)
         self.table = np.concatenate((self.table, extension))
         self.capacity *= 2
+
+
+class TableUtil():
+    def create_lob_event(self,
+            quote_no = -1,
+            event_no = -1,
+            order_id = -1,
+            original_order_id = -1,
+            side = -1,
+            price = -1,
+            size = -1,
+            lob_action = -1,
+            event_timestamp = -1,
+            send_timestamp = -1,
+            receive_timestamp = -1,
+            order_type = -1,
+            is_implied = -1,
+            order_executed = -1,
+            execution_price = -1,
+            executed_size = -1,
+            aggressor_side = -1,
+            matching_order_id = -1,
+            old_order_id = -1,
+            trade_id = -1,
+            size_ahead = -1,
+            orders_ahead = -1):
+        return {
+            "quote_no": quote_no,
+            "event_no": event_no,
+            "order_id": order_id,
+            "original_order_id": original_order_id,
+            "side": side,
+            "price": price,
+            "size": size,
+            "lob_action": lob_action,
+            "event_timestamp": event_timestamp,
+            "send_timestamp": send_timestamp,
+            "receive_timestamp": receive_timestamp,
+            "order_type": order_type,
+            "is_implied": is_implied,
+            "order_executed": order_executed,
+            "execution_price": execution_price,
+            "executed_size": executed_size,
+            "aggressor_side": aggressor_side,
+            "matching_order_id": matching_order_id,
+            "old_order_id": old_order_id,
+            "trade_id": trade_id,
+            "size_ahead": size_ahead,
+            "orders_ahead": orders_ahead
+        }
+
+    def create_market_order(self, 
+            order_id = -1,
+            price = -1,
+            trade_id = "",
+            timestamp = -1,
+            side = -1,
+            msg_original_type = ""):
+        return {
+            "order_id": order_id,
+            "price": price,
+            "trade_id": trade_id,
+            "timestamp": timestamp,
+            "side": side,
+            "msg_original_type": msg_original_type
+        }
 
 
 class LobTable(Table):
     def __init__(self):
         """
-        Table object for the Limit Order Book (LOB) data table specified
-        in the L3 Atom medium article (Table 3).
+        Table object for the Limit Order Book (LOB) data, timestamp data, and order 
+        details data tables specified in the L3 Atom medium article (Table 3, 4, 5).
         """
-        colnames = [
+        colnames = [ # Length: 22
             "quote_no",
             "event_no",
             "order_id",
@@ -136,32 +203,10 @@ class LobTable(Table):
             "side",
             "price",
             "size",
-            "lob_action"
-        ]
-        super().__init__(colnames)
-
-
-class TimestampTable(Table):
-    def __init__(self):
-        """
-        Table object for the Timestamp Data table specified
-        in the L3 Atom medium article (Table 4).
-        """
-        colnames = [
+            "lob_action",
             "event_timestamp",
             "send_timestamp",
-            "receive_timestamp"
-        ]
-        super().__init__(colnames)
-
-
-class OrderDetailsTable(Table):
-    def __init__(self):
-        """
-        Table object for the Order Details data table specified
-        in the L3 Atom medium article (Table 5).
-        """
-        colnames = [
+            "receive_timestamp",
             "order_type",
             "is_implied",
             "order_executed",
@@ -174,7 +219,32 @@ class OrderDetailsTable(Table):
             "size_ahead",
             "orders_ahead"
         ]
-        super().__init__(colnames)
+        types = [
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "f8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "f8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8",
+            "i8"
+        ]
+        dtype = list(zip(colnames, types))
+        super().__init__(colnames, dtype)
 
 
 class MarketOrdersTable(Table):
@@ -191,42 +261,57 @@ class MarketOrdersTable(Table):
             "side",
             "msg_original_type"
         ]
-        super().__init__(colnames)
+        dtype = [
+            ("order_id", "i8"),
+            ("price", "f8"),
+            ("trade_id", "U37"),
+            ("timestamp", "f8"),
+            ("side", "i8"),
+            ("msg_original_type", "U12")
+        ]
+        super().__init__(colnames, dtype)
 
 
 if __name__ == "__main__":
     np.set_printoptions(precision=2, suppress=True)
+    names = ["id", "trader_id", "side", "price"]
+    dtype = [
+        ("id", "u8"),
+        ("trader_id", "u8"),
+        ("side", "u8"),
+        ("price", "f8")
+    ]
 
-    table = Table(["id", "trader_id", "side", "price"])
-    table.print_table()
+    table = Table(names, dtype=dtype)
+    table.dump()
 
     data = [1, 10, 1, 40000.0]
     table.put_list(data)
-    table.print_table()
+    table.dump()
 
     data = {"id": 2, "trader_id": 20, "side": 0, "price": 39500.0}
     table.put_dict(data)
-    table.print_table()
+    table.dump()
 
     data = [3, 30, 1, 41000.0]
     table.put_list(data)
     data = [4, 40, 1, 42000.0]
     table.put_list(data)
-    table.print_table()
+    table.dump()
 
     print(table.get_cell("trader_id", 3))
     print(table.get_row(3))
 
     table.set_cell("side", 2, 0)
-    table.print_table()
+    table.dump()
 
     data = [3, 50, 1, 42000.0]
     table.set_list(2, data)
-    table.print_table()
+    table.dump()
 
     data = {"id": 2, "trader_id": 60, "side": 0, "price": 39250.0}
     table.set_dict(1, data)
-    table.print_table()
+    table.dump()
 
     table.del_row(1)
-    table.print_table()
+    table.dump()
