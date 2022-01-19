@@ -185,7 +185,7 @@ class NormaliseOkex(NormaliseExchange):
 
         if data['arg']['channel'] == 'books':
             order_data = data['data'][0]
-            ts = order_data['ts']
+            ts = float(order_data['ts'])
             for ask in order_data['asks']:
                 price = float(ask[0])
                 no_orders = int(ask[3])
@@ -216,6 +216,7 @@ class NormaliseOkex(NormaliseExchange):
                     lob_events.append(self.util.create_lob_event(
                         quote_no = self.QUOTE_NO,
                         event_no = self.EVENT_NO,
+                        order_id = self.ORDER_ID,
                         side = 2,
                         price = price,
                         size = size if size else -1,
@@ -225,6 +226,7 @@ class NormaliseOkex(NormaliseExchange):
                         order_type = 0
                     ))
                     self.QUOTE_NO += 1
+                    self.ORDER_ID += 1
             for bid in order_data['bids']:
                 price = float(bid[0])
                 no_orders = int(bid[3])
@@ -255,6 +257,7 @@ class NormaliseOkex(NormaliseExchange):
                     lob_events.append(self.util.create_lob_event(
                         quote_no = self.QUOTE_NO,
                         event_no = self.EVENT_NO,
+                        order_id = self.ORDER_ID,
                         side = 1,
                         price = price,
                         size = size if size else -1,
@@ -264,6 +267,7 @@ class NormaliseOkex(NormaliseExchange):
                         order_type = 0
                     ))
                     self.QUOTE_NO += 1
+                    self.ORDER_ID += 1
 
         elif data['arg']['channel'] == 'trades':
             trade = data['data'][0]
@@ -271,9 +275,10 @@ class NormaliseOkex(NormaliseExchange):
                 order_id = self.ORDER_ID,
                 price = float(trade['px']),
                 trade_id = trade['tradeId'],
-                timestamp = trade['ts'],
+                timestamp = float(trade['ts']),
                 side = 1 if trade['side'] == 'buy' else 2
             ))
+            self.ORDER_ID += 1
 
         else:
             print(f"Received unrecognised message {json.dumps(data)}")

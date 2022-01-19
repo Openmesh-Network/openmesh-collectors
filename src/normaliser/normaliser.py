@@ -55,6 +55,24 @@ class Normaliser():
     def get_lob_events(self):
         return self.lob_table
 
+    def get_best_orders(self):
+        lob = self.get_lob_events()
+        best_bid_price = -1
+        best_ask_price = 10e9
+        best_bid, best_ask = None, None
+
+        for order in lob.table:
+            if order["side"] == 1:
+                if order["price"] > best_bid_price:
+                    best_bid_price = order["price"]
+                    best_bid = order
+            elif order["side"] == 2:
+                if order["price"] < best_ask_price:
+                    best_ask_price = order["price"]
+                    best_ask = order
+        
+        return best_bid, best_ask
+
     def get_market_orders(self):
         return self.market_orders_table
     
