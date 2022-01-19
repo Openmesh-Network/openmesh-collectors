@@ -25,7 +25,7 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
-    
+
     def get_msg(self):
         """
         Retrieves a message from the front of the queue.
@@ -37,7 +37,7 @@ class WebsocketManager():
 
     def _get_url(self):
         return self.url
-    
+
     def _on_message(self, ws, message):
         message = json.loads(message)
         message["receive_timestamp"] = time.time_ns() / 10e6
@@ -60,7 +60,7 @@ class WebsocketManager():
             on_error=self._wrap_callback(self._on_error),
         )
 
-        wst = Thread(target = self._run_websocket, args = (self.ws,))
+        wst = Thread(target=self._run_websocket, args=(self.ws,))
         wst.daemon = True
         wst.start()
 
@@ -69,7 +69,8 @@ class WebsocketManager():
         while self.ws and (not self.ws.sock or not self.ws.sock.connected):
             if time.time() - ts > self._CONNECT_TIMEOUT_S:
                 self.ws = None
-                raise Exception(f"Failed to connect to websocket url {self._get_url()}")
+                raise Exception(
+                    f"Failed to connect to websocket url {self._get_url()}")
             time.sleep(0.1)
 
     def _wrap_callback(self, f):
@@ -83,7 +84,7 @@ class WebsocketManager():
 
     def _run_websocket(self, ws):
         try:
-            ws.run_forever(ping_interval = 30)
+            ws.run_forever(ping_interval=30)
         except Exception as e:
             raise Exception(f'Unexpected error while running websocket: {e}')
         finally:

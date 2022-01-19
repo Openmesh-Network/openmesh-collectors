@@ -5,9 +5,10 @@ Uses the factory pattern to create the correct websocket connection to each exch
 """
 from configparser import ConfigParser
 import json
-import os 
+import os
 
 from .websocket_manager import WebsocketManager
+
 
 class FactoryRegistry():
     FACTORIES = [
@@ -20,9 +21,9 @@ class FactoryRegistry():
     ]
 
     def __init__(self):
-        self.factories = {} # {str: WsManagerFactory}
+        self.factories = {}  # {str: WsManagerFactory}
         self.register()
-    
+
     def register(self):
         self.factories["okex"] = OkexWsManagerFactory()
         self.factories["phemex"] = PhemexWsManagerFactory()
@@ -30,10 +31,11 @@ class FactoryRegistry():
         self.factories["kucoin"] = KucoinWsManagerFactory()
         self.factories["deribit"] = DeribitWsManagerFactory()
         self.factories["ftx"] = FtxWsManagerFactory()
-    
+
     def get_ws_manager(self, exchange_id: str):
         if not exchange_id in self.factories.keys():
-            raise KeyError(f"exchange id {exchange_id} not registered as a factory")
+            raise KeyError(
+                f"exchange id {exchange_id} not registered as a factory")
         return self.factories[exchange_id].get_ws_manager()
 
 
@@ -52,7 +54,7 @@ class WsManagerFactory():
 class KrakenWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self):
         """Rayman"""
-        url = 'wss://futures.kraken.com/ws/v1' 
+        url = 'wss://futures.kraken.com/ws/v1'
 
         config_path = "src/normaliser/manager/symbol_configs/kraken.ini"
 
@@ -63,9 +65,9 @@ class KrakenWsManagerFactory(WsManagerFactory):
         # Subscribe to channels
         def subscribe(ws_manager):
             request = {
-                    "event": "subscribe",
-                    "feed": "book",
-                    "product_ids": symbols
+                "event": "subscribe",
+                "feed": "book",
+                "product_ids": symbols
             }
             ws_manager.send_json(request)
 
@@ -75,9 +77,9 @@ class KrakenWsManagerFactory(WsManagerFactory):
         # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {
-                    "event": "unsubscribe",
-                    "feed": "book",
-                    "product_ids": symbols
+                "event": "unsubscribe",
+                "feed": "book",
+                "product_ids": symbols
             }
             ws_manager.send_json(request)
 
@@ -124,7 +126,7 @@ class KucoinWsManagerFactory(WsManagerFactory):
 class OkexWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self):
         """Jay"""
-        url = "wss://ws.okex.com:8443/ws/v5/public" 
+        url = "wss://ws.okex.com:8443/ws/v5/public"
 
         config_path = "src/normaliser/manager/symbol_configs/okex.ini"
 
@@ -157,7 +159,7 @@ class OkexWsManagerFactory(WsManagerFactory):
 class PhemexWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self):
         """Will"""
-        url = "wss://phemex.com/ws" 
+        url = "wss://phemex.com/ws"
         ws_manager = WebsocketManager(url)
 
         config_path = "src/normaliser/manager/symbol_configs/phemex.ini"
@@ -167,7 +169,7 @@ class PhemexWsManagerFactory(WsManagerFactory):
         symbols = json.loads(config["DEFAULT"]["symbols"])
 
         request = {
-            "id": 1234, # Not sure what this is. Maybe you need an API Key?
+            "id": 1234,  # Not sure what this is. Maybe you need an API Key?
             "method": "orderbook.subscribe",
             "params": symbols
         }
@@ -175,8 +177,9 @@ class PhemexWsManagerFactory(WsManagerFactory):
 
         request['method'] = "trades.subscribe"
         ws_manager.send_json(request)
-        
+
         return ws_manager
+
 
 if __name__ == "__main__":
     ws_manager = FactoryRegistry().get_ws_manager("kraken")

@@ -11,6 +11,7 @@ from .manager.ws_factories import FactoryRegistry
 from .normalising_strategies import NormalisingStrategies
 from .tables.table import LobTable, MarketOrdersTable
 
+
 class Normaliser():
     def __init__(self, exchange_id):
         # Initialise WebSocket handler
@@ -25,14 +26,13 @@ class Normaliser():
 
         # Start normalising the data
         self.normalise_thr = Thread(
-            name = "normalising_thread",
-            target = self._normalise_thread,
-            args = (),
-            daemon = True
+            name="normalising_thread",
+            target=self._normalise_thread,
+            args=(),
+            daemon=True
         )
         self.normalise_thr.start()
 
-    
     def put_entry(self, data: dict):
         """
         Puts data into the table.
@@ -51,7 +51,7 @@ class Normaliser():
         for order in market_orders:
             if len(order) == 6:
                 self.market_orders_table.put_dict(order)
-        
+
     def get_lob_events(self):
         return self.lob_table
 
@@ -62,6 +62,8 @@ class Normaliser():
         best_bid, best_ask = None, None
 
         for order in lob.table:
+            if order['lob_action'] != 2:
+                continue
             if order["side"] == 1:
                 if order["price"] > best_bid_price:
                     best_bid_price = order["price"]
@@ -70,21 +72,20 @@ class Normaliser():
                 if order["price"] < best_ask_price:
                     best_ask_price = order["price"]
                     best_ask = order
-        
+
         return best_bid, best_ask
 
     def get_market_orders(self):
         return self.market_orders_table
-    
+
     def dump(self):
         print("LOB Data Table")
         self.lob_table.dump()
         print("Market Order Data Table")
         self.market_orders_table.dump()
-        sleep(1)
-    
+
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.ws_manager.get_msg()
-            self.put_entry(data) 
+            self.put_entry(data)

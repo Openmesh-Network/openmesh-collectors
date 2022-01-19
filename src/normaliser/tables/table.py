@@ -14,9 +14,10 @@ Classes:
 import numpy as np
 from tabulate import tabulate
 
+
 class Table():
 
-    INITIAL_CAPACITY = 10 # Initial height of array upon init.
+    INITIAL_CAPACITY = 10  # Initial height of array upon init.
 
     def __init__(self, colnames: list, dtype: list):
         """
@@ -34,40 +35,44 @@ class Table():
             return
         elif len(colnames) == 0:
             return
-        
+
         self.colnames = colnames
         self.dtype = dtype
         self.width = len(colnames)
         self.height = 0
         self.capacity = self.INITIAL_CAPACITY
-        self.table = np.zeros(self.capacity, dtype = dtype)
+        self.table = np.zeros(self.capacity, dtype=dtype)
 
         np.set_printoptions(precision=2, suppress=True, linewidth=0)
-    
+
     def get_cell(self, col: str, row: int):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
         elif row >= self.height:
-            raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError(
+                f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row][col]
-    
+
     def set_cell(self, col: str, row: int, data):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
         elif row >= self.height:
-            raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError(
+                f"Index {row} out of bounds (Length: {self.height}).")
         self.table[row][col] = data
-    
+
     def get_row(self, row: int):
         if row >= self.height:
-            raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError(
+                f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row]
 
     def set_list(self, row: int, data: list):
         if row >= self.height:
-            raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError(
+                f"Index {row} out of bounds (Length: {self.height}).")
         self._set_list(row, data)
-    
+
     def put_list(self, data: list):
         if self.height >= self.capacity:
             self._expand_table()
@@ -75,10 +80,10 @@ class Table():
         row = self.height
         self._set_list(row, data)
         self.height += 1
-    
+
     def set_dict(self, row: int, data: dict):
         self._set_dict(row, data)
-    
+
     def put_dict(self, data: dict):
         if self.height >= self.capacity:
             self._expand_table()
@@ -86,67 +91,71 @@ class Table():
         row = self.height
         self._set_dict(row, data)
         self.height += 1
-    
+
     def del_row(self, row: int):
         if row >= self.height:
-            raise IndexError(f"Index {row} out of bounds (Length: {self.height}).")
-        
+            raise IndexError(
+                f"Index {row} out of bounds (Length: {self.height}).")
+
         # Delete row at index "row" from self.table along the 0th axis (0th = row, 1st = column)
         self.table = np.delete(self.table, row, 0)
         self.height -= 1
         self.capacity -= 1
-    
+
     def dump(self):
-        print(tabulate(self.table[:20], headers=self.colnames, tablefmt="fancy_grid"))
+        print(tabulate(self.table[:20],
+              headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
-    
+
     def _set_list(self, row: int, data: list):
         if len(data) != self.width:
-            raise ValueError(f"Data list width {len(data)} is not equal to table width {self.width}")
+            raise ValueError(
+                f"Data list width {len(data)} is not equal to table width {self.width}")
         for i in range(len(data)):
             self.table[row][i] = data[i]
-    
+
     def _set_dict(self, row: int, data: dict):
         if len(data.keys()) != self.width:
-            raise ValueError(f"Data dictionary width {len(data)} is not equal to table width {self.width}")
-        
+            raise ValueError(
+                f"Data dictionary width {len(data)} is not equal to table width {self.width}")
+
         for key in data.keys():
             if key not in self.colnames:
                 raise KeyError(f"Column name {key} not a column in this table")
 
         for key in self.colnames:
             self.table[row][key] = data[key]
-             
+
     def _expand_table(self):
-        extension = np.zeros(self.capacity, dtype = self.dtype)
+        extension = np.zeros(self.capacity, dtype=self.dtype)
         self.table = np.concatenate((self.table, extension))
         self.capacity *= 2
 
 
 class TableUtil():
     def create_lob_event(self,
-            quote_no = -1,
-            event_no = -1,
-            order_id = -1,
-            original_order_id = -1,
-            side = -1,
-            price = -1,
-            size = -1,
-            lob_action = -1,
-            event_timestamp = -1,
-            send_timestamp = -1,
-            receive_timestamp = -1,
-            order_type = -1,
-            is_implied = -1,
-            order_executed = -1,
-            execution_price = -1,
-            executed_size = -1,
-            aggressor_side = -1,
-            matching_order_id = -1,
-            old_order_id = -1,
-            trade_id = -1,
-            size_ahead = -1,
-            orders_ahead = -1):
+                         quote_no=-1,
+                         event_no=-1,
+                         order_id=-1,
+                         original_order_id=-1,
+                         side=-1,
+                         price=-1,
+                         size=-1,
+                         lob_action=-1,
+                         event_timestamp=-1,
+                         send_timestamp=-1,
+                         receive_timestamp=-1,
+                         order_type=-1,
+                         is_implied=-1,
+                         order_executed=-1,
+                         execution_price=-1,
+                         executed_size=-1,
+                         aggressor_side=-1,
+                         matching_order_id=-1,
+                         old_order_id=-1,
+                         trade_id=-1,
+                         size_ahead=-1,
+                         orders_ahead=-1):
         return {
             "quote_no": quote_no,
             "event_no": event_no,
@@ -172,13 +181,13 @@ class TableUtil():
             "orders_ahead": orders_ahead
         }
 
-    def create_market_order(self, 
-            order_id = -1,
-            price = -1,
-            trade_id = "",
-            timestamp = -1,
-            side = -1,
-            msg_original_type = ""):
+    def create_market_order(self,
+                            order_id=-1,
+                            price=-1,
+                            trade_id="",
+                            timestamp=-1,
+                            side=-1,
+                            msg_original_type=""):
         return {
             "order_id": order_id,
             "price": price,
@@ -195,7 +204,7 @@ class LobTable(Table):
         Table object for the Limit Order Book (LOB) data, timestamp data, and order 
         details data tables specified in the L3 Atom medium article (Table 3, 4, 5).
         """
-        colnames = [ # Length: 22
+        colnames = [  # Length: 22
             "quote_no",
             "event_no",
             "order_id",
