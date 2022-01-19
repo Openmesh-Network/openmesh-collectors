@@ -164,9 +164,131 @@ class NormaliseKraken(NormaliseExchange):
 
 
 class NormaliseOkex(NormaliseExchange):
+
+    NO_EVENTS = {"lob_events": [], "market_orders": []}
+    ACTIVE_LEVELS = set()
+    QUOTE_NO = 2
+    EVENT_NO = 0
+    ORDER_ID = 0
+
+    def __init__(self):
+        self.util = TableUtil()
+
     def normalise(self, data) -> dict:
         """Jay"""
-        pass
+        lob_events = []
+        market_orders = []
+
+        if 'event' in data:
+            print(f"Received message {json.dumps(data)}")
+            return self.NO_EVENTS
+
+        if data['arg']['channel'] == 'books':
+            order_data = data['data'][0]
+            ts = order_data['ts']
+            for ask in order_data['asks']:
+                price = float(ask[0])
+                no_orders = int(ask[3])
+                if no_orders == 0:
+                    lob_action = 3
+                    if price in self.ACTIVE_LEVELS:
+                        self.ACTIVE_LEVELS.remove(price)
+                    lob_events.append(self.util.create_lob_event(
+                        quote_no = self.QUOTE_NO,
+                        event_no = self.EVENT_NO,
+                        side = 2,
+                        price = price,
+                        size = -1,
+                        lob_action = lob_action,
+                        send_timestamp = ts,
+                        receive_timestamp = data["receive_timestamp"],
+                        order_type = 0
+                    ))
+                    self.QUOTE_NO += 1
+                    continue
+                size = float(ask[1]) / no_orders
+                if price in self.ACTIVE_LEVELS:
+                    lob_action = 4
+                else:
+                    lob_action = 2
+                    self.ACTIVE_LEVELS.add(price)
+                for _ in range(no_orders):
+                    lob_events.append(self.util.create_lob_event(
+                        quote_no = self.QUOTE_NO,
+                        event_no = self.EVENT_NO,
+                        side = 2,
+                        price = price,
+                        size = size if size else -1,
+                        lob_action = lob_action,
+                        send_timestamp = ts,
+                        receive_timestamp = data["receive_timestamp"],
+                        order_type = 0
+                    ))
+                    self.QUOTE_NO += 1
+            for bid in order_data['bids']:
+                price = float(bid[0])
+                no_orders = int(bid[3])
+                if no_orders == 0:
+                    lob_action = 3
+                    if price in self.ACTIVE_LEVELS:
+                        self.ACTIVE_LEVELS.remove(price)
+                    lob_events.append(self.util.create_lob_event(
+                        quote_no = self.QUOTE_NO,
+                        event_no = self.EVENT_NO,
+                        side = 1,
+                        price = price,
+                        size = -1,
+                        lob_action = lob_action,
+                        send_timestamp = ts,
+                        receive_timestamp = data["receive_timestamp"],
+                        order_type = 0
+                    ))
+                    self.QUOTE_NO += 1
+                    continue
+                size = float(bid[1]) / no_orders
+                if price in self.ACTIVE_LEVELS:
+                    lob_action = 4
+                else:
+                    lob_action = 2
+                    self.ACTIVE_LEVELS.add(price)
+                for _ in range(no_orders):
+                    lob_events.append(self.util.create_lob_event(
+                        quote_no = self.QUOTE_NO,
+                        event_no = self.EVENT_NO,
+                        side = 1,
+                        price = price,
+                        size = size if size else -1,
+                        lob_action = lob_action,
+                        send_timestamp = ts,
+                        receive_timestamp = data["receive_timestamp"],
+                        order_type = 0
+                    ))
+                    self.QUOTE_NO += 1
+
+        elif data['arg']['channel'] == 'trades':
+            trade = data['data'][0]
+            market_orders.append(self.util.create_market_order(
+                order_id = self.ORDER_ID,
+                price = float(trade['px']),
+                trade_id = trade['tradeId'],
+                timestamp = trade['ts'],
+                side = 1 if trade['side'] == 'buy' else 2
+            ))
+
+        else:
+            print(f"Received unrecognised message {json.dumps(data)}")
+            self.EVENT_NO -= 1
+            return self.NO_EVENTS
+        self.EVENT_NO += 1
+
+        normalised = {
+            "lob_events": lob_events,
+            "market_orders": market_orders
+        }
+
+        return normalised
+
+
 
 
 class NormalisePhemex(NormaliseExchange):
