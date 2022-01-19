@@ -9,7 +9,7 @@ TO THE JDT: Make sure you look at the ws_factories.py file and the normalising_s
 from src.normaliser.normaliser import Normaliser
 
 def main():
-    normaliser = Normaliser("kraken")
+    normaliser = Normaliser("okex")
     while True:
         try:
             normaliser.dump() # Print tables 

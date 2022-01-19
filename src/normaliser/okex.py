@@ -18,6 +18,7 @@ class OkexSocket(ExchangeSocket):
         request = json.dumps(request)
         await self.ws.send(request)
         data = await self.receive()
+        print(data)
         return data
 
     async def subscribe_to_trades(self, symbol):
@@ -27,6 +28,7 @@ class OkexSocket(ExchangeSocket):
         request = json.dumps(request)
         await self.ws.send(request)
         data = await self.receive()
+        print(data)
         return data
 
     def normalise_order_book(self, data):
@@ -54,15 +56,15 @@ async def main():
     print("Subscribed to trades")
     while True:
         data = json.loads(await okex.receive())
-        #print(data)
+        print(json.dumps(data, indent=4))
         if 'event' in data:
             continue
         if data['arg']['channel'] == 'books':
             data = okex.normalise_order_book(data)
-            print(json.dumps(data, indent=4))
+            #print(json.dumps(data, indent=4))
         elif data['arg']['channel'] == 'trades':
             data = okex.normalise_trades(data)
-            print(json.dumps(data, indent=4))
+            #print(json.dumps(data, indent=4))
         sleep(0.1)
 
 if __name__ == "__main__":

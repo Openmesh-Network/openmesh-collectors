@@ -125,7 +125,6 @@ class OkexWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self):
         """Jay"""
         url = "wss://ws.okex.com:8443/ws/v5/public" 
-        ws_manager = WebsocketManager(url)
 
         config_path = "src/normaliser/manager/symbol_configs/okex.ini"
 
@@ -133,12 +132,25 @@ class OkexWsManagerFactory(WsManagerFactory):
         config.read(config_path)
         symbols = json.loads(config["DEFAULT"]["symbols"])
 
-        for symbol in symbols:
-            request = {}
-            request['op'] = 'subscribe'
-            request['args'] = [{"channel": "books", "instId": symbol}]
-            ws_manager.send_json(request)
-        
+        def subscribe(ws_manager):
+            for symbol in symbols:
+                request = {}
+                request['op'] = 'subscribe'
+                request['args'] = [{"channel": "books", "instId": symbol}]
+                ws_manager.send_json(request)
+                request['args'] = [{"channel": "trades", "instId": symbol}]
+                ws_manager.send_json(request)
+
+        def unsubscribe(ws_manager):
+            for symbol in symbols:
+                request = {}
+                request['op'] = 'unsubscribe'
+                request['args'] = [{"channel": "books", "instId": symbol}]
+                ws_manager.send_json(request)
+                request['args'] = [{"channel": "trades", "instId": symbol}]
+                ws_manager.send_json(request)
+
+        ws_manager = WebsocketManager(url, subscribe, unsubscribe)
         return ws_manager
 
 
