@@ -12,6 +12,7 @@ Classes:
 - MarketOrdersTable
 """
 import numpy as np
+from tabulate import tabulate
 
 class Table():
 
@@ -96,8 +97,7 @@ class Table():
         self.capacity -= 1
     
     def dump(self):
-        print(self.colnames)
-        print(self.table)
+        print(tabulate(self.table[:20], headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
     
     def _set_list(self, row: int, data: list):
