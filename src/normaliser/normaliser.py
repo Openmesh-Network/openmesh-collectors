@@ -102,18 +102,23 @@ class Normaliser():
         self.market_orders_table.dump()
         """
 
-        """
         self.lob_lock.acquire()
         self.order_book_manager.dump()
         self.lob_lock.release()
+
+        """
+        # Queue backlog
+        self.ws_manager.get_q_size()
         """
 
-        self.ws_manager.get_q_size()
-
+        """
+        print("-------------------------METRICS---------------------------")
         self.metric_lock.acquire()
         for metric in self.metrics:
             metric.display_metric()
         self.metric_lock.release()
+        print("-----------------------------------------------------------")
+        """
         if self.name:
             print(f"--------------------------------------------------END {self.name}--------------------------------------------------")
     

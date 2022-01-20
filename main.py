@@ -38,7 +38,7 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["kraken"]
+    exchanges = ["okex"]
 
     for exchange in exchanges:
         config_path = "symbols/" + exchange + ".ini"
