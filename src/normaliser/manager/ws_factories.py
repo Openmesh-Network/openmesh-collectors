@@ -157,28 +157,34 @@ class OkexWsManagerFactory(WsManagerFactory):
 
 
 class PhemexWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
-        """Will"""
         url = "wss://phemex.com/ws"
         ws_manager = WebsocketManager(url)
+
+        url = "wss://phemex.com/ws" 
 
         config_path = "src/normaliser/manager/symbol_configs/phemex.ini"
 
         config = ConfigParser()
         config.read(config_path)
         symbols = json.loads(config["DEFAULT"]["symbols"])
+    
+        def subscribe(ws_manager):
+            # Limit Order
+            request = {
+                "id": 0, # Not sure what this is. Maybe you need an API Key?
+                "method": "orderbook.subscribe",
+                "params": symbols
+            }
+            ws_manager.send_json(request)
 
-        request = {
-            "id": 1234,  # Not sure what this is. Maybe you need an API Key?
-            "method": "orderbook.subscribe",
-            "params": symbols
-        }
-        ws_manager.send_json(request)
+            # Market Order
+            request = {
+                "id": 0,
+                "method": "trade.subscribe",
+                "params": symbols
+            }
+            ws_manager.send_json(request)
 
-        request['method'] = "trades.subscribe"
-        ws_manager.send_json(request)
-
-        return ws_manager
 
 
 if __name__ == "__main__":
