@@ -87,7 +87,7 @@ class MicroPrice(Metric):
 
 class NumberOfLOBEvents(Metric):
     def calculate(self, normalizer):
-        self.metric = len(normalizer.get_lob_events().table)
+        self.metric = normalizer.get_lob_events().height
         return self.metric
 
     def display_metric(self):
@@ -118,6 +118,6 @@ class RatioOfLobEvents(Metric):
 
     def display_metric(self):
         if (not self.inserts) or (not self.updates) or (not self.deletes):
-            print("Ratio of LOB Events (inserts/updates/deletes): Not Calclated") 
+            print("Ratio of LOB Events (inserts/updates/deletes): Not Calculated") 
             return np.nan
         print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % (self.inserts, self.updates, self.deletes))

@@ -32,7 +32,7 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["kraken"]
+    exchanges = ["phemex"]
 
     for exchange in exchanges:
         config_path = "src/normaliser/manager/symbol_configs/" + exchange + ".ini"
