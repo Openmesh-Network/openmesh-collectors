@@ -6,16 +6,18 @@ Instantiates the correct websocket connection with an ID.
 """
 from threading import Thread, Lock
 from time import sleep
+import os
 
 from .manager.ws_factories import FactoryRegistry
 from .normalising_strategies import NormalisingStrategies
 from .tables.table import LobTable, MarketOrdersTable
-from .order_book import OrderBookManager
+from .jit_order_book import OrderBookManager
 from .metrics import Metric
 
 
 class Normaliser():
-    def __init__(self, exchange_id: str, symbol: str):
+    def __init__(self, exchange_id: str, symbol: str, name = None):
+        self.name = name
         # Initialise WebSocket handler
         self.ws_manager = FactoryRegistry().get_ws_manager(exchange_id, symbol)
 
@@ -33,6 +35,7 @@ class Normaliser():
         # Initialise locks
         self.lob_table_lock = Lock()
         self.metric_lock = Lock()
+        self.lob_lock = Lock()
 
         # Start normalising the data
         self.normalise_thr = Thread(
@@ -56,10 +59,12 @@ class Normaliser():
         market_orders = data["market_orders"]
 
         self.lob_table_lock.acquire()
+        self.lob_lock.acquire()
         for event in lob_events:
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+        self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
@@ -67,6 +72,8 @@ class Normaliser():
                 self.market_orders_table.put_dict(order)
 
         self.calculate_metrics()
+
+
 
     def get_lob_events(self):
         # NOTE: MODIFYING THE LOB TABLE AFTER RETRIEVING IT USING THIS FUNCTION IS NOT THREAD SAFE
@@ -80,21 +87,36 @@ class Normaliser():
         return self.market_orders_table
 
     def dump(self):
-        print("LOB Data Table")
+        os.system("cls")
+        if self.name:
+            print(f"-------------------------------------------------START {self.name}-------------------------------------------------")
+        """
+        print("LOB Events")
         self.lob_table_lock.acquire()
         self.lob_table.dump()
         self.lob_table_lock.release()
-        print("Market Order Data Table")
+        """
+
+        """
+        print("Market Orders")
         self.market_orders_table.dump()
-        print("Order Book")
+        """
+
+        """
+        self.lob_lock.acquire()
         self.order_book_manager.dump()
+        self.lob_lock.release()
+        """
+
+        self.ws_manager.get_q_size()
+
         self.metric_lock.acquire()
-        print("\n\n-----------METRICS-----------\n")
         for metric in self.metrics:
             metric.display_metric()
-        print("\n------------------------------------\n\n")
         self.metric_lock.release()
-
+        if self.name:
+            print(f"--------------------------------------------------END {self.name}--------------------------------------------------")
+    
     def add_metric(self, metric: Metric):
         if metric in self.metrics:
             return
@@ -108,6 +130,7 @@ class Normaliser():
     def calculate_metrics(self):
         threads = []
         self.lob_table_lock.acquire()
+        self.lob_lock.acquire()
         self.metric_lock.acquire()
         for metric in self.metrics:
             t = Thread(
@@ -119,7 +142,12 @@ class Normaliser():
             t.start()
         for thread in threads:
             t.join()
+        """
+        for metric in self.metrics:
+            Metric.metric_wrapper(metric.calculate, self)
+        """
         self.metric_lock.release()
+        self.lob_lock.release()
         self.lob_table_lock.release()
 
     def _normalise_thread(self):

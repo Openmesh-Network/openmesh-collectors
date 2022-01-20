@@ -58,7 +58,8 @@ class NormaliseExchange():
 
 class NormaliseKraken(NormaliseExchange):
     NO_EVENTS = {"lob_events": [], "market_orders": []}
-    ACTIVE_LEVELS = set()
+    ACTIVE_BID_LEVELS = set()
+    ACTIVE_ASK_LEVELS = set()
     QUOTE_NO = 2
     EVENT_NO = 0
     ORDER_ID = 0
@@ -96,7 +97,7 @@ class NormaliseKraken(NormaliseExchange):
                     receive_timestamp=data["receive_timestamp"],
                     order_type=0,
                 ))
-                self.ACTIVE_LEVELS.add(bid["price"])
+                self.ACTIVE_BID_LEVELS.add(bid["price"])
                 self.QUOTE_NO += 1
             for ask in data["asks"]:
                 lob_events.append(self.util.create_lob_event(
@@ -111,20 +112,27 @@ class NormaliseKraken(NormaliseExchange):
                     receive_timestamp=data["receive_timestamp"],
                     order_type=0,
                 ))
-                self.ACTIVE_LEVELS.add(ask["price"])
+                self.ACTIVE_ASK_LEVELS.add(ask["price"])
                 self.QUOTE_NO += 1
         elif data["feed"] == "book":
             ts = data["timestamp"]
             price = data["price"]
+            side = data["side"]
             qty = data["qty"]
             if qty == 0:
                 lob_action = 3  # Remove level
-                self.ACTIVE_LEVELS.remove(price)
-            elif price in self.ACTIVE_LEVELS:
+                if side == "buy":
+                    self.ACTIVE_BID_LEVELS.remove(price)
+                else:
+                    self.ACTIVE_ASK_LEVELS.remove(price)
+            elif price in self.ACTIVE_BID_LEVELS or price in self.ACTIVE_ASK_LEVELS:
                 lob_action = 4  # Update level
             else:
                 lob_action = 2  # Insert level
-                self.ACTIVE_LEVELS.add(price)
+                if side == "buy":
+                    self.ACTIVE_BID_LEVELS.add(price)
+                else:
+                    self.ACTIVE_ASK_LEVELS.add(price)
 
             lob_events.append(self.util.create_lob_event(
                 quote_no=self.QUOTE_NO,
@@ -388,7 +396,6 @@ class NormalisePhemex(NormaliseExchange):
         # If the data is in an unexpected format, ignore it
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 

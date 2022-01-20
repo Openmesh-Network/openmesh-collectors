@@ -11,8 +11,9 @@ Classes:
 - OrderDetailsTable
 - MarketOrdersTable
 """
-import numpy as np
+from numba import jit
 from tabulate import tabulate
+import numpy as np
 
 
 class Table():
@@ -44,7 +45,11 @@ class Table():
         self.table = np.zeros(self.capacity, dtype=self.dtype)
 
         np.set_printoptions(precision=2, suppress=True, linewidth=0)
+    
+    def size(self):
+        return self.height
 
+    @jit
     def get_cell(self, col: str, row: int):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
@@ -53,6 +58,7 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row][col]
 
+    @jit
     def set_cell(self, col: str, row: int, data):
         if not col in self.colnames:
             raise IndexError(f"No such column {col} in Table.")
@@ -67,12 +73,14 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row]
 
+    @jit
     def set_list(self, row: int, data: list):
         if row >= self.height:
-            raise IndexError(
-                f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError()
+            #    f"Index {row} out of bounds (Length: {self.height}).")
         self._set_list(row, data)
 
+    @jit
     def put_list(self, data: list):
         if self.height >= self.capacity:
             self._expand_table()
@@ -94,8 +102,7 @@ class Table():
 
     def del_row(self, row: int):
         if row >= self.height:
-            raise IndexError(
-                f"Index {row} out of bounds (Length: {self.height}).")
+            raise IndexError("Index out of bounds.")
 
         # Delete row at index "row" from self.table along the 0th axis (0th = row, 1st = column)
         self.table = np.delete(self.table, row, 0)
@@ -113,21 +120,23 @@ class Table():
               headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
 
+    @jit
     def _set_list(self, row: int, data: list):
         if len(data) != self.width:
-            raise ValueError(
-                f"Data list width {len(data)} is not equal to table width {self.width}")
+            raise ValueError()
+            #    f"Data list width {len(data)} is not equal to table width {self.width}")
         for i in range(len(data)):
             self.table[row][i] = data[i]
 
     def _set_dict(self, row: int, data: dict):
         if len(data.keys()) != self.width:
-            raise ValueError(
-                f"Data dictionary width {len(data)} is not equal to table width {self.width}")
+            raise ValueError()
+            #    f"Data dictionary width {len(data)} is not equal to table width {self.width}")
 
         for key in data.keys():
             if key not in self.colnames:
-                raise KeyError(f"Column name {key} not a column in this table")
+                raise KeyError()
+                #    f"Column name {key} not a column in this table")
 
         for key in self.colnames:
             self.table[row][key] = data[key]

@@ -42,6 +42,9 @@ class WebsocketManager():
         message = json.loads(message)
         message["receive_timestamp"] = time.time_ns() / 10e6
         self.queue.put(message)
+    
+    def get_q_size(self):
+        print(f"Queue Backlog: {self.queue.qsize()}")
 
     def send(self, message):
         self.connect()

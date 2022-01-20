@@ -8,7 +8,7 @@ Classes
 - MicroPrice: Calculates the micro price of the normalizer using the imbalance and best bid and ask prices
 '''
 import logging
-import numpy as np
+from numba import jit
 
 
 class Metric:
@@ -65,6 +65,7 @@ class MidPrice(Metric):
             return
         print("Mid Price: $%.4f" % self.metric)
 
+
 class MicroPrice(Metric):
     def calculate(self, normalizer):
         best_bid, best_ask = normalizer.get_best_orders()
@@ -82,12 +83,11 @@ class MicroPrice(Metric):
             print("Micro Price: Not Calculated")
             return 
         print("Micro Price: $%.4f" % self.metric)
-        
 
 
 class NumberOfLOBEvents(Metric):
     def calculate(self, normalizer):
-        self.metric = normalizer.get_lob_events().height
+        self.metric = normalizer.get_lob_events().size()
         return self.metric
 
     def display_metric(self):
@@ -96,30 +96,39 @@ class NumberOfLOBEvents(Metric):
             return 
         print("Number of LOB Events: %d" % self.metric)
 
+
 class RatioOfLobEvents(Metric):
     def __init__(self):
-        self.updates = None
-        self.inserts = None
-        self.deletes = None
+        self.updates = 0
+        self.inserts = 0
+        self.deletes = 0
+        self.updates_ratio = 0
+        self.deletes_ratio = 0
+        self.inserts_ratio = 0
+        self.curr_row = 0
 
+    @jit(forceobj=True)
     def calculate(self, normalizer):
-        num_updates = num_deletes = num_inserts = 0
-        for event in normalizer.get_lob_events().table:
+        table = normalizer.get_lob_events()
+        for i in range(self.curr_row,table.height):
+            event = table.get_row(i)
             if event['lob_action'] == 2:
-                num_inserts += 1
+                self.inserts += 1
             elif event['lob_action'] == 4:
-                num_updates += 1
+                self.updates += 1
             elif event['lob_action'] == 3:
-                num_deletes += 1
-        if num_updates + num_deletes + num_inserts == 0:
+                self.deletes += 1
+            self.curr_row += 1
+        if self.updates * self.deletes * self.inserts == 0:
             return
-        self.inserts = num_inserts / (num_updates + num_deletes + num_inserts)
-        self.updates = num_updates / (num_updates + num_deletes + num_inserts) 
-        self.deletes = num_deletes / (num_updates + num_deletes + num_inserts)
-        return self.inserts, self.updates, self.deletes
+        self.inserts_ratio = self.inserts / (self.updates + self.deletes + self.inserts)
+        self.updates_ratio = self.updates / (self.updates + self.deletes + self.inserts) 
+        self.deletes_ratio = self.deletes / (self.updates + self.deletes + self.inserts)
+        return self.inserts_ratio, self.updates_ratio, self.deletes_ratio
 
     def display_metric(self):
-        if (not self.inserts) or (not self.updates) or (not self.deletes):
+        if self.inserts_ratio * self.updates_ratio * self.deletes_ratio == 0:
             print("Ratio of LOB Events (inserts/updates/deletes): Not Calculated") 
-            return np.nan
-        print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % (self.inserts, self.updates, self.deletes))
+            return
+        print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % 
+                (self.inserts_ratio, self.updates_ratio, self.deletes_ratio))
