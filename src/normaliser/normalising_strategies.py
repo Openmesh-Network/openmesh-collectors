@@ -195,85 +195,59 @@ class NormaliseOkex(NormaliseExchange):
             for ask in order_data['asks']:
                 price = float(ask[0])
                 no_orders = int(ask[3])
+                size = float(ask[1])
                 if no_orders == 0:
                     lob_action = 3
                     if price in self.ACTIVE_LEVELS:
                         self.ACTIVE_LEVELS.remove(price)
-                    lob_events.append(self.util.create_lob_event(
-                        quote_no=self.QUOTE_NO,
-                        event_no=self.EVENT_NO,
-                        side=2,
-                        price=price,
-                        size=-1,
-                        lob_action=lob_action,
-                        send_timestamp=ts,
-                        receive_timestamp=data["receive_timestamp"],
-                        order_type=0
-                    ))
-                    self.QUOTE_NO += 1
-                    continue
-                size = float(ask[1]) / no_orders
-                if price in self.ACTIVE_LEVELS:
+                    self.QUOTE_NO += 1  
+                elif price in self.ACTIVE_LEVELS:
                     lob_action = 4
                 else:
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
-                for _ in range(no_orders):
-                    lob_events.append(self.util.create_lob_event(
-                        quote_no=self.QUOTE_NO,
-                        event_no=self.EVENT_NO,
-                        order_id=self.ORDER_ID,
-                        side=2,
-                        price=price,
-                        size=size if size else -1,
-                        lob_action=lob_action,
-                        send_timestamp=ts,
-                        receive_timestamp=data["receive_timestamp"],
-                        order_type=0
-                    ))
-                    self.QUOTE_NO += 1
-                    self.ORDER_ID += 1
+                lob_events.append(self.util.create_lob_event(
+                    quote_no=self.QUOTE_NO,
+                    event_no=self.EVENT_NO,
+                    order_id=self.ORDER_ID,
+                    side=2,
+                    price=price,
+                    size=size if size else -1,
+                    lob_action=lob_action,
+                    send_timestamp=ts,
+                    receive_timestamp=data["receive_timestamp"],
+                    order_type=0
+                ))
+                self.QUOTE_NO += 1
+                self.ORDER_ID += 1
             for bid in order_data['bids']:
                 price = float(bid[0])
                 no_orders = int(bid[3])
+                size = float(bid[1])
                 if no_orders == 0:
                     lob_action = 3
                     if price in self.ACTIVE_LEVELS:
                         self.ACTIVE_LEVELS.remove(price)
-                    lob_events.append(self.util.create_lob_event(
-                        quote_no=self.QUOTE_NO,
-                        event_no=self.EVENT_NO,
-                        side=1,
-                        price=price,
-                        size=-1,
-                        lob_action=lob_action,
-                        send_timestamp=ts,
-                        receive_timestamp=data["receive_timestamp"],
-                        order_type=0
-                    ))
                     self.QUOTE_NO += 1
-                    continue
-                size = float(bid[1]) / no_orders
-                if price in self.ACTIVE_LEVELS:
+                elif price in self.ACTIVE_LEVELS:
                     lob_action = 4
                 else:
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
-                for _ in range(no_orders):
-                    lob_events.append(self.util.create_lob_event(
-                        quote_no=self.QUOTE_NO,
-                        event_no=self.EVENT_NO,
-                        order_id=self.ORDER_ID,
-                        side=1,
-                        price=price,
-                        size=size if size else -1,
-                        lob_action=lob_action,
-                        send_timestamp=ts,
-                        receive_timestamp=data["receive_timestamp"],
-                        order_type=0
-                    ))
-                    self.QUOTE_NO += 1
-                    self.ORDER_ID += 1
+                lob_events.append(self.util.create_lob_event(
+                    quote_no=self.QUOTE_NO,
+                    event_no=self.EVENT_NO,
+                    order_id=self.ORDER_ID,
+                    side=1,
+                    price=price,
+                    size=size if size else -1,
+                    lob_action=lob_action,
+                    send_timestamp=ts,
+                    receive_timestamp=data["receive_timestamp"],
+                    order_type=0
+                ))
+                self.QUOTE_NO += 1
+                self.ORDER_ID += 1
 
         elif data['arg']['channel'] == 'trades':
             trade = data['data'][0]

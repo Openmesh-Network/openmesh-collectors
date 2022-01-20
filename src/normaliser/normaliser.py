@@ -10,6 +10,7 @@ from time import sleep
 from .manager.ws_factories import FactoryRegistry
 from .normalising_strategies import NormalisingStrategies
 from .tables.table import LobTable, MarketOrdersTable
+from .order_book import OrderBookManager
 
 
 class Normaliser():
@@ -23,6 +24,7 @@ class Normaliser():
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()
+        self.order_book_manager = OrderBookManager()
 
         # Start normalising the data
         self.normalise_thr = Thread(
@@ -47,6 +49,12 @@ class Normaliser():
         for event in lob_events:
             if len(event) == 22:
                 self.lob_table.put_dict(event)
+                if event['lob_action'] == 2:
+                    self.order_book_manager.insert({"price" : event['price'], "size" : event['size'], "side" : event['side']})
+                elif event['lob_action'] == 3:
+                    self.order_book_manager.delete({"price" : event['price'], "size" : event['size'], "side" : event['side']})
+                elif event['lob_action'] == 4:
+                    self.order_book_manager.update({"price" : event['price'], "size" : event['size'], "side" : event['side']})
 
         for order in market_orders:
             if len(order) == 6:
@@ -56,24 +64,7 @@ class Normaliser():
         return self.lob_table
 
     def get_best_orders(self):
-        lob = self.get_lob_events()
-        best_bid_price = -1
-        best_ask_price = 10e9
-        best_bid, best_ask = None, None
-
-        for order in lob.table:
-            if order['lob_action'] != 2:
-                continue
-            if order["side"] == 1:
-                if order["price"] > best_bid_price:
-                    best_bid_price = order["price"]
-                    best_bid = order
-            elif order["side"] == 2:
-                if order["price"] < best_ask_price:
-                    best_ask_price = order["price"]
-                    best_ask = order
-
-        return best_bid, best_ask
+        return self.order_book_manager.best_buy_order, self.order_book_manager.best_sell_order
 
     def get_market_orders(self):
         return self.market_orders_table
@@ -83,6 +74,8 @@ class Normaliser():
         self.lob_table.dump()
         print("Market Order Data Table")
         self.market_orders_table.dump()
+        print("Order Book")
+        self.order_book_manager.dump()
 
     def _normalise_thread(self):
         while True:

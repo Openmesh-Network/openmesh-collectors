@@ -47,7 +47,7 @@ class MidPrice(Metric):
         return mid_price
 
     def display_metric(self, normalizer):
-        return "Mid Price: %.4f" % self.calculate(normalizer)
+        return "Mid Price: $%.4f" % self.calculate(normalizer)
 
 class MicroPrice(Metric):
 
@@ -59,7 +59,7 @@ class MicroPrice(Metric):
         return micro_price
 
     def display_metric(self, normalizer):
-        return "Micro Price: %.4f" % self.calculate(normalizer)
+        return "Micro Price: $%.4f" % self.calculate(normalizer)
         
 
 
