@@ -111,6 +111,8 @@ class RatioOfLobEvents(Metric):
                 num_updates += 1
             elif event['lob_action'] == 3:
                 num_deletes += 1
+        if num_updates + num_deletes + num_inserts == 0:
+            return
         self.inserts = num_inserts / (num_updates + num_deletes + num_inserts)
         self.updates = num_updates / (num_updates + num_deletes + num_inserts) 
         self.deletes = num_deletes / (num_updates + num_deletes + num_inserts)

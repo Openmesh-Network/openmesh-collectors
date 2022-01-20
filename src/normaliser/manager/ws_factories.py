@@ -7,6 +7,7 @@ from configparser import ConfigParser
 import json
 import os
 from textwrap import indent
+from time import sleep
 
 from .websocket_manager import WebsocketManager
 
@@ -100,12 +101,32 @@ class DeribitWsManagerFactory(WsManagerFactory):
 
 class FtxWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self, symbol: str):
-        """Taras"""
-        url = None
-        ws_manager = WebsocketManager(url)
+        """Jay"""
+        url = 'wss://ftx.com/ws/'
 
         # Subscribe to channels
 
+        def subscribe(ws_manager):
+            request = {'op': 'subscribe', 
+            'channel': 'orderbook', 
+            'market': symbol
+            }
+            ws_manager.send_json(request)
+            request['channel'] = 'trades'
+
+            ws_manager.send_json(request)
+
+        def unsubscribe(ws_manager):
+            request = {'op': 'unsubscribe', 
+                'channel': 'orderbook', 
+                'market': symbol
+                }
+            ws_manager.send_json(request)
+            request['channel'] = 'trades'
+            ws_manager.send_json(request)
+
+            
+        ws_manager = WebsocketManager(url,subscribe,unsubscribe)
         return ws_manager
 
 
