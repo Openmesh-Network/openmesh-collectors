@@ -146,7 +146,6 @@ class NormaliseKraken(NormaliseExchange):
             self._handle_market_order(market_orders, data)
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 
@@ -262,7 +261,6 @@ class NormaliseOkex(NormaliseExchange):
 
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 

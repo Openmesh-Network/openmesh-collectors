@@ -9,17 +9,28 @@ Classes
 '''
 
 
+from decimal import DivisionByZero
+
+
 class Metric:
+    def __init__(self):
+        self.metric = None
 
     def calculate(self, normalizer):
         raise NotImplementedError()
 
     def display_metric(self):
-        raise NotImplementedError()
+        print(self.metric)
+    
+    @staticmethod
+    def metric_wrapper(f, normalizer):
+        try:
+            f(normalizer)
+        except ZeroDivisionError as e:
+                print(f"calculation failed: {e}")
 
 
 class OrderBookImbalance(Metric):
-
     def calculate(self, normalizer):
 
         best_bid, best_ask = normalizer.get_best_orders()
@@ -29,50 +40,65 @@ class OrderBookImbalance(Metric):
         ask_vol = best_ask["size"]
         bid_vol = best_bid["size"]
 
-        return (bid_vol) / (ask_vol + bid_vol)
+        self.metric = (bid_vol) / (ask_vol + bid_vol)
+        return self.metric
 
-    def display_metric(self, normalizer):
-        return "Order book Imbalance: %.4f" % self.calculate(normalizer)
+    def display_metric(self):
+        if not self.metric:
+            return
+        print("Order book Imbalance: %.4f" % self.metric)
 
 
 class MidPrice(Metric):
-
     def calculate(self, normalizer):
         best_bid, best_ask = normalizer.get_best_orders()
         if best_bid is None or best_ask is None:
             return
 
-        mid_price = (best_bid["price"] + best_ask["price"]) / 2
+        self.metric = (best_bid["price"] + best_ask["price"]) / 2
 
-        return mid_price
+        return self.metric 
 
-    def display_metric(self, normalizer):
-        return "Mid Price: $%.4f" % self.calculate(normalizer)
+    def display_metric(self):
+        if not self.metric:
+            return
+        print("Mid Price: $%.4f" % self.metric)
 
 class MicroPrice(Metric):
-
     def calculate(self, normalizer):
         best_bid, best_ask = normalizer.get_best_orders()
         imbalance = OrderBookImbalance().calculate(normalizer)
-        micro_price = best_bid['price'] * \
-            (1 - imbalance) + best_ask['price'] * imbalance
-        return micro_price
+        if not best_bid or not best_ask:
+            return
 
-    def display_metric(self, normalizer):
-        return "Micro Price: $%.4f" % self.calculate(normalizer)
+        bid_price = best_bid['price']
+        ask_price = best_ask['price']
+        self.metric = bid_price * (1 - imbalance) + ask_price * imbalance
+        return self.metric 
+
+    def display_metric(self):
+        if not self.metric:
+            return
+        print("Micro Price: $%.4f" % self.metric)
         
 
 
 class NumberOfLOBEvents(Metric):
-
     def calculate(self, normalizer):
-        return len(normalizer.get_lob_events().table)
+        self.metric = len(normalizer.get_lob_events().table)
+        return self.metric
 
-    def display_metric(self, normalizer):
-        return "Number of LOB Events: %d" % self.calculate(normalizer)
+    def display_metric(self):
+        if not self.metric:
+            return
+        print("Number of LOB Events: %d" % self.metric)
 
 class RatioOfLobEvents(Metric):
-    
+    def __init__(self):
+        self.updates = None
+        self.inserts = None
+        self.deletes = None
+
     def calculate(self, normalizer):
         num_updates = num_deletes = num_inserts = 0
         for event in normalizer.get_lob_events().table:
@@ -82,9 +108,14 @@ class RatioOfLobEvents(Metric):
                 num_updates += 1
             elif event['lob_action'] == 3:
                 num_deletes += 1
-        return num_inserts / (num_updates + num_deletes + num_inserts), num_updates / (num_updates + num_deletes + num_inserts), num_deletes / (num_updates + num_deletes + num_inserts)
+        self.inserts = num_inserts / (num_updates + num_deletes + num_inserts)
+        self.updates = num_updates / (num_updates + num_deletes + num_inserts) 
+        self.deletes = num_deletes / (num_updates + num_deletes + num_inserts)
+        return self.inserts, self.updates, self.deletes
 
-    def display_metric(self, normalizer):
-        return "Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % self.calculate(normalizer)
+    def display_metric(self):
+        if (not self.inserts) or (not self.updates) or (not self.deletes):
+            return
+        print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % self.inserts, self.updates, self.deletes)
 
                 

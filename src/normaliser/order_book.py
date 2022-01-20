@@ -8,6 +8,14 @@ class OrderBookManager:
         self.buy_orders = OrderBookTable()
         self.best_buy_order = None
         self.best_sell_order = None
+    
+    def handle_event(self, lob_event):
+        if lob_event['lob_action'] == 2:
+            self.insert({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+        elif lob_event['lob_action'] == 3:
+            self.delete({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+        elif lob_event['lob_action'] == 4:
+            self.update({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
 
     def insert(self, lob_event):
         price = lob_event["price"]

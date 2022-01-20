@@ -32,42 +32,38 @@ class FactoryRegistry():
         self.factories["deribit"] = DeribitWsManagerFactory()
         self.factories["ftx"] = FtxWsManagerFactory()
 
-    def get_ws_manager(self, exchange_id: str):
+    def get_ws_manager(self, exchange_id: str, symbol: str):
         if not exchange_id in self.factories.keys():
             raise KeyError(
                 f"exchange id {exchange_id} not registered as a factory")
-        return self.factories[exchange_id].get_ws_manager()
+        return self.factories[exchange_id].get_ws_manager(symbol)
 
 
 class WsManagerFactory():
-    def get_ws_manager(self) -> WebsocketManager:
+    def get_ws_manager(self, symbol: str) -> WebsocketManager:
         """
         Returns the websocket manager created by the factory.
 
         You can add any other private method to your implementation of the class.
         Make sure that get_ws_manager is the ONLY public method in your implementation.
         (Prefix private methods with an underscore).
+
+        :param symbol: symbol of the ticker to subscribe to
         """
         raise NotImplementedError()
 
 
 class KrakenWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
+    def get_ws_manager(self, symbol: str):
         """Rayman"""
         url = 'wss://futures.kraken.com/ws/v1'
-
-        config_path = "src/normaliser/manager/symbol_configs/kraken.ini"
-
-        config = ConfigParser()
-        config.read(config_path)
-        symbols = json.loads(config["DEFAULT"]["symbols"])
 
         # Subscribe to channels
         def subscribe(ws_manager):
             request = {
                 "event": "subscribe",
                 "feed": "book",
-                "product_ids": symbols
+                "product_ids": [symbol]
             }
             ws_manager.send_json(request)
 
@@ -79,7 +75,7 @@ class KrakenWsManagerFactory(WsManagerFactory):
             request = {
                 "event": "unsubscribe",
                 "feed": "book",
-                "product_ids": symbols
+                "product_ids": [symbol]
             }
             ws_manager.send_json(request)
 
@@ -91,7 +87,7 @@ class KrakenWsManagerFactory(WsManagerFactory):
 
 
 class DeribitWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
+    def get_ws_manager(self, symbol: str):
         """Vivek"""
         url = None
         ws_manager = WebsocketManager(url)
@@ -102,7 +98,7 @@ class DeribitWsManagerFactory(WsManagerFactory):
 
 
 class FtxWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
+    def get_ws_manager(self, symbol: str):
         """Taras"""
         url = None
         ws_manager = WebsocketManager(url)
@@ -113,7 +109,7 @@ class FtxWsManagerFactory(WsManagerFactory):
 
 
 class KucoinWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
+    def get_ws_manager(self, symbol: str):
         """Jack"""
         url = None
         ws_manager = WebsocketManager(url)
@@ -124,67 +120,35 @@ class KucoinWsManagerFactory(WsManagerFactory):
 
 
 class OkexWsManagerFactory(WsManagerFactory):
-    def get_ws_manager(self):
+    def get_ws_manager(self, symbol: str):
         """Jay"""
         url = "wss://ws.okex.com:8443/ws/v5/public"
 
-        config_path = "src/normaliser/manager/symbol_configs/okex.ini"
-
-        config = ConfigParser()
-        config.read(config_path)
-        symbols = json.loads(config["DEFAULT"]["symbols"])
-
         def subscribe(ws_manager):
-            for symbol in symbols:
-                request = {}
-                request['op'] = 'subscribe'
-                request['args'] = [{"channel": "books", "instId": symbol}]
-                ws_manager.send_json(request)
-                request['args'] = [{"channel": "trades", "instId": symbol}]
-                ws_manager.send_json(request)
+            request = {}
+            request['op'] = 'subscribe'
+            request['args'] = [{"channel": "books", "instId": symbol}]
+            ws_manager.send_json(request)
+            request['args'] = [{"channel": "trades", "instId": symbol}]
+            ws_manager.send_json(request)
 
         def unsubscribe(ws_manager):
-            for symbol in symbols:
-                request = {}
-                request['op'] = 'unsubscribe'
-                request['args'] = [{"channel": "books", "instId": symbol}]
-                ws_manager.send_json(request)
-                request['args'] = [{"channel": "trades", "instId": symbol}]
-                ws_manager.send_json(request)
+            request = {}
+            request['op'] = 'unsubscribe'
+            request['args'] = [{"channel": "books", "instId": symbol}]
+            ws_manager.send_json(request)
+            request['args'] = [{"channel": "trades", "instId": symbol}]
+            ws_manager.send_json(request)
 
         ws_manager = WebsocketManager(url, subscribe, unsubscribe)
         return ws_manager
 
 
 class PhemexWsManagerFactory(WsManagerFactory):
+    def get_ws_manager(self, symbol: str):
+        """Will"""
         url = "wss://phemex.com/ws"
         ws_manager = WebsocketManager(url)
-
-        url = "wss://phemex.com/ws" 
-
-        config_path = "src/normaliser/manager/symbol_configs/phemex.ini"
-
-        config = ConfigParser()
-        config.read(config_path)
-        symbols = json.loads(config["DEFAULT"]["symbols"])
-    
-        def subscribe(ws_manager):
-            # Limit Order
-            request = {
-                "id": 0, # Not sure what this is. Maybe you need an API Key?
-                "method": "orderbook.subscribe",
-                "params": symbols
-            }
-            ws_manager.send_json(request)
-
-            # Market Order
-            request = {
-                "id": 0,
-                "method": "trade.subscribe",
-                "params": symbols
-            }
-            ws_manager.send_json(request)
-
 
 
 if __name__ == "__main__":
