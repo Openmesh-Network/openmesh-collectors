@@ -107,6 +107,10 @@ class WebsocketManager():
                 if self.ws:
                     self.subscribe(self)
                     return
+    
+    def resubscribe(self):
+        self.unsubscribe()
+        self.subscribe()
 
     def _on_close(self, ws):
         print("Connection Closed")

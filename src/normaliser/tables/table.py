@@ -35,13 +35,13 @@ class Table():
             return
         elif len(colnames) == 0:
             return
-
+        
         self.colnames = colnames
-        self.dtype = dtype
+        self.dtype = np.dtype(dtype, align=True) 
         self.width = len(colnames)
         self.height = 0
         self.capacity = self.INITIAL_CAPACITY
-        self.table = np.zeros(self.capacity, dtype=dtype)
+        self.table = np.zeros(self.capacity, dtype=self.dtype)
 
         np.set_printoptions(precision=2, suppress=True, linewidth=0)
 
