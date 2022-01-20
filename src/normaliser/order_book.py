@@ -3,6 +3,9 @@ from tabulate import tabulate
 import numpy as np
 
 class OrderBookManager:
+    """
+    Handles the buy and sell orders, storing the best for metric calculations
+    """
     def __init__(self):
         self.sell_orders = OrderBookTable()
         self.buy_orders = OrderBookTable()
@@ -18,6 +21,11 @@ class OrderBookManager:
             self.update({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
 
     def insert(self, lob_event):
+        """
+        Inserts a new order into the order book
+        :param lob_event: The data from the LOB event to insert
+        :return: None
+        """
         price = lob_event["price"]
         size = lob_event["size"]
         if lob_event["side"] == 2:
@@ -30,6 +38,11 @@ class OrderBookManager:
             self.buy_orders.put_dict({"price": price, "size": size})
 
     def update(self, lob_event):
+        """
+        Updates an existing order in the order book
+        :param lob_event: The data from the LOB event to update. Finds the order with the given price, and updates its size
+        :return: None
+        """
         price = lob_event['price']
         size = lob_event['size']
         row = self._get_row_by_price(price, lob_event['side'])
@@ -46,6 +59,11 @@ class OrderBookManager:
                 
 
     def delete(self, lob_event):
+        """
+        Deletes an order from the order book
+        :param lob_event: The data from the LOB event to delete. Finds the order with the given price in the relevant table, and deletes it
+        :return: None
+        """
         price = lob_event['price']
         row = self._get_row_by_price(price, lob_event['side'])
         if row == -1:
@@ -61,6 +79,12 @@ class OrderBookManager:
 
 
     def _get_row_by_price(self, price, side):
+        """
+        Given the price and side of an order, returns the index of the row in the relevant table
+        :param price: The price of the order
+        :param side: The side of the order
+        :return: The index of the row in the relevant table
+        """
         index = 0
         if side == 2:
             for order in self.sell_orders.table:
@@ -75,6 +99,11 @@ class OrderBookManager:
         return -1
 
     def _get_new_best_order(self, side):
+        """
+        When an order is deleted, this function is called to find the new best order in the relevant table
+        :param side: The side of the order to find the new best order for
+        :return: The new best order
+        """
         if side == 2:
             min_price = 10e9 + 5
             for order in self.sell_orders.table:
@@ -89,6 +118,10 @@ class OrderBookManager:
                     return {"price": max_price, "size": order["size"]}
 
     def dump(self):
+        """
+        Prints the data in the order book in a table format
+        :return: None
+        """
         print("Sell Orders\n")
         dist_from_end = self.sell_orders.capacity - self.sell_orders.height
         print(tabulate(np.sort(self.sell_orders.table, order = ("price"))[dist_from_end:dist_from_end + 21], headers="keys", tablefmt="fancy_grid"))
@@ -100,6 +133,9 @@ class OrderBookManager:
     
 
 def main():
+    """
+    Simple tests for the OrderBookManager class
+    """
     order_book = OrderBookManager()
     order_book.insert({"side": 1, "price": 10, "size": 10})
     order_book.insert({"side": 1, "price": 20, "size": 10})

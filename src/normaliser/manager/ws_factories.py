@@ -6,6 +6,7 @@ Uses the factory pattern to create the correct websocket connection to each exch
 from configparser import ConfigParser
 import json
 import os
+from textwrap import indent
 
 from .websocket_manager import WebsocketManager
 
@@ -146,15 +147,42 @@ class OkexWsManagerFactory(WsManagerFactory):
 
 class PhemexWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self, symbol: str):
-        """Will"""
+        """Rayman"""
         url = "wss://phemex.com/ws"
-        ws_manager = WebsocketManager(url)
+
+        config_path = "src/normaliser/manager/symbol_configs/phemex.ini"
+
+        def subscribe(ws_manager):
+
+            request = {
+                "id": 1234,  # Not sure what this is. Maybe you need an API Key?
+                "method": "orderbook.subscribe",
+                "params": [symbol]
+            }
+            ws_manager.send_json(request)
+
+            request['method'] = "trade.subscribe"
+            ws_manager.send_json(request)
+
+        def unsubscribe(ws_manager):
+            request = {
+                "id": 1234,
+                "method": "orderbook.unsubscribe",
+                "params": [symbol]
+            }
+            ws_manager.send_json(request)
+
+            request['method'] = "trades.unsubscribe"
+            ws_manager.send_json(request)
+
+        ws_manager = WebsocketManager(url, subscribe, unsubscribe)
+        return ws_manager
 
 
 if __name__ == "__main__":
-    ws_manager = FactoryRegistry().get_ws_manager("kraken")
+    ws_manager = FactoryRegistry().get_ws_manager("phemex")
     while True:
         try:
-            print(json.dumps(ws_manager.get_msg()))
+            print(json.dumps(ws_manager.get_msg(), indent=4))
         except KeyboardInterrupt:
             break

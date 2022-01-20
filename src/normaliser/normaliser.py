@@ -65,12 +65,12 @@ class Normaliser():
         for order in market_orders:
             if len(order) == 6:
                 self.market_orders_table.put_dict(order)
-            
+
         self.calculate_metrics()
 
     def get_lob_events(self):
         # NOTE: MODIFYING THE LOB TABLE AFTER RETRIEVING IT USING THIS FUNCTION IS NOT THREAD SAFE
-        #       It is only safe for metric which are observing this normaliser through the calculate_metrics method. 
+        #       It is only safe for metric which are observing this normaliser through the calculate_metrics method.
         return self.lob_table
 
     def get_best_orders(self):
@@ -94,12 +94,12 @@ class Normaliser():
             metric.display_metric()
         print("\n------------------------------------\n\n")
         self.metric_lock.release()
-    
+
     def add_metric(self, metric: Metric):
         if metric in self.metrics:
             return
         self.metrics.append(metric)
-    
+
     def remove_metric(self, metric: Metric):
         if not metric in self.metrics:
             return
@@ -111,14 +111,14 @@ class Normaliser():
         self.metric_lock.acquire()
         for metric in self.metrics:
             t = Thread(
-                target = Metric.metric_wrapper,
-                args = (metric.calculate, self),
-                daemon = True
+                target=Metric.metric_wrapper,
+                args=(metric.calculate, self),
+                daemon=True
             )
             threads.append(t)
             t.start()
         for thread in threads:
-            t.join() 
+            t.join()
         self.metric_lock.release()
         self.lob_table_lock.release()
 
