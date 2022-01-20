@@ -42,6 +42,7 @@ class Normaliser():
             daemon=True
         )
         self.normalise_thr.start()
+        sleep(1)
 
     def put_entry(self, data: dict):
         """
@@ -79,7 +80,6 @@ class Normaliser():
         return self.market_orders_table
 
     def dump(self):
-        """
         print("LOB Data Table")
         self.lob_table_lock.acquire()
         self.lob_table.dump()
@@ -88,7 +88,6 @@ class Normaliser():
         self.market_orders_table.dump()
         print("Order Book")
         self.order_book_manager.dump()
-        """
         self.metric_lock.acquire()
         print("\n\n-----------METRICS-----------\n")
         for metric in self.metrics:

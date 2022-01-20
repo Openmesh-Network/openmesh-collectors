@@ -7,9 +7,8 @@ Classes
 - MidPrice: Calculates the mid price of the normalizer using the best bid and ask prices
 - MicroPrice: Calculates the micro price of the normalizer using the imbalance and best bid and ask prices
 '''
-
-
-from decimal import DivisionByZero
+import logging
+import numpy as np
 
 
 class Metric:
@@ -27,7 +26,7 @@ class Metric:
         try:
             f(normalizer)
         except ZeroDivisionError as e:
-                print(f"calculation failed: {e}")
+                logging.log(f"calculation failed: {e}")
 
 
 class OrderBookImbalance(Metric):
@@ -45,6 +44,7 @@ class OrderBookImbalance(Metric):
 
     def display_metric(self):
         if not self.metric:
+            print("Order book Imbalance: Not Calculated")
             return
         print("Order book Imbalance: %.4f" % self.metric)
 
@@ -61,6 +61,7 @@ class MidPrice(Metric):
 
     def display_metric(self):
         if not self.metric:
+            print("Mid Price: Not Calculated")
             return
         print("Mid Price: $%.4f" % self.metric)
 
@@ -78,7 +79,8 @@ class MicroPrice(Metric):
 
     def display_metric(self):
         if not self.metric:
-            return
+            print("Micro Price: Not Calculated")
+            return 
         print("Micro Price: $%.4f" % self.metric)
         
 
@@ -90,7 +92,8 @@ class NumberOfLOBEvents(Metric):
 
     def display_metric(self):
         if not self.metric:
-            return
+            print("Number of LOB Events: Not Calculated")
+            return 
         print("Number of LOB Events: %d" % self.metric)
 
 class RatioOfLobEvents(Metric):
@@ -115,7 +118,6 @@ class RatioOfLobEvents(Metric):
 
     def display_metric(self):
         if (not self.inserts) or (not self.updates) or (not self.deletes):
-            return
-        print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % self.inserts, self.updates, self.deletes)
-
-                
+            print("Ratio of LOB Events (inserts/updates/deletes): Not Calclated") 
+            return np.nan
+        print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" % (self.inserts, self.updates, self.deletes))
