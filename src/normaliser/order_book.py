@@ -71,11 +71,11 @@ class OrderBookManager:
         if lob_event['side'] == 2:
             self.sell_orders.del_row(row)
             if price == self.best_sell_order['price']:
-                self.best_sell_order = self._get_new_best_order(1)
+                self.best_sell_order = self._get_new_best_order(2)
         if lob_event['side'] == 1:
             self.buy_orders.del_row(row)
             if price == self.best_buy_order['price']:
-                self.best_buy_order = self._get_new_best_order(2)
+                self.best_buy_order = self._get_new_best_order(1)
 
 
     def _get_row_by_price(self, price, side):
@@ -106,16 +106,20 @@ class OrderBookManager:
         """
         if side == 2:
             min_price = 10e9 + 5
+            size = None
             for order in self.sell_orders.table:
                 if order["price"] < min_price and order["price"] > 0:
                     min_price = order["price"]
-                    return {"price": min_price, "size": order["size"]}
+                    size = order["size"]
+            return {"price": min_price, "size": size}
         elif side == 1:
             max_price = -1
+            size = None
             for order in self.buy_orders.table:
                 if order["price"] > max_price:
                     max_price = order["price"]
-                    return {"price": max_price, "size": order["size"]}
+                    size = order["size"]
+            return {"price": max_price, "size": size}
 
     def dump(self):
         """
