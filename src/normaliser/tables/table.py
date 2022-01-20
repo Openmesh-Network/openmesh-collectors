@@ -102,6 +102,12 @@ class Table():
         self.height -= 1
         self.capacity -= 1
 
+    def del_rows(self, rows):
+        n = len(rows)
+        self.table = np.delete(self.table, rows, 0)
+        self.height -= n
+        self.capacity -= n
+
     def dump(self):
         print(tabulate(self.table[:20],
               headers=self.colnames, tablefmt="fancy_grid"))
@@ -197,7 +203,6 @@ class TableUtil():
             "msg_original_type": msg_original_type
         }
 
-
 class LobTable(Table):
     def __init__(self):
         """
@@ -277,6 +282,21 @@ class MarketOrdersTable(Table):
             ("timestamp", "f8"),
             ("side", "i8"),
             ("msg_original_type", "U12")
+        ]
+        super().__init__(colnames, dtype)
+
+class OrderBookTable(Table):
+    def __init__(self):
+        """
+        Table object to hold order book data, modified by LOB events
+        """
+        colnames = [
+            "price",
+            "size",
+        ]
+        dtype = [
+            ("price", "f8"),
+            ("size", "f8"),
         ]
         super().__init__(colnames, dtype)
 
