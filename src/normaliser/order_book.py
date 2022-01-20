@@ -50,11 +50,11 @@ class OrderBookManager:
             return
         if lob_event['side'] == 2:
             self.sell_orders.table[row]['size'] = size
-            if price < self.best_sell_order['price']:
+            if price <= self.best_sell_order['price']:
                 self.best_sell_order = {"price": price, "size": size}
         elif lob_event['side'] == 1:
             self.buy_orders.table[row]['size'] = size
-            if price > self.best_buy_order['price']:
+            if price >= self.best_buy_order['price']:
                 self.best_buy_order = {"price": price, "size": size}
                 
 
@@ -153,8 +153,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-    

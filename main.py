@@ -6,8 +6,8 @@ Contains example of how to use my code scaffold.
 TO THE JDT: Make sure you look at the ws_factories.py file and the normalising_strategies.py file.
             I've assigned functions for yall to write.
 """
-from time import sleep
 from configparser import ConfigParser
+import time
 import json
 import multiprocessing
 
@@ -16,15 +16,21 @@ import src.normaliser.metrics as metrics
 
 
 def start_normaliser(exchange: str, symbol: str):
-    normaliser = Normaliser(exchange, symbol)
-    metrics_list = [metrics.NumberOfLOBEvents(), metrics.RatioOfLobEvents(), metrics.MidPrice(), metrics.MicroPrice(), metrics.OrderBookImbalance()]
+    normaliser = Normaliser(exchange, symbol, name = exchange + ":" + symbol)
+    metrics_list = [
+        metrics.NumberOfLOBEvents(), 
+        metrics.RatioOfLobEvents(), 
+        metrics.MidPrice(), 
+        metrics.MicroPrice(), 
+        metrics.OrderBookImbalance()
+    ]
     for metric in metrics_list:
         normaliser.add_metric(metric)
 
     while True:
         try:
             normaliser.dump()  # Print tables
-            sleep(1)
+            time.sleep(1/60)
         except KeyboardInterrupt:
             break
 
@@ -32,16 +38,16 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["kucoin"]
+    exchanges = ["kraken"]
 
     for exchange in exchanges:
-        config_path = "src/normaliser/manager/symbol_configs/" + exchange + ".ini"
+        config_path = "symbols/" + exchange + ".ini"
 
         config = ConfigParser()
         config.read(config_path)
         symbols = json.loads(config["DEFAULT"]["symbols"])
         for symbol in symbols:
-            process_name = exchange + "_" + symbol
+            process_name = exchange + ":" + symbol
             process = multiprocessing.Process(
                 target = start_normaliser,
                 name = process_name,
