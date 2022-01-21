@@ -20,11 +20,11 @@ Data is collected from the exchanges listed below, normalised, LOB constructed, 
 
 ## Dependencies
 
-These packages must be manually installed if not installed already.
+All required dependencies can be installed from `requirements.txt`.
 ```
-pip install numpy
+pip install -r requirements.txt
 ```
 
 ## Usage
 
-TBC once implementation is better defined.
+Configure symbols in `symbols/[exchange].ini`, and then run `main.py [exchange]` to get normalised data from the desired exchange. Modify the `dump` function in `normaliser/normaliser.py` to configure the desired outputs.
