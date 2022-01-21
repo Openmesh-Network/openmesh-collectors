@@ -16,6 +16,8 @@ from .websocket_manager import WebsocketManager
 
 
 class FactoryRegistry():
+    """Holds the factory classes for each exchange"""
+
     FACTORIES = [
         "okex",
         "phemex",
@@ -30,6 +32,7 @@ class FactoryRegistry():
         self.register()
 
     def register(self):
+        """Initiliases the factory classes for the given exchanges"""
         self.factories["okex"] = OkexWsManagerFactory()
         self.factories["phemex"] = PhemexWsManagerFactory()
         self.factories["kraken"] = KrakenWsManagerFactory()
@@ -48,10 +51,6 @@ class WsManagerFactory():
     def get_ws_manager(self, symbol: str) -> WebsocketManager:
         """
         Returns the websocket manager created by the factory.
-
-        You can add any other private method to your implementation of the class.
-        Make sure that get_ws_manager is the ONLY public method in your implementation.
-        (Prefix private methods with an underscore).
 
         :param symbol: symbol of the ticker to subscribe to
         """
@@ -97,7 +96,6 @@ class HuobiWsManagerFactory(WsManagerFactory):
         url = 'wss://api-aws.huobi.pro/ws'
 
         # Subscribe to channels
-
         def subscribe(ws_manager):
             request = {'sub': f'market.{symbol}.depth.step0', 
             'id': 'id1'
@@ -108,6 +106,7 @@ class HuobiWsManagerFactory(WsManagerFactory):
 
             ws_manager.send_json(request)
 
+        # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {'unsub': f'market.{symbol}.depth.step0', 
             'id': 'id1'
@@ -129,7 +128,6 @@ class FtxWsManagerFactory(WsManagerFactory):
         url = 'wss://ftx.com/ws/'
 
         # Subscribe to channels
-
         def subscribe(ws_manager):
             request = {'op': 'subscribe', 
             'channel': 'orderbook', 
@@ -140,6 +138,7 @@ class FtxWsManagerFactory(WsManagerFactory):
 
             ws_manager.send_json(request)
 
+        # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {'op': 'unsubscribe', 
                 'channel': 'orderbook', 
@@ -175,6 +174,7 @@ class KucoinWsManagerFactory(WsManagerFactory):
 
             ws_manager.send_json(request)
 
+        # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {'type': 'unsubscribe', 
             'topic': f'/market/level2:{symbol}', 
@@ -198,6 +198,7 @@ class OkexWsManagerFactory(WsManagerFactory):
         """Jay"""
         url = "wss://ws.okex.com:8443/ws/v5/public"
 
+        # Subscribe to channels
         def subscribe(ws_manager):
             request = {}
             request['op'] = 'subscribe'
@@ -206,6 +207,8 @@ class OkexWsManagerFactory(WsManagerFactory):
             request['args'] = [{"channel": "trades", "instId": symbol}]
             ws_manager.send_json(request)
 
+
+        # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {}
             request['op'] = 'unsubscribe'
@@ -223,12 +226,11 @@ class PhemexWsManagerFactory(WsManagerFactory):
         """Rayman"""
         url = "wss://phemex.com/ws"
 
-        config_path = "src/normaliser/manager/symbol_configs/phemex.ini"
-
+        # Subscribe to channels
         def subscribe(ws_manager):
 
             request = {
-                "id": 1234,  # Not sure what this is. Maybe you need an API Key?
+                "id": 1234,  # random id
                 "method": "orderbook.subscribe",
                 "params": [symbol]
             }
@@ -237,6 +239,7 @@ class PhemexWsManagerFactory(WsManagerFactory):
             request['method'] = "trade.subscribe"
             ws_manager.send_json(request)
 
+        # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {
                 "id": 1234,

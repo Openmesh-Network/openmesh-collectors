@@ -47,16 +47,20 @@ class WebsocketManager():
         self.queue.put(message)
     
     def get_q_size(self):
+        """Returns the size of the queue"""
         print(f"Queue Backlog: {self.queue.qsize()}")
 
     def send(self, message):
+        """Sends a message over the websocket"""
         self.connect()
         self.ws.send(message)
 
     def send_json(self, message):
+        """Sends a json message over the websocket"""
         self.send(json.dumps(message))
 
     def _connect(self):
+        """Creates a websocket app and connects"""
         assert not self.ws, "ws should be closed before attempting to connect"
 
         self.ws = WebSocketApp(
@@ -80,6 +84,7 @@ class WebsocketManager():
             time.sleep(0.1)
 
     def _wrap_callback(self, f):
+        """Wrap websocket callback"""
         def wrapped_f(ws, *args, **kwargs):
             if ws is self.ws:
                 try:
@@ -89,6 +94,7 @@ class WebsocketManager():
         return wrapped_f
 
     def _run_websocket(self, ws):
+        """"Runs the websocket app"""
         try:
             ws.run_forever(ping_interval=30)
         except Exception as e:
@@ -98,6 +104,7 @@ class WebsocketManager():
             # self._reconnect(ws)
 
     def _reconnect(self, ws):
+        """Closes a connection and attempts to reconnect"""
         assert ws is not None, '_reconnect should only be called with an existing ws'
         if ws is self.ws:
             self.ws = None
@@ -105,6 +112,7 @@ class WebsocketManager():
             self.connect()
 
     def connect(self):
+        """Connects to the websocket"""
         if self.ws:
             return
         with self.connect_lock:
