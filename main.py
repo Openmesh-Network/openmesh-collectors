@@ -39,12 +39,19 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = sys.argv[1:]
+    # Exchanges defined in main config file config.ini
+    
+    config = ConfigParser()
+    if len(sys.argv) > 1:
+        exchanges = sys.argv[1:]
+    else:
+        main_config_path = "config.ini"
+        config.read(main_config_path)
+        exchanges = json.loads(config["DEFAULT"]["exchanges"])
 
     for exchange in exchanges:
+        # Ticker symbols specified in config files in the "symbols" directory
         config_path = "symbols/" + exchange + ".ini"
-
-        config = ConfigParser()
         config.read(config_path)
         symbols = json.loads(config["DEFAULT"]["symbols"])
         for symbol in symbols:
