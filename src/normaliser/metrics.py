@@ -29,7 +29,7 @@ class Metric:
         try:
             f(normalizer)
         except Exception as e:
-            logging.log(f"calculation failed: {e}")
+            logging.log(logging.WARNING, f"calculation failed: {e}")
 
 
 class OrderBookImbalance(Metric):

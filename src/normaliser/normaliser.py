@@ -8,7 +8,7 @@ from threading import Thread, Lock
 from time import sleep
 import os
 
-from .manager.ws_factories import FactoryRegistry
+from .manager.ws_factories.ws_registry import FactoryRegistry
 from .normalising_strategies.normalising_strategies import NormalisingStrategies
 from .tables.table import LobTable, MarketOrdersTable
 from .order_books.jit_order_book import OrderBookManager
@@ -100,6 +100,14 @@ class Normaliser():
         self._wrap_output(self._dump)()
         return
 
+    def _dump(self):
+        # self._dump_lob_table()
+        # self._dump_market_orders()
+        # self._dump_lob()
+        self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_metrics()
+        return
+
     def add_metric(self, metric: Metric):
         """Adds a metric to the normaliser."""
         if metric in self.metrics:
@@ -143,17 +151,9 @@ class Normaliser():
             self.calculate_metrics()
             sleep(1/self.METRIC_CALCULATION_FREQUENCY)
 
-    def _dump(self):
-        self._dump_lob_table()
-        self._dump_market_orders()
-        self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
-        self._dump_metrics()
-        return
-
     def _wrap_output(self, f):
         def wrapped():
-            os.system("clear")
+            os.system("cls")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

@@ -160,7 +160,7 @@ class Table():
         Prints the table to the console in a pretty format.
         :return: None
         """
-        print(tabulate(self.table[:20],
+        print(tabulate(self.table[self.height-10:self.height],
               headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
 
@@ -174,13 +174,13 @@ class Table():
 
     def _set_dict(self, row: int, data: dict):
         if len(data.keys()) != self.width:
-            raise ValueError()
-            #    f"Data dictionary width {len(data)} is not equal to table width {self.width}")
+            raise ValueError(
+                f"Data dictionary width {len(data)} is not equal to table width {self.width}")
 
         for key in data.keys():
             if key not in self.colnames:
-                raise KeyError()
-                #    f"Column name {key} not a column in this table")
+                raise KeyError(
+                    f"Column name {key} not a column in this table")
 
         for key in self.colnames:
             self.table[row][key] = data[key]
@@ -333,7 +333,7 @@ class LobTable(Table):
             "i8",
             "i8",
             "f8",
-            "i8",
+            "f8",
             "i8",
             "i8",
             "i8",
