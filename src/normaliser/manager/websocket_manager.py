@@ -35,15 +35,18 @@ class WebsocketManager():
         """
         return self.queue.get()
 
-    def _get_url(self):
-        return self.url
-
     def _on_message(self, ws, message):
-        try:
-            message = json.loads(message)
-        except:
+        if isinstance(message, bytes) and "huobi" in self.url:
             message = json.loads(decompress(message))
-        message["receive_timestamp"] = time.time_ns() / 10e6
+        else:
+            message = json.loads(message)
+        
+        if isinstance(message, dict):
+            message["receive_timestamp"] = int(time.time()*10e3)
+        elif isinstance(message, list):
+            message.append(int(time.time()*10e3))
+        else:
+            raise ValueError(f"message from {self.url} is of type {type(message)}")
         self.queue.put(message)
     
     def get_q_size(self):
@@ -64,7 +67,7 @@ class WebsocketManager():
         assert not self.ws, "ws should be closed before attempting to connect"
 
         self.ws = WebSocketApp(
-            self._get_url(),
+            self.url,
             on_message=self._wrap_callback(self._on_message),
             on_close=self._wrap_callback(self._on_close),
             on_error=self._wrap_callback(self._on_error),

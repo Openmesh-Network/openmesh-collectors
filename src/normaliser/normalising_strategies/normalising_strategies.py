@@ -10,6 +10,7 @@ from .ftx import NormaliseFtx
 from .huobi import NormaliseHuobi
 from .okex import NormaliseOkex
 from .phemex import NormalisePhemex
+from .kraken_futures import NormaliseKrakenFutures
 from .kraken import NormaliseKraken
 from .kucoin import NormaliseKucoin
 
@@ -21,6 +22,7 @@ class NormalisingStrategies():
     def register(self):
         """Initialises the normalising strategies for the given exchanges"""
         self.strategies["kraken"] = NormaliseKraken()
+        self.strategies["kraken-futures"] = NormaliseKrakenFutures()
         self.strategies["okex"] = NormaliseOkex()
         self.strategies["phemex"] = NormalisePhemex()
         self.strategies["huobi"] = NormaliseHuobi()
