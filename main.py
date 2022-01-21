@@ -10,6 +10,7 @@ from configparser import ConfigParser
 import time
 import json
 import multiprocessing
+import sys
 
 from src.normaliser.normaliser import Normaliser
 import src.normaliser.metrics as metrics
@@ -38,7 +39,7 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["kraken"]
+    exchanges = sys.argv[1:]
 
     for exchange in exchanges:
         config_path = "symbols/" + exchange + ".ini"

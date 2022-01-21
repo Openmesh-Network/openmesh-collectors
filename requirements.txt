@@ -1,3 +1,5 @@
+numba==0.55.0
 numpy==1.21.5
+requests==2.22.0
 tabulate==0.8.9
 websocket_client==1.2.3
