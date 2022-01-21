@@ -11,11 +11,11 @@ class OrderBookManager:
         Handles the buy and sell orders, storing the best for metric calculations
         """
         self.sell_orders = Dict.empty(
-            key_type = types.unicode_type,
+            key_type = types.float64,
             value_type = types.float64
         )
         self.buy_orders = Dict.empty(
-            key_type = types.unicode_type,
+            key_type = types.float64,
             value_type = types.float64
         )
 
@@ -26,28 +26,20 @@ class OrderBookManager:
         side = lob_event['side']
         if side == 1:
             book = self.buy_orders
-            order = self.best_buy_order
+            best_price = self.best_buy_order['price'] if self.best_buy_order else None
         else:
             book = self.sell_orders
-            order = self.best_sell_order
+            best_price = self.best_sell_order['price'] if self.best_sell_order else None
+        args = (best_price,) + (lob_event['price'], lob_event['side'], lob_event['size'])
 
         if lob_event['lob_action'] == 2:
-            new_best = self.insert(
-                book,
-                order,
-                {"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            new_best = OrderBookManager.insert(book, *args)
         elif lob_event['lob_action'] == 3:
-            new_best = self.delete(
-                book,
-                order,
-                {"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            new_best = OrderBookManager.delete(book, *args)
         elif lob_event['lob_action'] == 4:
-            new_best = self.update(
-                book,
-                order,
-                {"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            new_best = OrderBookManager.update(book, *args)
 
-        if not new_best:
+        if len(new_best) == 0:
             return
 
         if side == 1:
@@ -55,68 +47,67 @@ class OrderBookManager:
         else:
             self.best_sell_order = new_best
 
-    @staticmethod
     @jit(nopython=True)
-    def insert(book: dict, best: dict, lob_event: dict):
+    def insert(book, best_price, price, side, size):
         """
         Inserts a new order into the order book
         :param lob_event: The data from the LOB event to insert
         :return: None
         """
-        price = lob_event["price"]
-        size = lob_event["size"]
         level = {"price": price, "size": size}
-        new_best = None
-        if lob_event["side"] == 2:
-            if best is None or price < best["price"]:
+        new_best = Dict.empty(types.unicode_type, types.float64)
+        if side == 2:
+            if best_price is None or price < best_price:
                 new_best = level
             book[price] = size
-        elif lob_event["side"] == 1:
-            if best is None or price > best["price"]:
+        elif side == 1:
+            if best_price is None or price > best_price:
                 new_best = level
             book[price] = size
         return new_best
 
-    @staticmethod
     @jit(nopython=True)
-    def update(book, best, lob_event):
+    def update(book, best_price, price, side, size):
         """
         Updates an existing order in the order book
         :param lob_event: The data from the LOB event to update. Finds the order with the given price, and updates its size
         :return: None
         """
-        price = lob_event['price']
-        size = lob_event['size']
         level = {"price": price, "size": size}
-        if lob_event['side'] == 2:
+        if side == 2:
             book[price] = size
-            if price <= best['price']:
+            if price <= best_price:
                 return level
-        elif lob_event['side'] == 1:
+        elif side == 1:
             book[price] = size
-            if price >= best['price']:
+            if price >= best_price:
                 return level
-        return None
+        return Dict.empty(types.unicode_type, types.float64)
 
-    @staticmethod
     @jit(nopython=True)
-    def delete(book, best, lob_event):
+    def delete(book, best, price, side, size):
         """
         Deletes an order from the order book
         :param lob_event: The data from the LOB event to delete. Finds the order with the given price in the relevant table, and deletes it
         :return: None
         """
-        price = lob_event['price']
         del book[price]
 
-        if not price == best['price']:
-            return None
+        if not price == best:
+            return Dict.empty(types.unicode_type, types.float64)
 
-        if lob_event['side'] == 2:
-            best_price = sorted(book)[0]
-        elif lob_event['side'] == 1:
-            best_price = sorted(book, reverse=True)[0]
-        return {'price': best_price, 'size': book[best_price]}
+        if side == 2:
+            best = 10e12
+            for price in list(book.keys()):
+                if price < best:
+                    best = price 
+        elif side == 1:
+            best = -1
+            for price in list(book.keys()):
+                if price > best:
+                    best = price 
+        return {'price': best, 'size': book[best]}
+
 
     def dump(self):
         """

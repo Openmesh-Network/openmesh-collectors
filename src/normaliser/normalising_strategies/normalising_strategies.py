@@ -8,7 +8,7 @@ import time
 import json
 from typing import Callable
 
-from .tables.table import TableUtil
+from src.normaliser.tables.table import TableUtil
 
 
 class NormalisingStrategies():
@@ -507,7 +507,6 @@ class NormaliseHuobi(NormaliseExchange):
         # If the data is in an unexpected format, ignore it
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 
@@ -618,7 +617,6 @@ class NormaliseFtx(NormaliseExchange):
         # If the data is in an unexpected format, ignore it
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 
@@ -730,7 +728,6 @@ class NormaliseKucoin(NormaliseExchange):
         # If the data is in an unexpected format, ignore it
         else:
             print(f"Received unrecognised message {json.dumps(data)}")
-            self.EVENT_NO -= 1
             return self.NO_EVENTS
         self.EVENT_NO += 1
 

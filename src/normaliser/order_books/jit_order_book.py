@@ -1,10 +1,10 @@
-from ast import Or
 from tabulate import tabulate
-from numba import jit, int32
+from numba import jit
+from threading import Thread
+from queue import Queue
 import numpy as np
-import sys
 
-from .tables.table import OrderBookTable
+from ..tables.table import OrderBookTable
 
 class OrderBookManager:
     """
@@ -13,10 +13,37 @@ class OrderBookManager:
     def __init__(self):
         self.sell_orders = OrderBookTable()
         self.buy_orders = OrderBookTable()
+
+        self.sell_queue = Queue()
+        self.buy_queue = Queue()
+
         self.best_buy_order = None
         self.best_sell_order = None
+
+        self.sell_thread = Thread(
+            name = "sell_thread",
+            target = self._sell_thread,
+            args = (),
+            daemon = True
+        )
     
+        self.buy_thread = Thread(
+            name = "buy_thread",
+            target = self._buy_thread,
+            args = (),
+            daemon = True
+        )
+
+        self.sell_thread.start()
+        self.buy_thread.start()
+
     def handle_event(self, lob_event):
+        if lob_event['side'] == 1:
+            self.buy_queue.put(lob_event)
+        elif lob_event['side'] == 2:
+            self.sell_queue.put(lob_event)
+    
+    def _handle_event(self, lob_event):
         if lob_event['lob_action'] == 2:
             self.insert({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
         elif lob_event['lob_action'] == 3:
@@ -90,26 +117,27 @@ class OrderBookManager:
                     'size': self.buy_orders.table[price_ind]['size']
                 }
 
+    def dump(self):
+        """
+        Prints the data in the order book in a table format
+        :return: None
+        """
+        n_rows = 10
+        print("Sell Orders\n")
+        dist_from_end = self.sell_orders.capacity - self.sell_orders.height
+        print(tabulate(np.sort(self.sell_orders.table, order = ("price"))[dist_from_end:dist_from_end + n_rows], headers="keys", tablefmt="fancy_grid"))
+        print("\nBEST ASK: " + str(self.best_sell_order))
+        print("\n\nBuy Orders\n")
+        print(tabulate(np.sort(self.buy_orders.table, order = ("price"))[:-n_rows:-1], headers="keys", tablefmt="fancy_grid"))
+        print("\nBEST BID: " + str(self.best_buy_order))
+    
+    def _sell_thread(self):
+        while True:
+            self._handle_event(self.sell_queue.get())
 
-    def old_get_row_by_price(self, price, side):
-        """
-        Given the price and side of an order, returns the index of the row in the relevant table
-        :param price: The price of the order
-        :param side: The side of the order
-        :return: The index of the row in the relevant table
-        """
-        index = 0
-        if side == 2:
-            for order in self.sell_orders.table:
-                if order["price"] == price:
-                    return index
-                index += 1
-        elif side == 1:
-            for order in self.buy_orders.table:
-                if order["price"] == price:
-                    return index
-                index += 1
-        return -1
+    def _buy_thread(self):
+        while True:
+            self._handle_event(self.buy_queue.get())
 
     @staticmethod
     @jit(nopython=True)
@@ -126,30 +154,6 @@ class OrderBookManager:
                 return index
             index += 1
         return -1
-
-    def old_get_new_best_order(self, side: int):
-        """
-        When an order is deleted, this function is called to find the new best order in the relevant table
-        :param side: The side of the order to find the new best order for
-        :return: The new best order
-        """
-        if side == 2:
-            min_price = 10e9 + 5
-            size = None
-            for order in self.sell_orders.table:
-                if order["price"] < min_price and order["price"] > 0:
-                    min_price = order["price"]
-                    size = order["size"]
-            if size == None: return None
-            return {"price": min_price, "size": size}
-        elif side == 1:
-            max_price = -1
-            size = None
-            for order in self.buy_orders.table:
-                if order["price"] > max_price:
-                    max_price = order["price"]
-                    size = order["size"]
-            return {"price": max_price, "size": size}
 
     @staticmethod
     @jit(nopython=True)
@@ -175,20 +179,6 @@ class OrderBookManager:
                     max_price = table[i]["price"]
                     max_price_ind = i
             return max_price_ind
-
-    def dump(self):
-        """
-        Prints the data in the order book in a table format
-        :return: None
-        """
-        n_rows = 10
-        print("Sell Orders\n")
-        dist_from_end = self.sell_orders.capacity - self.sell_orders.height
-        print(tabulate(np.sort(self.sell_orders.table, order = ("price"))[dist_from_end:dist_from_end + n_rows], headers="keys", tablefmt="fancy_grid"))
-        print("\nBEST ASK: " + str(self.best_sell_order))
-        print("\n\nBuy Orders\n")
-        print(tabulate(np.sort(self.buy_orders.table, order = ("price"))[:-n_rows:-1], headers="keys", tablefmt="fancy_grid"))
-        print("\nBEST BID: " + str(self.best_buy_order))
 
     
 

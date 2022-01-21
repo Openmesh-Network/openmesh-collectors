@@ -16,7 +16,7 @@ import src.normaliser.metrics as metrics
 
 
 def start_normaliser(exchange: str, symbol: str):
-    normaliser = Normaliser(exchange, symbol, name = exchange + ":" + symbol)
+    normaliser = Normaliser(exchange, symbol)
     metrics_list = [
         metrics.NumberOfLOBEvents(), 
         metrics.RatioOfLobEvents(), 
@@ -38,7 +38,7 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["okex"]
+    exchanges = ["kraken"]
 
     for exchange in exchanges:
         config_path = "symbols/" + exchange + ".ini"
