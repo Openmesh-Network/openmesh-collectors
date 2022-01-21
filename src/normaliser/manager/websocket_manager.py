@@ -3,7 +3,7 @@ import time
 from threading import Thread, Lock
 from queue import Queue
 from typing import Callable
-
+from gzip import decompress
 from websocket import WebSocketApp
 
 
@@ -39,7 +39,10 @@ class WebsocketManager():
         return self.url
 
     def _on_message(self, ws, message):
-        message = json.loads(message)
+        try:
+            message = json.loads(message)
+        except:
+            message = json.loads(decompress(message))
         message["receive_timestamp"] = time.time_ns() / 10e6
         self.queue.put(message)
     

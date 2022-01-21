@@ -8,7 +8,9 @@ import json
 import os
 from textwrap import indent
 from time import sleep
+import time
 import requests
+from gzip import decompress
 
 from .websocket_manager import WebsocketManager
 
@@ -19,7 +21,7 @@ class FactoryRegistry():
         "phemex",
         "kraken",
         "kucoin",
-        "bitfinex",
+        "huobi",
         "ftx"
     ]
 
@@ -32,7 +34,7 @@ class FactoryRegistry():
         self.factories["phemex"] = PhemexWsManagerFactory()
         self.factories["kraken"] = KrakenWsManagerFactory()
         self.factories["kucoin"] = KucoinWsManagerFactory()
-        self.factories["deribit"] = DeribitWsManagerFactory()
+        self.factories["huobi"] = HuobiWsManagerFactory()
         self.factories["ftx"] = FtxWsManagerFactory()
 
     def get_ws_manager(self, exchange_id: str, symbol: str):
@@ -89,14 +91,35 @@ class KrakenWsManagerFactory(WsManagerFactory):
         return ws_manager
 
 
-class DeribitWsManagerFactory(WsManagerFactory):
+class HuobiWsManagerFactory(WsManagerFactory):
     def get_ws_manager(self, symbol: str):
-        """Vivek"""
-        url = None
-        ws_manager = WebsocketManager(url)
+        """Jay"""
+        url = 'wss://api-aws.huobi.pro/ws'
 
         # Subscribe to channels
 
+        def subscribe(ws_manager):
+            request = {'sub': f'market.{symbol}.depth.step0', 
+            'id': 'id1'
+            }
+            ws_manager.send_json(request)
+
+            request['sub'] = f'market.{symbol}.trade.detail'
+
+            ws_manager.send_json(request)
+
+        def unsubscribe(ws_manager):
+            request = {'unsub': f'market.{symbol}.depth.step0', 
+            'id': 'id1'
+            }
+            ws_manager.send_json(request)
+
+            request['unsub'] = f'market.{symbol}.trade.detail'
+
+            ws_manager.send_json(request)
+
+            
+        ws_manager = WebsocketManager(url,subscribe,unsubscribe)
         return ws_manager
 
 
