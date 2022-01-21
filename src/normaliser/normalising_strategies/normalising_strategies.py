@@ -4,8 +4,6 @@ normalising_strategies
 Normalising strategies for each exchange. Takes input from data feeds and normalises them into 
 a form suitable to be put into the data tables.
 """
-import time
-import json
 from typing import Callable
 
 from .ftx import NormaliseFtx
@@ -21,6 +19,7 @@ class NormalisingStrategies():
         self.register()
 
     def register(self):
+        """Initialises the normalising strategies for the given exchanges"""
         self.strategies["kraken"] = NormaliseKraken()
         self.strategies["okex"] = NormaliseOkex()
         self.strategies["phemex"] = NormalisePhemex()
@@ -29,6 +28,7 @@ class NormalisingStrategies():
         self.strategies["kucoin"] = NormaliseKucoin()
 
     def get_strategy(self, exchange_id) -> Callable:
+        """Given an exchange id, returns the normalising strategy"""
         if not exchange_id in self.strategies.keys():
             raise KeyError(
                 f"exchange id {exchange_id} not registered as a strategy")

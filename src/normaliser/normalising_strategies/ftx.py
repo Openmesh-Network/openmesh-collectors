@@ -24,7 +24,6 @@ class NormaliseFtx(NormaliseExchange):
             return self.NO_EVENTS
 
         # Handling new LOB events
-        #print(json.dumps(data, indent=4))
         if 'asks' in data['data']:
             ts = float(data['data']['time'])
             order_data = data['data']
