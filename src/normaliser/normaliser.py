@@ -9,15 +9,16 @@ from time import sleep
 import os
 
 from .manager.ws_factories import FactoryRegistry
-from .normalising_strategies import NormalisingStrategies
+from .normalising_strategies.normalising_strategies import NormalisingStrategies
 from .tables.table import LobTable, MarketOrdersTable
-from .jit_order_book import OrderBookManager
+from .order_books.jit_order_book import OrderBookManager
 from .metrics import Metric
 
 
 class Normaliser():
-    def __init__(self, exchange_id: str, symbol: str, name = None):
-        self.name = name
+    METRIC_CALCULATION_FREQUENCY = 100 # Times per second
+    def __init__(self, exchange_id: str, symbol: str):
+        self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
         self.ws_manager = FactoryRegistry().get_ws_manager(exchange_id, symbol)
 
@@ -45,7 +46,15 @@ class Normaliser():
             daemon=True
         )
         self.normalise_thr.start()
-        sleep(1)
+
+        # Calculate metrics once every 100ms
+        self.metrics_thr = Thread(
+            name="metrics_thread",
+            target=self._metric_threads,
+            args=(),
+            daemon=True
+        )
+        self.metrics_thr.start()
 
     def put_entry(self, data: dict):
         """
@@ -71,10 +80,6 @@ class Normaliser():
             if len(order) == 6:
                 self.market_orders_table.put_dict(order)
 
-        self.calculate_metrics()
-
-
-
     def get_lob_events(self):
         # NOTE: MODIFYING THE LOB TABLE AFTER RETRIEVING IT USING THIS FUNCTION IS NOT THREAD SAFE
         #       It is only safe for metric which are observing this normaliser through the calculate_metrics method.
@@ -85,42 +90,10 @@ class Normaliser():
 
     def get_market_orders(self):
         return self.market_orders_table
-
+    
     def dump(self):
-        #os.system("clear")
-        if self.name:
-            print(f"-------------------------------------------------START {self.name}-------------------------------------------------")
-        """
-        print("LOB Events")
-        self.lob_table_lock.acquire()
-        self.lob_table.dump()
-        self.lob_table_lock.release()
-        """
-
-        """
-        print("Market Orders")
-        self.market_orders_table.dump()
-        """
-
-        self.lob_lock.acquire()
-        self.order_book_manager.dump()
-        self.lob_lock.release()
-
-        """
-        # Queue backlog
-        self.ws_manager.get_q_size()
-        """
-
-        
-        print("-------------------------METRICS---------------------------")
-        self.metric_lock.acquire()
-        for metric in self.metrics:
-            metric.display_metric()
-        self.metric_lock.release()
-        print("-----------------------------------------------------------")
-        
-        if self.name:
-            print(f"--------------------------------------------------END {self.name}--------------------------------------------------")
+        self._wrap_output(self._dump)()
+        return
     
     def add_metric(self, metric: Metric):
         if metric in self.metrics:
@@ -147,10 +120,6 @@ class Normaliser():
             t.start()
         for thread in threads:
             t.join()
-        """
-        for metric in self.metrics:
-            Metric.metric_wrapper(metric.calculate, self)
-        """
         self.metric_lock.release()
         self.lob_lock.release()
         self.lob_table_lock.release()
@@ -160,3 +129,47 @@ class Normaliser():
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.ws_manager.get_msg()
             self.put_entry(data)
+    
+    def _metric_threads(self):
+        while True:
+            self.calculate_metrics()
+            sleep(1/self.METRIC_CALCULATION_FREQUENCY)
+
+    def _dump(self):
+        # self._dump_lob_table()
+        # self._dump_market_orders()
+        # self._dump_lob()
+        self.ws_manager.get_q_size() # Queue backlog
+        self._dump_metrics()
+        return
+    
+    def _wrap_output(self, f):
+        def wrapped():
+            os.system("clear")
+            print(f"-------------------------------------------------START {self.name}-------------------------------------------------")
+            f()
+            print(f"--------------------------------------------------END {self.name}--------------------------------------------------")
+        return wrapped
+    
+    def _dump_lob_table(self):
+        print("LOB Events")
+        self.lob_table_lock.acquire()
+        self.lob_table.dump()
+        self.lob_table_lock.release()
+    
+    def _dump_market_orders(self):
+        print("Market Orders")
+        self.market_orders_table.dump()
+    
+    def _dump_lob(self):
+        self.lob_lock.acquire()
+        self.order_book_manager.dump()
+        self.lob_lock.release()
+    
+    def _dump_metrics(self):
+        print("-------------------------METRICS---------------------------")
+        self.metric_lock.acquire()
+        for metric in self.metrics:
+            metric.display_metric()
+        self.metric_lock.release()
+        print("-----------------------------------------------------------")

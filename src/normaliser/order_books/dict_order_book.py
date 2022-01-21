@@ -1,4 +1,5 @@
-from tabulate import tabulate
+from threading import Thread
+from queue import Queue
 
 class OrderBookManager:
     def __init__(self):
@@ -8,10 +9,36 @@ class OrderBookManager:
         self.sell_orders = {}
         self.buy_orders = {}
 
+        self.sell_queue = Queue()
+        self.buy_queue = Queue()
+
         self.best_buy_order = None
         self.best_sell_order = None
+
+        self.sell_thread = Thread(
+            name = "sell_thread",
+            target = self._sell_thread,
+            args = (),
+            daemon = True
+        )
     
+        self.buy_thread = Thread(
+            name = "buy_thread",
+            target = self._buy_thread,
+            args = (),
+            daemon = True
+        )
+
+        self.sell_thread.start()
+        self.buy_thread.start()
+
     def handle_event(self, lob_event):
+        if lob_event['side'] == 1:
+            self.buy_queue.put(lob_event)
+        elif lob_event['side'] == 2:
+            self.sell_queue.put(lob_event)
+    
+    def _handle_event(self, lob_event):
         if lob_event['lob_action'] == 2:
             self.insert({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
         elif lob_event['lob_action'] == 3:
@@ -78,16 +105,16 @@ class OrderBookManager:
         Prints the data in the order book in a table format
         :return: None
         """
-        """
-        n_rows = 10
-        print("Sell Orders\n")
-        dist_from_end = self.sell_orders.capacity - self.sell_orders.height
-        print(tabulate(np.sort(self.sell_orders.table, order = ("price"))[dist_from_end:dist_from_end + n_rows], headers="keys", tablefmt="fancy_grid"))
-        print("\n\nBuy Orders\n")
-        print(tabulate(np.sort(self.buy_orders.table, order = ("price"))[:-n_rows:-1], headers="keys", tablefmt="fancy_grid"))
-        """
         print("\nBEST ASK: " + str(self.best_sell_order))
         print("\nBEST BID: " + str(self.best_buy_order))
+
+    def _sell_thread(self):
+        while True:
+            self._handle_event(self.sell_queue.get())
+
+    def _buy_thread(self):
+        while True:
+            self._handle_event(self.buy_queue.get())
     
 
 def main():

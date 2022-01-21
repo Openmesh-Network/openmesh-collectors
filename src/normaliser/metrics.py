@@ -25,7 +25,7 @@ class Metric:
     def metric_wrapper(f, normalizer):
         try:
             f(normalizer)
-        except ZeroDivisionError as e:
+        except Exception as e:
                 logging.log(f"calculation failed: {e}")
 
 
