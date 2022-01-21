@@ -38,12 +38,15 @@ def start_normaliser(exchange: str, symbol: str):
 processes = []
 
 def main():
-    exchanges = ["kraken"]
+    # Exchanges defined in main config file config.ini
+    main_config_path = "config.ini"
+    config = ConfigParser()
+    config.read(main_config_path)
+    exchanges = json.loads(config["DEFAULT"]["exchanges"])
 
     for exchange in exchanges:
+        # Ticker symbols specified in config files in the "symbols" directory
         config_path = "symbols/" + exchange + ".ini"
-
-        config = ConfigParser()
         config.read(config_path)
         symbols = json.loads(config["DEFAULT"]["symbols"])
         for symbol in symbols:
