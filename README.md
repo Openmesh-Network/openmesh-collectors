@@ -27,4 +27,4 @@ pip install -r requirements.txt
 
 ## Usage
 
-Configure symbols in `symbols/[exchange].ini`, and then run `main.py [exchange]` to get normalised data from the desired exchange. Modify the `dump` function in `normaliser/normaliser.py` to configure the desired outputs.
+Configure symbols in `symbols/[exchange].ini`, and then run `main.py [exchange]` to get normalised data from the desired exchange. Alternatively, modify `config.ini` with the desired exchanges and run `main.py` without an argument. Modify the `dump` function in `normaliser/normaliser.py` to configure the desired outputs.
