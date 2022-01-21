@@ -87,7 +87,7 @@ class Normaliser():
         return self.market_orders_table
 
     def dump(self):
-        os.system("cls")
+        #os.system("clear")
         if self.name:
             print(f"-------------------------------------------------START {self.name}-------------------------------------------------")
         """
@@ -111,14 +111,14 @@ class Normaliser():
         self.ws_manager.get_q_size()
         """
 
-        """
+        
         print("-------------------------METRICS---------------------------")
         self.metric_lock.acquire()
         for metric in self.metrics:
             metric.display_metric()
         self.metric_lock.release()
         print("-----------------------------------------------------------")
-        """
+        
         if self.name:
             print(f"--------------------------------------------------END {self.name}--------------------------------------------------")
     
