@@ -13,6 +13,7 @@ from .phemex import NormalisePhemex
 from .kraken_futures import NormaliseKrakenFutures
 from .kraken import NormaliseKraken
 from .kucoin import NormaliseKucoin
+from .bybit import NormaliseBybit
 
 class NormalisingStrategies():
     def __init__(self):
@@ -28,6 +29,7 @@ class NormalisingStrategies():
         self.strategies["huobi"] = NormaliseHuobi()
         self.strategies["ftx"] = NormaliseFtx()
         self.strategies["kucoin"] = NormaliseKucoin()
+        self.strategies["bybit"] = NormaliseBybit()
 
     def get_strategy(self, exchange_id) -> Callable:
         """Given an exchange id, returns the normalising strategy"""

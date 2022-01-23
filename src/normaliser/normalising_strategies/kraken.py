@@ -62,7 +62,7 @@ class NormaliseKraken(NormaliseExchange):
             return
         price = float(event[0])
         size = float(event[1])
-        ts = int(float(event[2])*10e3)
+        ts = int(float(event[2])*10**3)
         if key == "as" or key == "bs":
             lob_action = 2
             if key == "as":

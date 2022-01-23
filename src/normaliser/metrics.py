@@ -24,16 +24,17 @@ class Metric:
         print(self.metric)
 
     @staticmethod
-    def metric_wrapper(f, normalizer):
+    def metric_wrapper(f, normalizer, metric):
         """Wraps the metric calculation function to be run in a thread"""
         try:
             f(normalizer)
         except Exception as e:
-            logging.log(logging.WARNING, f"calculation failed: {e}")
+            logging.log(logging.WARNING, f"calculation of {metric.NAME} failed: {e}")
 
 
 class OrderBookImbalance(Metric):
     """Metric for the imbalance of the order book"""
+    NAME = "OrderBookImbalance"
 
     def calculate(self, normalizer):
 
@@ -56,6 +57,7 @@ class OrderBookImbalance(Metric):
 
 class MidPrice(Metric):
     """Metric for the mid price of the order book ((bid + ask) / 2)"""
+    NAME = "MidPrice"
 
     def calculate(self, normalizer):
         best_bid, best_ask = normalizer.get_best_orders()
@@ -75,6 +77,7 @@ class MidPrice(Metric):
 
 class MicroPrice(Metric):
     """Metric for the micro price -- uses the order book imbalance and best bid / ask"""
+    NAME = "MicroPrice"
 
     def calculate(self, normalizer):
         best_bid, best_ask = normalizer.get_best_orders()
@@ -96,6 +99,7 @@ class MicroPrice(Metric):
 
 class NumberOfLOBEvents(Metric):
     """Metric for the number of events in the LOB"""
+    NAME = "NumberOfLOBEvents"
 
     def calculate(self, normalizer):
         self.metric = normalizer.get_lob_events().size()
@@ -110,6 +114,7 @@ class NumberOfLOBEvents(Metric):
 
 class RatioOfLobEvents(Metric):
     """Running total of all the event types in the LOB, with ratios being calculated as a metric"""
+    NAME = "RatioOfLobEvents"
 
     def __init__(self):
         self.updates = 0
