@@ -8,12 +8,11 @@ from threading import Thread, Lock
 from time import sleep
 import os
 
-from .manager.ws_factories.ws_registry import FactoryRegistry
-from .normalising_strategies.normalising_strategies import NormalisingStrategies
-from .tables.table import LobTable, MarketOrdersTable
-from .order_books.jit_order_book import OrderBookManager
-from .metrics import Metric
-from .data_writer import DataWriter
+from bybit_ws_factory import BybitWsManagerFactory
+from bybit_normalisation import NormaliseBybit
+from table import LobTable, MarketOrdersTable
+from order_book import OrderBookManager
+from metrics import Metric
 
 
 class Normaliser():
@@ -22,10 +21,10 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
-        self.ws_manager = FactoryRegistry().get_ws_manager(exchange_id, symbol)
+        self.ws_manager = BybitWsManagerFactory.get_ws_manager(exchange_id, symbol)
 
         # Retrieve correct normalisation function
-        self.normalise = NormalisingStrategies().get_strategy(exchange_id)
+        self.normalise = NormaliseBybit().normalise
 
         # Initialise tables
         self.lob_table = LobTable()
@@ -76,14 +75,12 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
-                # self.writer.write_lob_event(event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             if len(order) == 6:
                 self.market_orders_table.put_dict(order)
-                # self.writer.write_market_order(order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

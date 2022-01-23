@@ -13,6 +13,8 @@ from .phemex_factory import PhemexWsManagerFactory
 from .kucoin_factory import KucoinWsManagerFactory
 from .huobi_factory import HuobiWsManagerFactory
 from .ftx_factory import FtxWsManagerFactory
+from .bitfinex_factory import BitfinexWsManagerFactory
+from .bybit_factory import BybitWsManagerFactory
 
 
 class FactoryRegistry():
@@ -31,6 +33,8 @@ class FactoryRegistry():
         self.factories["kucoin"] = KucoinWsManagerFactory()
         self.factories["huobi"] = HuobiWsManagerFactory()
         self.factories["ftx"] = FtxWsManagerFactory()
+        self.factories["bitfinex"] = BitfinexWsManagerFactory()
+        self.factories["bybit"] = BybitWsManagerFactory()
 
     def get_ws_manager(self, exchange_id: str, symbol: str):
         if not exchange_id in self.factories.keys():
