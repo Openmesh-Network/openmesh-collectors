@@ -142,7 +142,10 @@ class BitfinexWebsocketManager():
             if isinstance(msg, dict) and "channel" in msg.keys() and msg["channel"] == "book":
                 self.book_channel_id = msg["chanId"]
             else:
-                self.queue.put(msg)
+                if isinstance(msg, dict):
+                    self.temp_queue.put(msg) # In case the trades feed subscribes first
+                else:
+                    self.queue.put(msg)
                 msg = self.temp_queue.get()
 
         del request["len"]
@@ -153,7 +156,7 @@ class BitfinexWebsocketManager():
         self.trades_channel_id = None
         while not self.trades_channel_id:
             if isinstance(msg, dict) and "channel" in msg.keys() and msg["channel"] == "trades":
-                self.book_channel_id = msg["chanId"]
+                self.trades_channel_id = msg["chanId"]
             else:
                 self.queue.put(msg)
                 msg = self.temp_queue.get()

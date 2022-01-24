@@ -11,7 +11,7 @@ import os
 from bitfinex_ws_manager import BitfinexWebsocketManager 
 from bitfinex_normalisation import NormaliseBitfinex
 from table import LobTable, MarketOrdersTable
-from order_book import L3OrderBookManager
+from l3_order_book import L3OrderBookManager
 from metrics import Metric
 
 
@@ -99,13 +99,13 @@ class Normaliser():
 
     def dump(self):
         """Outputs the current state of the normaliser."""
-        # self._wrap_output(self._dump)()
+        self._wrap_output(self._dump)()
         return
 
     def _dump(self):
         # self._dump_lob_table()
         # self._dump_market_orders()
-        # self._dump_lob()
+        self._dump_lob()
         self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
