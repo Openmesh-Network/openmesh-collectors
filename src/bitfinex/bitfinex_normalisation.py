@@ -2,7 +2,7 @@ from table import TableUtil
 
 import json
 
-class NormaliseBybit():
+class NormaliseBitfinex():
     NO_EVENTS = {"lob_events": [], "market_orders": []}
     ACTIVE_LEVELS = set()
     QUOTE_NO = 2
@@ -40,7 +40,6 @@ class NormaliseBybit():
                     price = price,
                     timestamp = ts,
                     side = side,
-                    size = size,
                     msg_original_type = trade["cross_seq"]
                 ))
                 self.ORDER_ID += 1
