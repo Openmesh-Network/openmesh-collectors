@@ -1,5 +1,3 @@
-from threading import Thread
-from queue import Queue
 from tabulate import tabulate
 
 import os
@@ -10,10 +8,6 @@ class L3OrderBookManager:
         self.sells = dict() # {price: [order, order, ...]}
 
         self.orders = dict() # {order_id: order}
-
-        # Debugging
-        self.deleted = set()
-        self.inserted = set()
 
         self.best_buy_order = None
         self.best_sell_order = None
@@ -62,56 +56,60 @@ class L3OrderBookManager:
         price = lob_event["price"]
         size = lob_event["size"]
         side = lob_event["side"]
+
         order_book = self.buys if side == 1 else self.sells
         if price not in order_book.keys():
-            order_book[price] = [lob_event]
+            order_book[price] = [lob_event] # New price level with list
         else:
-            order_book[price].append(lob_event)
+            order_book[price].append(lob_event) # Existing price levels
         self.orders[order_id] = lob_event
+
         if not (self.best_buy_order and self.best_sell_order) or \
                 (side == 1 and price >= self.best_buy_order["price"]) or \
                 (side == 2 and price <= self.best_sell_order["price"]):
             self._update_best_levels(side)
-        
-        self.inserted.add(order_id)
 
     def _delete(self, lob_event):
         order_id = lob_event["order_id"]
         if order_id not in self.orders.keys():
             raise KeyError(f"order_id {order_id} not an active order.")
+
         order = self.orders[order_id]
         price = order["price"]
         side = order["side"]
+
         order_book = self.buys if side == 1 else self.sells
         if price not in order_book.keys():
-            anti_order_book = self.sells if side == 1 else self.buys
-            raise KeyError(f"Deleting order at price {price} when price is not in orderbook. \
-                    Price in opposing orderbook: {price in anti_order_book}")
+            raise KeyError(f"Deleting order at price {price} when price is not in orderbook.")
         self._pop_order(order_book, price, order_id)
         del self.orders[order_id]
+
         if (side == 1 and price == self.best_buy_order["price"]) or \
                 (side == 2 and price == self.best_sell_order["price"]):
             self._update_best_levels(side)
 
-        self.deleted.add(order_id)
-
     def _update(self, lob_event):
         order_id = lob_event["order_id"]
         if order_id not in self.orders.keys():
-            raise KeyError(f"order_id {order_id} not an active order.\n \
-                    order been deleted: {order_id in self.deleted}, order been added: {order_id in self.inserted}")
+            raise KeyError(f"order_id {order_id} not an active order.")
         order = self.orders[order_id]
         old_price = order["price"]
+
         order_book = self.buys if order["side"] == 1 else self.sells
+
+        # Reset order position in queue
         order = self._pop_order(order_book, order["price"], order_id)
+
         if order["side"] != lob_event["side"]:
             raise ValueError("Need to implement side updates")
-        order["price"] = lob_event["price"]
-        order["size"] = lob_event["size"]
-        order["side"] = lob_event["side"]
 
         price = lob_event["price"]
         side = lob_event["side"]
+        order["price"] = price
+        order["side"] = side
+        order["size"] = lob_event["size"]
+
+        # Place order into correct price level if price was changed
         if price not in order_book.keys():
             order_book[price] = [order]
         else:
@@ -136,8 +134,6 @@ class L3OrderBookManager:
         for i in range(len(book[price])):
             order = book[price][i]
             size += order["size"]
-        if size == 0:
-            raise ValueError(f"Empty price level {price}")
         return size
 
     def _update_best_levels(self, side):
