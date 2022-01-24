@@ -1,6 +1,6 @@
 import json
 import time
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 from queue import Queue
 from typing import Callable
 from gzip import decompress
@@ -20,9 +20,12 @@ class BitfinexWebsocketManager():
         """
         self.connect_lock = Lock()
         self.ws = None
+        self.temp_queue = Queue()
         self.queue = Queue()
         self.url = "wss://api-pub.bitfinex.com/ws/2"
         self.symbol = symbol
+        self.subscribed = Event()
+        self.subscribed.clear()
         self.connect()
 
     def get_msg(self):
@@ -36,8 +39,16 @@ class BitfinexWebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
-        message["receive_timestamp"] = int(time.time()*10**3)
-        self.queue.put(message)
+        if isinstance(message, dict):
+            message["receive_timestamp"] = int(time.time()*10**3)
+        elif isinstance(message, list):
+            message.append(int(time.time()*10**3))
+        else:
+            raise TypeError(f"unrecognised message type {type(message)}")
+        if self.subscribed.is_set():
+            self.queue.put(message)
+        else:
+            self.temp_queue.put(message)
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -119,21 +130,35 @@ class BitfinexWebsocketManager():
         request = {
             "event": "subscribe",
             "channel": "book",
-            "symbol": "symbol",
+            "symbol": self.symbol,
+            "prec": "R0",
             "len": "250"
         }
         self.send_json(request)
 
-        msg = self.queue.get()
-        if msg["event"] == "subscribed" and msg["channel"] == "book":
-            self.book_channel_id = msg["chanId"]
+        msg = self.temp_queue.get()
+        self.book_channel_id = None
+        while self.book_channel_id == None:
+            if isinstance(msg, dict) and "channel" in msg.keys() and msg["channel"] == "book":
+                self.book_channel_id = msg["chanId"]
+            else:
+                self.queue.put(msg)
+                msg = self.temp_queue.get()
 
         del request["len"]
         request["channel"] = "trades"
+        self.send_json(request)
 
-        msg = self.queue.get()
-        if msg["event"] == "subscribed" and msg["channel"] == "trades":
-            self.trades_channel_id = msg["chanId"]
+        msg = self.temp_queue.get()
+        self.trades_channel_id = None
+        while not self.trades_channel_id:
+            if isinstance(msg, dict) and "channel" in msg.keys() and msg["channel"] == "trades":
+                self.book_channel_id = msg["chanId"]
+            else:
+                self.queue.put(msg)
+                msg = self.temp_queue.get()
+        
+        self.subscribed.set()
     
     def unsubscribe(self):
         request = {

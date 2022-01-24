@@ -385,10 +385,12 @@ class OrderBookTable(Table):
         Table object to hold order book data, modified by LOB events
         """
         colnames = [
+            "id",
             "price",
-            "size",
+            "size"
         ]
         dtype = [
+            ("id", "i8")
             ("price", "f8"),
             ("size", "f8"),
         ]
