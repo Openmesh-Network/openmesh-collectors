@@ -275,6 +275,7 @@ class TableUtil():
                             trade_id="",
                             timestamp=-1,
                             side=-1,
+                            size=-1,
                             msg_original_type=""):
         """
         Creates a market order dictionary.
@@ -292,6 +293,7 @@ class TableUtil():
             "trade_id": trade_id,
             "timestamp": timestamp,
             "side": side,
+            "size": size,
             "msg_original_type": msg_original_type
         }
 

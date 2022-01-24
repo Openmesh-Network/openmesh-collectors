@@ -20,8 +20,15 @@ class NormaliseBitfinex():
         """Rayman"""
         lob_events = []
         market_orders = []
+    
+        if not isinstance(data, list):
+            print(f"Received message {data}")
+            return self.NO_EVENTS
+        
+        if data[1] == "hb":
+            print(f"Received message {data}")
+            return self.NO_EVENTS
 
-        recv_ts = data[-1]
         if data[0] == self.book_id:
             if isinstance(data[1][0], list): # Snapshot
                 for order in data[1]:
@@ -30,7 +37,7 @@ class NormaliseBitfinex():
             else:
                 order = data[1]
                 side = 1 if order[2] > 0 else 2
-                if order[2] == 0:
+                if order[1] == 0:
                     lob_action = 3
                     self.ACTIVE_ORDER_IDS.remove(order[0])
                 elif order[0] in self.ACTIVE_ORDER_IDS:
@@ -42,7 +49,11 @@ class NormaliseBitfinex():
         elif data[0] == self.trades_id:
             if isinstance(data[1][0], list):
                 for trade in data[1]:
-                    return
+                    self._handle_trade(data, market_orders, trade)
+            else:
+                trade = data[1]
+                if trade[1] == "tu":
+                    self._handle_trade(data, market_orders, trade)
         else:
             print(f"Received message {data}")
             return self.NO_EVENTS
@@ -63,15 +74,22 @@ class NormaliseBitfinex():
             order_id = order[0],
             side = side,
             price = float(order[1]),
-            size = order[2],
+            size = abs(order[2]),
             lob_action = lob_action,
-            send_timestamp = int(data[-1]),
-            event_timestamp = int(data[-1]),
+            send_timestamp = data[-1],
+            event_timestamp = data[-1],
             receive_timestamp = data[-1],
             order_type = 0
         ))
         self.QUOTE_NO += 1
 
-    def _handle_trade(self, data, market_orders, order):
-        side = 1 if order[2] > 0 else 2
-        market_orders.append(self.util.create_market_order())
+    def _handle_trade(self, data, market_orders, trade):
+        side = 1 if trade[2] > 0 else 2
+        market_orders.append(self.util.create_market_order(
+            price = trade[3],
+            trade_id = trade[0],
+            timestamp = trade[1],
+            side = side,
+            size = abs(trade[2]),
+            msg_original_type = data[1]
+        ))

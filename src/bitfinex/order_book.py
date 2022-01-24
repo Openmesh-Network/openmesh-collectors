@@ -17,6 +17,9 @@ class L3OrderBookManager:
         self.sell_queue = Queue()
         self.buy_queue = Queue()
 
+        self.orders = dict() # {order_id: order}
+        self.price_levels = dict() # {price: size}
+
         self.best_buy_order = None
         self.best_sell_order = None
 
@@ -45,11 +48,11 @@ class L3OrderBookManager:
     
     def _handle_event(self, lob_event):
         if lob_event['lob_action'] == 2:
-            self.insert({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            self.insert({"order_id": lob_event['order_id'], "price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
         elif lob_event['lob_action'] == 3:
-            self.delete({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            self.delete({"order_id": lob_event['order_id'], "price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
         elif lob_event['lob_action'] == 4:
-            self.update({"price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
+            self.update({"order_id": lob_event['order_id'], "price" : lob_event['price'], "size" : lob_event['size'], "side" : lob_event['side']})
 
     def insert(self, lob_event):
         """
@@ -57,16 +60,24 @@ class L3OrderBookManager:
         :param lob_event: The data from the LOB event to insert
         :return: None
         """
+        order_id = lob_event["order_id"]
         price = lob_event["price"]
         size = lob_event["size"]
+        self.orders[order_id] = lob_event
+        if price not in self.price_levels.keys():
+            self.price_levels[price] = size
+        else:
+            self.price_levels[price] += size
         if lob_event["side"] == 2:
             if self.best_sell_order is None or price < self.best_sell_order["price"]:
-                self.best_sell_order = {"price": price, "size": size}
-            self.sell_orders.put_dict({"price": price, "size": size})
+                self.best_sell_order = {"price": price, "size": self.price_levels[price]}
+            row = L3OrderBookManager._get_row_by_price(self.sell_orders.table, price)
+            self.sell_orders.put_dict({"price": price, "size": self.price_levels[price]})
         elif lob_event["side"] == 1:
             if self.best_buy_order is None or price > self.best_buy_order["price"]:
-                self.best_buy_order = {"price": price, "size": size}  
-            self.buy_orders.put_dict({"price": price, "size": size})
+                self.best_buy_order = {"price": price, "size": self.price_levels[price]}  
+            row = L3OrderBookManager._get_row_by_price(self.buy_orders.table, price)
+            self.buy_orders.put_dict({"price": price, "size": self.price_levels[price]})
 
     def update(self, lob_event):
         """
@@ -74,8 +85,10 @@ class L3OrderBookManager:
         :param lob_event: The data from the LOB event to update. Finds the order with the given price, and updates its size
         :return: None
         """
+        order_id = lob_event["order_id"]
         price = lob_event['price']
         size = lob_event['size']
+        self.orders[order_id] = lob_event
         if lob_event['side'] == 2:
             row = L3OrderBookManager._get_row_by_price(self.sell_orders.table, price)
             self.sell_orders.table[row]['size'] = size
@@ -181,7 +194,7 @@ class L3OrderBookManager:
                     max_price_size = 0
                     max_price = table[i]["price"]
                 if table[i]["price"] == max_price:
-                    max_price_size += table[i]["price"]
+                    max_price_size += table[i]["size"]
             return {"price": max_price, "size": max_price_size}
 
     
