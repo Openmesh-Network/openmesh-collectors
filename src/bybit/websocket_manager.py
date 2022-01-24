@@ -83,7 +83,7 @@ class WebsocketManager():
             if time.time() - ts > self._CONNECT_TIMEOUT_S:
                 self.ws = None
                 raise Exception(
-                    f"Failed to connect to websocket url {self._get_url()}")
+                    f"Failed to connect to websocket url {self.url}")
             time.sleep(0.1)
 
     def _wrap_callback(self, f):
