@@ -11,7 +11,7 @@ import os
 from bitfinex_ws_manager import BitfinexWebsocketManager 
 from bitfinex_normalisation import NormaliseBitfinex
 from table import LobTable, MarketOrdersTable
-from order_book import OrderBookManager
+from order_book import L3OrderBookManager
 from metrics import Metric
 
 
@@ -22,14 +22,15 @@ class Normaliser():
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
         self.ws_manager = BitfinexWebsocketManager(symbol)
+        self.ws_manager.subscribed.wait()
 
         # Retrieve correct normalisation function
-        self.normalise = NormaliseBitfinex().normalise
+        self.normalise = NormaliseBitfinex(self.ws_manager.book_channel_id, self.ws_manager.trades_channel_id).normalise
 
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()
-        self.order_book_manager = OrderBookManager()
+        self.order_book_manager = L3OrderBookManager()
         # self.writer = DataWriter(exchange_id, symbol)
 
         # Metric observers
@@ -65,7 +66,6 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        return
         data = self.normalise(data)
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]

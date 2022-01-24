@@ -6,7 +6,7 @@ import numpy as np
 
 from table import OrderBookTable
 
-class OrderBookManager:
+class L3OrderBookManager:
     """
     Handles the buy and sell orders, storing the best for metric calculations
     """
@@ -77,12 +77,12 @@ class OrderBookManager:
         price = lob_event['price']
         size = lob_event['size']
         if lob_event['side'] == 2:
-            row = OrderBookManager._get_row_by_price(self.sell_orders.table, price)
+            row = L3OrderBookManager._get_row_by_price(self.sell_orders.table, price)
             self.sell_orders.table[row]['size'] = size
             if price <= self.best_sell_order['price']:
                 self.best_sell_order = {"price": price, "size": size}
         elif lob_event['side'] == 1:
-            row = OrderBookManager._get_row_by_price(self.buy_orders.table, price)
+            row = L3OrderBookManager._get_row_by_price(self.buy_orders.table, price)
             self.buy_orders.table[row]['size'] = size
             if price >= self.best_buy_order['price']:
                 self.best_buy_order = {"price": price, "size": size}
@@ -95,23 +95,23 @@ class OrderBookManager:
         """
         price = lob_event['price']
         if lob_event['side'] == 2:
-            row = OrderBookManager._get_row_by_price(self.sell_orders.table, price)
+            row = L3OrderBookManager._get_row_by_price(self.sell_orders.table, price)
             if row == -1:
                 return
             self.sell_orders.del_row(row)
             if price == self.best_sell_order['price']:
-                price_ind = OrderBookManager._get_new_best_price(self.sell_orders.table, 2)
+                price_ind = L3OrderBookManager._get_new_best_price(self.sell_orders.table, 2)
                 self.best_sell_order = {
                     'price': self.sell_orders.table[price_ind]['price'], 
                     'size': self.sell_orders.table[price_ind]['size']
                 }
         elif lob_event['side'] == 1:
-            row = OrderBookManager._get_row_by_price(self.buy_orders.table, price)
+            row = L3OrderBookManager._get_row_by_price(self.buy_orders.table, price)
             if row == -1:
                 return
             self.buy_orders.del_row(row)
             if price == self.best_buy_order['price']:
-                price_ind = OrderBookManager._get_new_best_price(self.buy_orders.table, 1)
+                price_ind = L3OrderBookManager._get_new_best_price(self.buy_orders.table, 1)
                 self.best_buy_order = {
                     'price': self.buy_orders.table[price_ind]['price'], 
                     'size': self.buy_orders.table[price_ind]['size']
@@ -164,29 +164,33 @@ class OrderBookManager:
         :return: The new best order
         """
         if side == 2:
-            min_price_ind = -1
             min_price = 10e9 + 5
+            min_price_size = 0
             for i in range(len(table)):
                 if table[i]["price"] < min_price and table[i]["price"] > 0:
+                    min_price_size = 0
                     min_price = table[i]["price"]
-                    min_price_ind = i
-            return min_price_ind
+                if table[i]["price"] == min_price:
+                    min_price_size += table[i]["size"]
+            return {"price": min_price, "size": min_price_size}
         elif side == 1:
-            max_price_ind = -1
             max_price = -1
+            max_price_size = 0
             for i in range(len(table)):
                 if table[i]["price"] > max_price:
+                    max_price_size = 0
                     max_price = table[i]["price"]
-                    max_price_ind = i
-            return max_price_ind
+                if table[i]["price"] == max_price:
+                    max_price_size += table[i]["price"]
+            return {"price": max_price, "size": max_price_size}
 
     
 
 def main():
     """
-    Simple tests for the OrderBookManager class
+    Simple tests for the L3OrderBookManager class
     """
-    order_book = OrderBookManager()
+    order_book = L3OrderBookManager()
     order_book.insert({"side": 1, "price": 10, "size": 10})
     order_book.insert({"side": 1, "price": 20, "size": 10})
     order_book.insert({"side": 1, "price": 30, "size": 10})
