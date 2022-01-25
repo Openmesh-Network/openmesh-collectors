@@ -272,10 +272,10 @@ class TableUtil():
     def create_market_order(self,
                             order_id=-1,
                             price=-1,
-                            size=-1,
                             trade_id="",
                             timestamp=-1,
                             side=-1,
+                            size=-1,
                             msg_original_type=""):
         """
         Creates a market order dictionary.
@@ -290,10 +290,10 @@ class TableUtil():
         return {
             "order_id": order_id,
             "price": price,
-            "size": size,
             "trade_id": trade_id,
             "timestamp": timestamp,
             "side": side,
+            "size": size,
             "msg_original_type": msg_original_type
         }
 
@@ -365,19 +365,19 @@ class MarketOrdersTable(Table):
         colnames = [
             "order_id",
             "price",
-            "size",
             "trade_id",
             "timestamp",
             "side",
+            "size",
             "msg_original_type"
         ]
         dtype = [
             ("order_id", "i8"),
             ("price", "f8"),
-            ("size", "f8"),
             ("trade_id", "U37"),
             ("timestamp", "f8"),
             ("side", "i8"),
+            ("size", "f8"),
             ("msg_original_type", "U12")
         ]
         super().__init__(colnames, dtype)
