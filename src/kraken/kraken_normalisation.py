@@ -106,6 +106,7 @@ class NormaliseKraken():
             price=float(trade[0]),
             timestamp=int(float(trade[2])*10e3),
             side=1 if trade[3] == "b" else 2,
+            size=float(trade[2]),
             msg_original_type=trade[4]
         ))
         self.ORDER_ID += 1

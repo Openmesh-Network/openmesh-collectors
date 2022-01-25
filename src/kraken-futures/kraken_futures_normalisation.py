@@ -116,6 +116,7 @@ class NormaliseKrakenFutures():
             trade_id=trade["uid"],
             timestamp=trade["time"],
             side=1 if trade["side"] == "buy" else 2,
+            size=trade["qty"],
             msg_original_type=trade["type"]
         ))
         self.ORDER_ID += 1
