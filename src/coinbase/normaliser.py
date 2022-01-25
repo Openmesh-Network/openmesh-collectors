@@ -7,6 +7,7 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
+import requests
 
 from coinbase_ws_factory import CoinbaseWsManagerFactory
 from coinbase_normalisation import NormaliseCoinbase
@@ -20,6 +21,7 @@ class Normaliser():
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.symbol = symbol
         # Initialise WebSocket handler
         self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
 
@@ -58,6 +60,13 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
+        #self.normalise(self.get_snapshot())
+        self.normalise(self.get_snapshot())
+
+    def get_snapshot(self):
+        data = requests.get(f'https://api.exchange.coinbase.com/products/{self.symbol}/book?level=3')
+        return data.json()
+
     def put_entry(self, data: dict):
         """
         Puts data into the table.
@@ -79,8 +88,7 @@ class Normaliser():
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) == 6:
-                self.market_orders_table.put_dict(order)
+            self.market_orders_table.put_dict(order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -103,9 +111,9 @@ class Normaliser():
 
     def _dump(self):
         """Modify to change the output format."""
-        #self._dump_lob_table()
-        #self._dump_market_orders()
-        #self._dump_lob()
+        self._dump_lob_table()
+        self._dump_market_orders()
+        self._dump_lob()
         self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
@@ -155,7 +163,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            #os.system("clear")
+            os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

@@ -137,7 +137,7 @@ class RatioOfLobEvents(Metric):
             elif event['lob_action'] == 3:
                 self.deletes += 1
             self.curr_row += 1
-        if self.updates * self.deletes * self.inserts == 0:
+        if self.updates + self.deletes + self.inserts == 0:
             return
         self.inserts_ratio = self.inserts / \
             (self.updates + self.deletes + self.inserts)
@@ -148,7 +148,7 @@ class RatioOfLobEvents(Metric):
         return self.inserts_ratio, self.updates_ratio, self.deletes_ratio
 
     def display_metric(self):
-        if self.inserts_ratio * self.updates_ratio * self.deletes_ratio == 0:
+        if self.inserts_ratio + self.updates_ratio + self.deletes_ratio == 0:
             print("Ratio of LOB Events (inserts/updates/deletes): Not Calculated")
             return
         print("Ratio of LOB Events (inserts/updates/deletes): %.4f/%.4f/%.4f" %
