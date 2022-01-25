@@ -8,8 +8,8 @@ from threading import Thread, Lock
 from time import sleep
 import os
 
-from bybit_ws_factory import BybitWsManagerFactory
-from bybit_normalisation import NormaliseBybit
+from binance_ws_manager import BinanceWebsocketManager
+from binance_normalisation import NormaliseBinance
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
@@ -21,16 +21,16 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
-        self.ws_manager = BybitWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.ws_manager = BinanceWebsocketManager(symbol)
 
         # Retrieve correct normalisation function
-        self.normalise = NormaliseBybit().normalise
+        self.normalise = NormaliseBinance().normalise
+
 
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()
         self.order_book_manager = OrderBookManager()
-        # self.writer = DataWriter(exchange_id, symbol)
 
         # Metric observers
         self.metrics = []
@@ -39,6 +39,9 @@ class Normaliser():
         self.lob_table_lock = Lock()
         self.metric_lock = Lock()
         self.lob_lock = Lock()
+
+        self.ws_manager.snapshot_received.wait()
+        self.put_entry(self.ws_manager.snapshot)
 
         # Start normalising the data
         self.normalise_thr = Thread(
