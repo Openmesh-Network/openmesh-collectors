@@ -275,6 +275,7 @@ class TableUtil():
                             trade_id="",
                             timestamp=-1,
                             side=-1,
+                            size=-1,
                             msg_original_type=""):
         """
         Creates a market order dictionary.
@@ -292,6 +293,7 @@ class TableUtil():
             "trade_id": trade_id,
             "timestamp": timestamp,
             "side": side,
+            "size": size,
             "msg_original_type": msg_original_type
         }
 
@@ -366,6 +368,7 @@ class MarketOrdersTable(Table):
             "trade_id",
             "timestamp",
             "side",
+            "size",
             "msg_original_type"
         ]
         dtype = [
@@ -374,6 +377,7 @@ class MarketOrdersTable(Table):
             ("trade_id", "U37"),
             ("timestamp", "f8"),
             ("side", "i8"),
+            ("size", "f8"),
             ("msg_original_type", "U12")
         ]
         super().__init__(colnames, dtype)
@@ -385,12 +389,10 @@ class OrderBookTable(Table):
         Table object to hold order book data, modified by LOB events
         """
         colnames = [
-            "id",
             "price",
             "size"
         ]
         dtype = [
-            ("id", "i8")
             ("price", "f8"),
             ("size", "f8"),
         ]

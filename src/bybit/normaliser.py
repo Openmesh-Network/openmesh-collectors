@@ -104,7 +104,7 @@ class Normaliser():
     def _dump(self):
         # self._dump_lob_table()
         # self._dump_market_orders()
-        # self._dump_lob()
+        self._dump_lob()
         self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
