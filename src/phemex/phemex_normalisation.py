@@ -31,8 +31,8 @@ class NormalisePhemex():
             ts = float(data['timestamp'])
             order_data = data['book']
             for ask in order_data['asks']:
-                price = float(ask[0]) / 10000
-                size = float(ask[1]) / price
+                price = float(ask[0]) / 100000000
+                size = float(ask[1]) / 100000000
                 # For Phemex, if the order size is 0, it means that the level is being removed
                 if size == 0:
                     lob_action = 3
@@ -62,8 +62,8 @@ class NormalisePhemex():
                 self.QUOTE_NO += 1
                 self.ORDER_ID += 1
             for bid in order_data['bids']:
-                price = float(bid[0]) / 10000
-                size = float(bid[1]) / price
+                price = float(bid[0]) / 100000000
+                size = float(bid[1]) / 100000000
                 if size == 0:
                     lob_action = 3
                     if price in self.ACTIVE_LEVELS:
