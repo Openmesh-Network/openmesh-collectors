@@ -95,6 +95,7 @@ class NormaliseHuobi():
                     price=float(trade['price']),
                     timestamp=float(trade['ts']),
                     side=1 if trade['direction'] == 'buy' else 2,
+                    size=float(trade['amount']),
                 ))
                 self.ORDER_ID += 1
 

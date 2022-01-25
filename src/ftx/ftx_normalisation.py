@@ -84,14 +84,15 @@ class NormaliseFtx():
                 self.QUOTE_NO += 1
                 self.ORDER_ID += 1
 
-        elif "liquidation" in data['data']:
-            trade = data['result']
+        elif "liquidation" in data['data'][0]:
+            trade = data['data'][0]
             market_orders.append(self.util.create_market_order(
                 order_id=self.ORDER_ID,
                 trade_id=trade['id'],
                 price=float(trade['price']),
-                timestamp=float(trade['time']),
-                side=1 if trade[1] == 'Buy' else 2,
+                timestamp=trade['time'],
+                side=1 if trade['side'] == 'Buy' else 2,
+                size=float(trade['size'])
             ))
             self.ORDER_ID += 1
 

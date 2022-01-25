@@ -95,7 +95,8 @@ class NormaliseOkex():
                 price=float(trade['px']),
                 trade_id=trade['tradeId'],
                 timestamp=float(trade['ts']),
-                side=1 if trade['side'] == 'buy' else 2
+                side=1 if trade['side'] == 'buy' else 2,
+                size = float(trade['sz'])
             ))
             self.ORDER_ID += 1
 

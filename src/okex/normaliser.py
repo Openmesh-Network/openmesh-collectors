@@ -79,7 +79,7 @@ class Normaliser():
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) == 6:
+            if len(order) == 7:
                 self.market_orders_table.put_dict(order)
 
     def get_lob_events(self):
@@ -103,7 +103,7 @@ class Normaliser():
 
     def _dump(self):
         # self._dump_lob_table()
-        # self._dump_market_orders()
+        self._dump_market_orders()
         # self._dump_lob()
         self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
@@ -154,7 +154,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("clear")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

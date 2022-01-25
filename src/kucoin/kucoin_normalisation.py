@@ -95,6 +95,7 @@ class NormaliseKucoin():
                 price=float(trade['price']),
                 timestamp=float(trade['time']),
                 side=1 if trade['side'] == 'buy' else 2,
+                size=float(trade['size']),
             ))
             self.ORDER_ID += 1
 

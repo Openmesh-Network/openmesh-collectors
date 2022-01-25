@@ -94,10 +94,11 @@ class NormalisePhemex():
             for trade in data['trades']:
                 market_orders.append(self.util.create_market_order(
                     order_id=self.ORDER_ID,
-                    price=float(trade[2]) / 10000,
+                    price=float(trade[2]) / 100000000,
                     timestamp=float(trade[0]),
                     side=1 if trade[1] == 'Buy' else 2,
-                    msg_original_type=msg
+                    msg_original_type=msg,
+                    size=float(trade[3]) / 100000000
                 ))
                 self.ORDER_ID += 1
 
