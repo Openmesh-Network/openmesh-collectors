@@ -1,9 +1,12 @@
 import json
 import time
+import asyncio
+import requests
 from threading import Thread, Lock
 from queue import Queue
 from typing import Callable
 from gzip import decompress
+from urllib import request
 from websocket import WebSocketApp
 
 

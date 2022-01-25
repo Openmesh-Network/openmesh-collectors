@@ -372,10 +372,10 @@ class MarketOrdersTable(Table):
             "msg_original_type"
         ]
         dtype = [
-            ("order_id", "i8"),
+            ("order_id", "U36"),
             ("price", "f8"),
-            ("trade_id", "U37"),
-            ("timestamp", "f8"),
+            ("trade_id", "i8"),
+            ("timestamp", "datetime64[ms]"),
             ("side", "i8"),
             ("size", "f8"),
             ("msg_original_type", "U12")
