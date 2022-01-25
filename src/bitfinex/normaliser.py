@@ -80,7 +80,7 @@ class Normaliser():
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) == 6:
+            if len(order) > 0:
                 self.market_orders_table.put_dict(order)
 
     def get_lob_events(self):
