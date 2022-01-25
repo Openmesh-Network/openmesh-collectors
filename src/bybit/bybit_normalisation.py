@@ -56,7 +56,7 @@ class NormaliseBybit():
                     receive_timestamp = data["receive_timestamp"],
                     order_type = 2,
                     order_executed = 1,
-                    execution_price = price,
+                    execution_price = price,    
                     executed_size = size,
                     aggressor_side = side,
                     matching_order_id = int(price*10**4),
