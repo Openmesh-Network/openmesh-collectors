@@ -4,30 +4,36 @@ from websocket_manager import WebsocketManager
 class HuobiWsManagerFactory():
     def get_ws_manager(self, symbol: str):
         """Jay"""
-        url = 'wss://api-aws.huobi.pro/ws'
+        book_url = "wss://api-aws.huobi.pro/feed"
+        trades_url = 'wss://api-aws.huobi.pro/ws'
 
         # Subscribe to channels
-        def subscribe(ws_manager):
-            request = {'sub': f'market.{symbol}.depth.step0', 
-            'id': 'id1'
+        def subscribe_book(ws_manager):
+            request = {'sub': f'market.{symbol}.mbp.400', 
+                'id': 'id1'
             }
             ws_manager.send_json(request)
 
-            request['sub'] = f'market.{symbol}.trade.detail'
-
+        def subscribe_trades(ws_manager):
+            request = {'sub': f'market.{symbol}.trade.detail', 
+                'id': 'id1'
+            }
             ws_manager.send_json(request)
+
 
         # Unubscribe from channels
-        def unsubscribe(ws_manager):
-            request = {'unsub': f'market.{symbol}.depth.step0', 
-            'id': 'id1'
+        def unsubscribe_book(ws_manager):
+            request = {'unsub': f'market.{symbol}.mbp.400', 
+                'id': 'id1'
             }
             ws_manager.send_json(request)
 
-            request['unsub'] = f'market.{symbol}.trade.detail'
-
+        def unsubscribe_trades(ws_manager):
+            request = {'unsub': f'market.{symbol}.trade.detail', 
+                'id': 'id1'
+            }
             ws_manager.send_json(request)
-
             
-        ws_manager = WebsocketManager(url,subscribe,unsubscribe)
-        return ws_manager
+        trades_ws_manager = WebsocketManager(trades_url, subscribe_trades,unsubscribe_trades)
+        book_ws_manager = WebsocketManager(book_url, subscribe_book, subscribe_trades)
+        return book_ws_manager, trades_ws_manager
