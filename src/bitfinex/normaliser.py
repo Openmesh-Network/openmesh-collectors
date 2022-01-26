@@ -155,7 +155,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("cls")
+            #os.system("cls")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

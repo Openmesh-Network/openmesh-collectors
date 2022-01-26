@@ -5,7 +5,7 @@ from websocket_manager import WebsocketManager
 
 class KucoinWsManagerFactory():
     def get_ws_manager(self, symbol: str):
-        """Jack"""
+        """Jay"""
 
         setup_data = requests.post("https://api.kucoin.com/api/v1/bullet-public").json()
         token = setup_data['data']['token']
