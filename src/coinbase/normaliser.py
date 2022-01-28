@@ -60,7 +60,6 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
-        #self.normalise(self.get_snapshot())
         self.normalise(self.get_snapshot())
 
     def get_snapshot(self):
