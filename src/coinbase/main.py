@@ -33,7 +33,7 @@ def start_normaliser(exchange: str, symbol: str):
             normaliser.dump()  # Print tables
             time.sleep(1/60)
         except KeyboardInterrupt:
-            break
+            normaliser.consumer.close()
 
 
 processes = []

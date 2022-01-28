@@ -8,8 +8,9 @@ from threading import Thread, Lock
 from time import sleep
 import os
 import requests
-
+import json
 from coinbase_ws_factory import CoinbaseWsManagerFactory
+from kafka_consumer import ExchangeDataConsumer
 from coinbase_normalisation import NormaliseCoinbase
 from table import LobTable, MarketOrdersTable
 from order_book import L3OrderBookManager
@@ -23,8 +24,8 @@ class Normaliser():
         self.name = exchange_id + ":" + symbol
         self.symbol = symbol
         # Initialise WebSocket handler
-        self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
-
+        #self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.consumer = ExchangeDataConsumer(symbol)
         # Retrieve correct normalisation function
         self.normalise = NormaliseCoinbase().normalise
 
@@ -73,7 +74,9 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        data = self.normalise(data)
+        if not data:
+            return
+        data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -110,10 +113,10 @@ class Normaliser():
 
     def _dump(self):
         """Modify to change the output format."""
-        self._dump_lob_table()
-        self._dump_market_orders()
-        self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
+        #self._dump_lob_table()
+        #self._dump_market_orders()
+        #self._dump_lob()
+        #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -152,7 +155,8 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
+            data = self.consumer.consume()
+            #print(data)
             self.put_entry(data)
 
     def _metric_threads(self):
@@ -162,7 +166,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("clear")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()
