@@ -35,6 +35,8 @@ class BitfinexWebsocketManager():
         NOTE: The message received has an extra field "received_timestamp", which
               is the UTC timestamp of when the message was received in milliseconds.
         """
+        if self.temp_queue.qsize() > 0:
+            return self.temp_queue.get()
         return self.queue.get()
 
     def _on_message(self, ws, message):

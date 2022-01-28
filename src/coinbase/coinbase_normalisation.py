@@ -42,6 +42,7 @@ class NormaliseCoinbase():
                     lob_action=2
                 )
                 lob_events.append(event)
+                self.QUOTE_NO += 1
             for bid in data['bids']:
                 order_id = bid[2]
                 price = float(bid[0])
@@ -57,10 +58,12 @@ class NormaliseCoinbase():
                     lob_action=2
                 )
                 lob_events.append(event)
+                self.QUOTE_NO += 1
             while not self.lob_event_queue.empty():
                 event = self.lob_event_queue.get()
                 if float(event['sequence']) >= self.snapshot_received:
                     lob_events.append(event)
+                    self.QUOTE_NO += 1
 
         elif data['type'] == 'subscriptions':
             print(f"Received message {json.dumps(data)}")
@@ -182,7 +185,7 @@ class NormaliseCoinbase():
                 self.lob_event_queue.put(event)
 
             self.QUOTE_NO += 1
-
+        
         elif data['type'] == 'received':
             return self.NO_EVENTS
 

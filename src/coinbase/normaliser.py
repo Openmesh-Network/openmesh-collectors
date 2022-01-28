@@ -12,7 +12,7 @@ import requests
 from coinbase_ws_factory import CoinbaseWsManagerFactory
 from coinbase_normalisation import NormaliseCoinbase
 from table import LobTable, MarketOrdersTable
-from order_book import L3OrderBookManager
+from l3_order_book import L3OrderBookManager
 from metrics import Metric
 
 
@@ -82,8 +82,9 @@ class Normaliser():
         self.lob_lock.acquire()
         for event in lob_events:
             if len(event) == 22:
-                self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
+                self.lob_table.put_dict(event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
@@ -112,10 +113,10 @@ class Normaliser():
     def _dump(self):
         """Modify to change the output format."""
         self._dump_lob_table()
-        self._dump_market_orders()
-        self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
-        self._dump_metrics()
+        # self._dump_market_orders()
+        # self._dump_lob()
+        # self.ws_manager.get_q_size()  # Queue backlog
+        # self._dump_metrics()
         return
 
     def add_metric(self, metric: Metric):
@@ -163,7 +164,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("clear")
+            os.system("cls")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

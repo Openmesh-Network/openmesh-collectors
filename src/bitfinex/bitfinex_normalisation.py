@@ -50,10 +50,9 @@ class NormaliseBitfinex():
             if isinstance(data[1][0], list):
                 for trade in data[1]:
                     self._handle_trade(data, market_orders, trade)
-            else:
-                trade = data[1]
-                if trade[1] == "tu":
-                    self._handle_trade(data, market_orders, trade)
+            elif data[1] == "tu":
+                trade = data[2]
+                self._handle_trade(data, market_orders, trade)
         else:
             print(f"Received message {data}")
             return self.NO_EVENTS
@@ -86,10 +85,12 @@ class NormaliseBitfinex():
     def _handle_trade(self, data, market_orders, trade):
         side = 1 if trade[2] > 0 else 2
         market_orders.append(self.util.create_market_order(
+            order_id = self.ORDER_ID,
             price = trade[3],
             trade_id = trade[0],
             timestamp = trade[1],
             side = side,
             size = abs(trade[2]),
-            msg_original_type = data[1]
+            msg_original_type = data[0]
         ))
+        self.ORDER_ID += 1

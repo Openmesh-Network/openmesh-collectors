@@ -74,13 +74,14 @@ class Normaliser():
         self.lob_lock.acquire()
         for event in lob_events:
             if len(event) == 22:
-                self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
+                self.lob_table.put_dict(event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) > 0:
+            if len(order) == 7:
                 self.market_orders_table.put_dict(order)
 
     def get_lob_events(self):
@@ -155,7 +156,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            #os.system("cls")
+            os.system("cls")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

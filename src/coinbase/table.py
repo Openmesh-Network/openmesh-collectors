@@ -349,8 +349,8 @@ class LobTable(Table):
             "U36",
             "U36",
             "i8",
-            "i8",
-            "i8"
+            "f8",
+            "f8"
         ]
         dtype = list(zip(colnames, types))
         super().__init__(colnames, dtype)
