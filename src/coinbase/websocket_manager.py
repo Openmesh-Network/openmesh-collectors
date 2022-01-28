@@ -8,7 +8,7 @@ from typing import Callable
 from gzip import decompress
 from urllib import request
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -28,6 +28,9 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
+        conf = {'bootstrap.servers': 'localhost:9092', 'client.id': 'kafka-python-producer'}
+        self.producer = Producer(conf)
+        
 
     def get_msg(self):
         """
@@ -43,14 +46,16 @@ class WebsocketManager():
             message = json.loads(decompress(message))
         else:
             message = json.loads(message)
-        
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
-        elif isinstance(message, list):
-            message.append(int(time.time()*10**3))
-        else:
-            raise ValueError(f"message from {self.url} is of type {type(message)}")
-        self.queue.put(message)
+            try:
+                symbol = message["product_id"]
+                #print(symbol)
+                #self.producer.send("quickstart", message)
+                #self.producer.produce('BTC-USD', message)
+                self.producer.produce(symbol, key="%s:%s" % ("Coinbase", self.url), value=json.dumps(message))
+            except:
+                pass
     
     def get_q_size(self):
         """Returns the size of the queue"""
