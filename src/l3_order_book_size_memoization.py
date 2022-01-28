@@ -1,17 +1,20 @@
 from tabulate import tabulate
+from math import isclose
 
 import os
 
 class L3OrderBookManager:
+    FLOAT_SCALAR = 10e5
+
     def __init__(self):
-        self.buys = dict() # {price: [order, order, ...]}
+        self.buys = dict() # {price: {size, [order, order, ...]}}
         self.sells = dict() # {price: [order, order, ...]}
 
         self.orders = dict() # {order_id: order}
 
         self.best_buy_order = None
         self.best_sell_order = None
-   
+    
     def handle_event(self, lob_event):
         if lob_event['lob_action'] == 2:
             self._insert(lob_event)
@@ -19,6 +22,31 @@ class L3OrderBookManager:
             self._delete(lob_event)
         elif lob_event['lob_action'] == 4:
             self._update(lob_event)
+    
+    def get_ahead(self, lob_event):
+        order_id = lob_event["order_id"]
+        if order_id not in self.orders.keys():
+            # raise KeyError(f"order_id {order_id} not an active order.")
+            return -1, -1
+        
+        orders_ahead = 0
+        size_ahead = 0
+        book = self.buys if lob_event["side"] == 1 else self.sells
+        order_price = lob_event["price"] * self.FLOAT_SCALAR
+        for price in book.keys():
+            if book == self.buys and order_price < price or \
+                    book == self.sells and order_price > price: 
+                orders_ahead += len(book[price]["orders"])
+                size_ahead += book[price]["level_size"]
+            elif order_price == price:
+                i = 0
+                order = book[price]["orders"][i]
+                while order["order_id"] != order_id:
+                    orders_ahead += 1
+                    size_ahead += order["size"]
+                    i += 1
+                    order = book[price]["orders"][i]
+        return size_ahead / self.FLOAT_SCALAR, orders_ahead
 
     def dump(self):
         nrows = 10
@@ -27,7 +55,7 @@ class L3OrderBookManager:
         n_indexed = 0
         bids = []
         for price in sorted(self.buys.keys(), reverse=True):
-            bids.append((price, self._get_level_size(price, self.buys)))
+            bids.append((price, self.buys[price]["level_size"]/self.FLOAT_SCALAR))
             n_indexed += 1
             if n_indexed == nrows:
                 n_indexed = 0
@@ -35,7 +63,7 @@ class L3OrderBookManager:
 
         asks = []
         for price in sorted(self.sells.keys()):
-            asks.append((price, self._get_level_size(price, self.sells)))
+            asks.append((price, self.sells[price]["level_size"]/self.FLOAT_SCALAR))
             n_indexed += 1
             if n_indexed == nrows:
                 n_indexed = 0
@@ -54,14 +82,10 @@ class L3OrderBookManager:
     def _insert(self, lob_event):
         order_id = lob_event["order_id"]
         price = lob_event["price"]
-        size = lob_event["size"]
         side = lob_event["side"]
 
         order_book = self.buys if side == 1 else self.sells
-        if price not in order_book.keys():
-            order_book[price] = [lob_event] # New price level with list
-        else:
-            order_book[price].append(lob_event) # Existing price levels
+        self._put_order(order_book, price, lob_event)
         self.orders[order_id] = lob_event
 
         if not (self.best_buy_order and self.best_sell_order) or \
@@ -72,7 +96,7 @@ class L3OrderBookManager:
     def _delete(self, lob_event):
         order_id = lob_event["order_id"]
         if order_id not in self.orders.keys():
-            #raise KeyError(f"order_id {order_id} not an active order.")
+            # raise KeyError(f"order_id {order_id} not an active order.")
             return
 
         order = self.orders[order_id]
@@ -85,13 +109,15 @@ class L3OrderBookManager:
         self._pop_order(order_book, price, order_id)
         del self.orders[order_id]
 
-        if (side == 1 and price == self.best_buy_order["price"]) or \
-                (side == 2 and price == self.best_sell_order["price"]):
+        if (side == 1 and isclose(price, self.best_buy_order["price"])) or \
+                (side == 2 and isclose(price, self.best_sell_order["price"])):
             self._update_best_levels(side)
 
     def _update(self, lob_event):
-        print("\n\nUPDATE\n\n")
         order_id = lob_event["order_id"]
+        new_price = lob_event["price"]
+        new_side = lob_event["side"]
+        new_size = lob_event["size"]
         if order_id not in self.orders.keys():
             raise KeyError(f"order_id {order_id} not an active order.")
         order = self.orders[order_id]
@@ -99,56 +125,78 @@ class L3OrderBookManager:
 
         order_book = self.buys if order["side"] == 1 else self.sells
 
+        # Don't reset queue position if new size is lower than previous size
+        if isclose(new_price, old_price) and order["size"] > new_size:
+            order["size"] = new_size
+            order_book[old_price]["level_size"] -= (order["size"] - new_size)
+            if (new_side == 1 and isclose(old_price, self.best_buy_order["price"])) or \
+                    (new_side == 2 and isclose(old_price, self.best_sell_order["price"])):
+                self._update_best_levels(new_side)
+            return
+
         # Reset order position in queue
         order = self._pop_order(order_book, order["price"], order_id)
 
         if order["side"] != lob_event["side"]:
             raise ValueError("Need to implement side updates")
 
-        price = lob_event["price"]
-        side = lob_event["side"]
-        order["price"] = price
-        order["side"] = side
+        order["price"] = new_price
+        order["side"] = new_side
         order["size"] = lob_event["size"]
 
-        # Place order into correct price level if price was changed
-        if price not in order_book.keys():
-            order_book[price] = [order]
+        self._put_order(order_book, new_price, order)
+
+        if (new_side == 1 and isclose(old_price, self.best_buy_order["price"])) or \
+                (new_side == 2 and isclose(old_price, self.best_sell_order["price"])):
+            self._update_best_levels(new_side)
+    
+    def _put_order(self, book, price, order):
+        # Place order into correct new_price level if price was changed
+        order["size"] *= self.FLOAT_SCALAR
+        if not price in book.keys():
+            book[price] = {"level_size": 0, "orders": [order]}
         else:
-            order_book[price].append(order)
-        self.orders[order_id] = order
-        if (side == 1 and old_price == self.best_buy_order["price"]) or \
-                (side == 2 and old_price == self.best_sell_order["price"]):
-            self._update_best_levels(side)
+            book[price]["orders"].append(order)
+        
+        # Increment level size
+        book[price]["level_size"] += order["size"]
     
     def _pop_order(self, book, price, order_id):
-        for i in range(len(book[price])):
-            order = book[price][i]
+        for i in range(len(book[price]["orders"])):
+            order = book[price]["orders"][i]
             if order_id == order["order_id"]:
-                book[price].pop(i)
-                if len(book[price]) == 0:
+                book[price]["orders"].pop(i)
+                book[price]["level_size"] -= order["size"]
+                if len(book[price]["orders"]) == 0:
+                    if not isclose(book[price]["level_size"]/self.FLOAT_SCALAR, 0):
+                        raise ValueError(f"Size not right {book[price]['level_size']}")
                     del book[price]
                 return order
         raise KeyError(f"order_id {order_id} does not exist in the orderbook.")
     
     def _get_level_size(self, price, book):
-        size = 0
-        for i in range(len(book[price])):
-            order = book[price][i]
-            size += order["size"]
-        return size
+        return book[price]["level_size"]
 
     def _update_best_levels(self, side):
         book = self.buys if side == 1 else self.sells
-        if len(book.keys()) == 0:
-            return
         best_price = max(book.keys()) if side == 1 else min(book.keys())
-        best_size = self._get_level_size(best_price, book)
+        best_size = self._get_level_size(best_price, book) / self.FLOAT_SCALAR
 
         if side == 1:
             self.best_buy_order = {"price": best_price, "size": best_size}
         else:
             self.best_sell_order = {"price": best_price, "size": best_size}
+
+
+def create_order(order_id, price, size, side, lob_action):
+    return {
+        "order_id": order_id,
+        "price": price,
+        "size": size,
+        "side": side,
+        "lob_action": lob_action
+    }
+
 
 def main():
     """
@@ -167,35 +215,37 @@ def main():
     orders = [order1, order2, order3, order4, order5]
     for order in orders:
         order_book.handle_event(order)
+        print(order_book.get_ahead(order))
     order_book.dump()
 
     # Testing deletion
     order = create_order(3, 0, 0, 1, 3)
     order_book.handle_event(order)
+    print(order_book.get_ahead(order))
     order_book.dump()
 
-    # Testing update
+    # Testing update to larger size
     order = create_order(1, 100, 40, 1, 4)
     order_book.handle_event(order)
+    print(order_book.get_ahead(order))
+    order_book.dump()
+
+    # Testing update to smaller size
+    order = create_order(4, 100, 10, 1, 4)
+    order_book.handle_event(order)
+    print(order_book.get_ahead(order))
     order_book.dump()
 
     # Testing empty level
     order = create_order(6, 200, 40, 1, 2)
     order_book.handle_event(order)
+    print(order_book.get_ahead(order))
     order_book.dump()
     order = create_order(6, 50, 0, 1, 3)
     order_book.handle_event(order)
+    print(order_book.get_ahead(order))
     order_book.dump()
     print("----------END ORDERBOOK TEST----------")
-
-def create_order(order_id, price, size, side, lob_action):
-    return {
-        "order_id": order_id,
-        "price": price,
-        "size": size,
-        "side": side,
-        "lob_action": lob_action
-    }
 
 if __name__ == '__main__':
     main()
