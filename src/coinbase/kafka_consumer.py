@@ -8,11 +8,12 @@ class ExchangeDataConsumer():
         self.conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
         self.consumer = Consumer(self.conf)
         self.consumer.subscribe([self.topic])
-        self.msg_queue = Queue()
 
     def consume(self):
         msg = self.consumer.poll(1.0)
-        if msg is None: return
+        if msg is None: 
+            print("no message")
+            return
 
         if msg.error():
             if msg.error().code() == KafkaError._PARTITION_EOF:
@@ -22,12 +23,9 @@ class ExchangeDataConsumer():
                 raise KafkaException(msg.error())
         
         else:
-            print("Message received: %s: %s" % (msg.key().decode(), msg.value().decode()))
-            self.msg_queue.put(msg.value())
+            #print("Message received: %s: %s" % (msg.key().decode(), msg.value().decode()))
+            return msg.value()
         #self.consumer.close()
-
-    def get_msg(self):
-        return self.msg_queue.get()
 
 def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}

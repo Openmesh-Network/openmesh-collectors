@@ -54,6 +54,7 @@ class WebsocketManager():
                 #self.producer.send("quickstart", message)
                 #self.producer.produce('BTC-USD', message)
                 self.producer.produce(symbol, key="%s:%s" % ("Coinbase", self.url), value=json.dumps(message))
+                print(f"Produced {symbol}")
             except:
                 pass
     
