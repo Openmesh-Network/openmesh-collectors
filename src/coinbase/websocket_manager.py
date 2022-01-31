@@ -49,7 +49,7 @@ class WebsocketManager():
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
-                symbol = message["product_id"]
+                symbol = message["product_id"].replace("-", "")
                 #print(symbol)
                 #self.producer.send("quickstart", message)
                 #self.producer.produce('BTC-USD', message)

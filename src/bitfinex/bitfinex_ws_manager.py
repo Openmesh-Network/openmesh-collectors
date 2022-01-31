@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Callable
 from gzip import decompress
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class BitfinexWebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -18,6 +18,8 @@ class BitfinexWebsocketManager():
         both subscribe and unsubscribe MUST have one argument, which is an instance of 
         WebsocketManager (see KrakenWsManagerFactory in ws_factories.py for an example).
         """
+        conf = {'bootstrap.servers': 'localhost:9092', 'client.id': 'kafka-bitfinex-producer'}
+        self.producer = Producer(conf)
         self.connect_lock = Lock()
         self.ws = None
         self.temp_queue = Queue()
@@ -41,13 +43,22 @@ class BitfinexWebsocketManager():
         message = json.loads(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
+            if self.subscribed.is_set():
+                try:
+                    symbol = self.symbol[1:]
+                    #print(symbol)
+                    #self.producer.send("quickstart", message)
+                    #self.producer.produce('BTC-USD', message)
+                    print(message)
+                    self.producer.produce(symbol, key="%s:%s" % ("Bitfinex", self.url), value=json.dumps(message))
+                    print(f"Produced {symbol}")
+                except Exception as e:
+                    print("Error producing message: %s" % e)
         elif isinstance(message, list):
             message.append(int(time.time()*10**3))
         else:
             raise TypeError(f"unrecognised message type {type(message)}")
-        if self.subscribed.is_set():
-            self.queue.put(message)
-        else:
+        if not self.subscribed.is_set():
             self.temp_queue.put(message)
     
     def get_q_size(self):
@@ -189,3 +200,11 @@ class BitfinexWebsocketManager():
     def reconnect(self) -> None:
         if self.ws is not None:
             self._reconnect(self.ws)
+
+def main():
+    ws = BitfinexWebsocketManager(symbol="tBTCUSD")
+    while True:
+        pass
+
+if __name__ == "__main__":
+    main()
