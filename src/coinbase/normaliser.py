@@ -25,7 +25,7 @@ class Normaliser():
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(symbol)
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
         # Retrieve correct normalisation function
         self.normalise = NormaliseCoinbase().normalise
 

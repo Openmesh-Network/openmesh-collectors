@@ -12,6 +12,8 @@ All required dependencies can be installed from `requirements.txt`.
 pip install -r requirements.txt
 ```
 
+In order to get the data streaming working on your local machine, you'll also need to install [docker and docker-compose](https://docs.docker.com/desktop/windows/install/), so that the local kafka cluster can be set up.
 ## Usage
+Data is transferred from the exchange websockets to a local kafka cluster, with the symbol as the topic. In order to set this up on your local machine, you'll need to start the docker container for the cluster, which can be done by traversing to the root directory and running `sudo docker-compose up`. This will start the kafka cluster according to the configuration in `docker-compose.yml`, and hence the data pipeline will be established for use on your local machine.
 
-Enter the folder of the desired exchange, and run `main.py` to begin the data collection and normalisation for that given exchange. Modify the `_dump` function in `normaliser.py` to change the output format.
+Enter the folder of the desired exchange, and first run the relevant websocket script to begin collecting data from the exchange websocket and begin sending the data down the kafka pipeline. Afterwards, run `main.py` to begin the data normalisation for that given exchange. Modify the `_dump` function in `normaliser.py` to change the output format.
