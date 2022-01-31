@@ -5,13 +5,14 @@ from queue import Queue
 class ExchangeDataConsumer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {'bootstrap.servers': 'localhost:9092,localhost:9093,localhost:9094', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
+        self.conf = {'bootstrap.servers': 'localhost:29092,localhost:39092,localhost:49092', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
         self.consumer = Consumer(self.conf)
         self.consumer.subscribe([self.topic])
 
     def consume(self):
         msg = self.consumer.poll(1.0)
         if msg is None: 
+            print(msg)
             print("no message")
             return
 
