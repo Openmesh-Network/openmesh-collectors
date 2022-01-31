@@ -5,7 +5,7 @@ from queue import Queue
 class ExchangeDataConsumer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {'bootstrap.servers': 'localhost:9092,localhost:9093,localhost:9094', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
+        self.conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
         self.consumer = Consumer(self.conf)
         self.consumer.subscribe([self.topic])
 
@@ -31,7 +31,7 @@ def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
     consumer = Consumer(conf)
 
-    consumer.subscribe(["BTC-USD"])
+    consumer.subscribe(["tBTCUSD"])
 
 
 if __name__ == "__main__":
