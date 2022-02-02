@@ -11,10 +11,8 @@ class NormaliseBitfinex():
 
     LONG_MAX = 2**63-1
 
-    def __init__(self, book_id: int, trades_id: int):
+    def __init__(self):
         self.util = TableUtil()
-        self.book_id = book_id
-        self.trades_id = trades_id
 
     def normalise(self, data) -> dict:
         """Rayman"""
@@ -29,7 +27,7 @@ class NormaliseBitfinex():
             print(f"Received message {data}")
             return self.NO_EVENTS
 
-        if data[0] == self.book_id:
+        if self._is_float(data[1][0][-1]):
             if isinstance(data[1][0], list): # Snapshot
                 for order in data[1]:
                     self._handle_lob_event(data, lob_events, order, 2)
@@ -46,7 +44,7 @@ class NormaliseBitfinex():
                     lob_action = 2 # Insert
                     self.ACTIVE_ORDER_IDS.add(order[0])
                 self._handle_lob_event(data, lob_events, order, lob_action)
-        elif data[0] == self.trades_id:
+        elif data[1][0][-1].isdigit():
             if isinstance(data[1][0], list):
                 for trade in data[1]:
                     self._handle_trade(data, market_orders, trade)
@@ -93,3 +91,10 @@ class NormaliseBitfinex():
             size = abs(trade[2]),
             msg_original_type = data[1]
         ))
+
+    def _is_float(self, s):
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False

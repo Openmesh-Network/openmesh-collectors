@@ -18,7 +18,7 @@ class BitfinexWebsocketManager():
         both subscribe and unsubscribe MUST have one argument, which is an instance of 
         WebsocketManager (see KrakenWsManagerFactory in ws_factories.py for an example).
         """
-        conf = {'bootstrap.servers': 'localhost:9092', 'client.id': 'kafka-bitfinex-producer'}
+        conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'client.id': 'kafka-python-producer'}
         self.producer = Producer(conf)
         self.connect_lock = Lock()
         self.ws = None
@@ -41,21 +41,22 @@ class BitfinexWebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
+        #print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
+        elif isinstance(message, list):
+            message.append(int(time.time()*10**3))
             if self.subscribed.is_set():
                 try:
                     symbol = self.symbol[1:]
                     #print(symbol)
                     #self.producer.send("quickstart", message)
                     #self.producer.produce('BTC-USD', message)
-                    print(message)
+                    #print(message)
                     self.producer.produce(symbol, key="%s:%s" % ("Bitfinex", self.url), value=json.dumps(message))
                     print(f"Produced {symbol}")
                 except Exception as e:
                     print("Error producing message: %s" % e)
-        elif isinstance(message, list):
-            message.append(int(time.time()*10**3))
         else:
             raise TypeError(f"unrecognised message type {type(message)}")
         if not self.subscribed.is_set():
@@ -129,12 +130,14 @@ class BitfinexWebsocketManager():
     def connect(self):
         """Connects to the websocket"""
         if self.ws:
+            print("Already connected")
             return
         with self.connect_lock:
             while not self.ws:
                 self._connect()
                 if self.ws:
                     self.subscribe()
+                    print("Subscribed")
                     return
     
     def subscribe(self):
@@ -203,6 +206,8 @@ class BitfinexWebsocketManager():
 
 def main():
     ws = BitfinexWebsocketManager(symbol="tBTCUSD")
+    ws.connect()
+    ws.subscribed.wait()
     while True:
         pass
 

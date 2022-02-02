@@ -8,7 +8,8 @@ from threading import Thread, Lock
 from time import sleep
 import os
 
-from bitfinex_ws_manager import BitfinexWebsocketManager 
+from bitfinex_ws_manager import BitfinexWebsocketManager
+from kafka_consumer import ExchangeDataConsumer
 from bitfinex_normalisation import NormaliseBitfinex
 from table import LobTable, MarketOrdersTable
 from l3_order_book import L3OrderBookManager
@@ -21,11 +22,13 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
-        self.ws_manager = BitfinexWebsocketManager(symbol)
-        self.ws_manager.subscribed.wait()
+        # self.ws_manager = BitfinexWebsocketManager(symbol)
+        # self.ws_manager.subscribed.wait()
+
+        self.consumer = ExchangeDataConsumer(symbol[1:])
 
         # Retrieve correct normalisation function
-        self.normalise = NormaliseBitfinex(self.ws_manager.book_channel_id, self.ws_manager.trades_channel_id).normalise
+        self.normalise = NormaliseBitfinex().normalise
 
         # Initialise tables
         self.lob_table = LobTable()
@@ -106,7 +109,6 @@ class Normaliser():
         # self._dump_lob_table()
         # self._dump_market_orders()
         self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -145,7 +147,8 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
+            data = self.consumer.consume()
+            print(data)
             self.put_entry(data)
 
     def _metric_threads(self):

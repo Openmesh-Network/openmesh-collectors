@@ -120,6 +120,14 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# security
+jay.cert
+jay.key
+ca-aiven-cert.pem
+
+# helper bash scripts
+kafka-generate-ssl.sh
+
 # mypy
 .mypy_cache/
 .dmypy.json
