@@ -28,7 +28,7 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
-        conf = {'bootstrap.servers': 'localhost:29092,localhost:39092,localhost:49092', 'client.id': 'kafka-python-producer'}
+        conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'client.id': 'kafka-python-producer'}
         self.producer = Producer(conf)
         
 

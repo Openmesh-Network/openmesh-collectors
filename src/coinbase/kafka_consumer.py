@@ -5,7 +5,7 @@ from queue import Queue
 class ExchangeDataConsumer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {'bootstrap.servers': 'localhost:29092,localhost:39092,localhost:49092', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
+        self.conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
         self.consumer = Consumer(self.conf)
         self.consumer.subscribe([self.topic])
 
