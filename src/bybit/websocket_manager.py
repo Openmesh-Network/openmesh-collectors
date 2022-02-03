@@ -1,11 +1,14 @@
 import json
 import time
+import asyncio
+import requests
 from threading import Thread, Lock
 from queue import Queue
 from typing import Callable
 from gzip import decompress
+from urllib import request
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -25,6 +28,23 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {}"
+                  .format(msg.topic(), msg.partition(), msg.offset()))
 
     def get_msg(self):
         """
@@ -36,18 +56,16 @@ class WebsocketManager():
         return self.queue.get()
 
     def _on_message(self, ws, message):
-        if isinstance(message, bytes) and "huobi" in self.url:
-            message = json.loads(decompress(message))
-        else:
-            message = json.loads(message)
-        
+        message = json.loads(message)
+        #print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
-        elif isinstance(message, list):
-            message.append(int(time.time()*10**3))
-        else:
-            raise ValueError(f"message from {self.url} is of type {type(message)}")
-        self.queue.put(message)
+            try:
+                self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps(message), on_delivery=self._acked)
+                #print(f"Produced {symbol}")
+                self.producer.poll(0)
+            except Exception as e:
+                print("An error occurred while producing: %s" % e)
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -70,7 +88,7 @@ class WebsocketManager():
             self.url,
             on_message=self._wrap_callback(self._on_message),
             on_close=self._wrap_callback(self._on_close),
-            on_error=self._wrap_callback(self._on_error),
+            on_error=self._wrap_callback(self._on_error)
         )
 
         wst = Thread(target=self._run_websocket, args=(self.ws,))
@@ -83,7 +101,7 @@ class WebsocketManager():
             if time.time() - ts > self._CONNECT_TIMEOUT_S:
                 self.ws = None
                 raise Exception(
-                    f"Failed to connect to websocket url {self.url}")
+                    f"Failed to connect to websocket url {self._get_url()}")
             time.sleep(0.1)
 
     def _wrap_callback(self, f):
@@ -105,6 +123,9 @@ class WebsocketManager():
         finally:
             pass
             # self._reconnect(ws)
+
+    def _get_url(self):
+        return self.url
 
     def _reconnect(self, ws):
         """Closes a connection and attempts to reconnect"""
