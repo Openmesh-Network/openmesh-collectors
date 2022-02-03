@@ -26,3 +26,12 @@ class BybitWsManagerFactory():
             
         ws_manager = WebsocketManager(url,subscribe,unsubscribe)
         return ws_manager
+
+def main():
+    ws = BybitWsManagerFactory().get_ws_manager("BTCUSD")
+    ws.connect()
+    while True:
+        pass
+
+if __name__ == '__main__':
+    main()
