@@ -14,6 +14,14 @@ pip install -r requirements.txt
 
 In order to get the data streaming working on your local machine, you'll also need to install [docker and docker-compose](https://docs.docker.com/desktop/windows/install/), so that the local kafka cluster can be set up.
 ## Usage
+### Kafka
 Data is transferred from the exchange websockets to a local kafka cluster, with the symbol as the topic. In order to set this up on your local machine, you'll need to start the docker container for the cluster, which can be done by traversing to the root directory and running `sudo docker-compose up`. This will start the kafka cluster according to the configuration in `docker-compose.yml`, and hence the data pipeline will be established for use on your local machine.
 
 Enter the folder of the desired exchange, and first run the relevant websocket script to begin collecting data from the exchange websocket and begin sending the data down the kafka pipeline. Afterwards, run `main.py` to begin the data normalisation for that given exchange. Modify the `_dump` function in `normaliser.py` to change the output format.
+
+### Websocket Dissemination
+Currently still in development. Configure `config.ini` in the root directory to set the address and port of the server, then run `python server.py` to start the server. To start a client, run the command `python client.py ws://<host>:<port>/` in a separate terminal instance. The server supports multiple clients connecting.
+
+After connecting, the client will start accepting console input. To subscribe to the data feed (currently hard coded to pipe ByBit websocket data), type `sub` into the console input and press enter. To unsubscribe, console input `dc` on the client. To disconnect and exit, console input `exit`. You may subscribe and unsubscribe as many times as you wish. 
+
+The server will dump its state onto the terminal once every second.
