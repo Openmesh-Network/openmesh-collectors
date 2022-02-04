@@ -27,31 +27,36 @@ class NormaliseBitfinex():
             print(f"Received message {data}")
             return self.NO_EVENTS
 
-        if self._is_float(data[1][0][-1]):
+        if isinstance(data[1], list) and len(data[1]) == 3 or isinstance(data[1][0], list) and len(data[1][0]) == 3:
             if isinstance(data[1][0], list): # Snapshot
                 for order in data[1]:
+                    #print("Processing Order: ", order)
                     self._handle_lob_event(data, lob_events, order, 2)
                     self.ACTIVE_ORDER_IDS.add(order[0])
             else:
                 order = data[1]
+                #print("Processing Order: ", order)
                 side = 1 if order[2] > 0 else 2
                 if order[1] == 0:
                     lob_action = 3
-                    self.ACTIVE_ORDER_IDS.remove(order[0])
+                    if order[0] in self.ACTIVE_ORDER_IDS:
+                        self.ACTIVE_ORDER_IDS.remove(order[0])
+                    else:
+                        return self.NO_EVENTS
                 elif order[0] in self.ACTIVE_ORDER_IDS:
                     lob_action = 4 # Update
                 else:
                     lob_action = 2 # Insert
                     self.ACTIVE_ORDER_IDS.add(order[0])
                 self._handle_lob_event(data, lob_events, order, lob_action)
-        elif data[1][0][-1].isdigit():
+        #elif isinstance(data[1][-1], int):
+        elif data[1] == "tu" or isinstance(data[1], list):
             if isinstance(data[1][0], list):
                 for trade in data[1]:
                     self._handle_trade(data, market_orders, trade)
             else:
-                trade = data[1]
-                if trade[1] == "tu":
-                    self._handle_trade(data, market_orders, trade)
+                trade = data[2]
+                self._handle_trade(data, market_orders, trade)
         else:
             print(f"Received message {data}")
             return self.NO_EVENTS

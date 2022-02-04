@@ -67,9 +67,11 @@ class NormaliseKrakenFutures():
             if qty == 0:
                 lob_action = 3  # Remove level
                 if side == "buy":
-                    self.ACTIVE_BID_LEVELS.remove(price)
+                    if price in self.ACTIVE_BID_LEVELS:
+                        self.ACTIVE_BID_LEVELS.remove(price)
                 else:
-                    self.ACTIVE_ASK_LEVELS.remove(price)
+                    if price in self.ACTIVE_ASK_LEVELS:
+                        self.ACTIVE_ASK_LEVELS.remove(price)
             elif price in self.ACTIVE_BID_LEVELS or price in self.ACTIVE_ASK_LEVELS:
                 lob_action = 4  # Update level
             else:

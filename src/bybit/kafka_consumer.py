@@ -16,11 +16,11 @@ class ExchangeDataConsumer():
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([f"test-bybit-raw"])
+        self.consumer.subscribe(["test-bybit-raw"])
         print(f"Subscribed to topic test-bybit-raw")
 
     def consume(self):
-        msg = self.consumer.poll(10)
+        msg = self.consumer.poll(2)
         if msg is None: 
             print(msg)
             print("no message")
