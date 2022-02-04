@@ -30,10 +30,10 @@ def start_normaliser(exchange: str, symbol: str):
 
     while True:
         try:
-            normaliser.dump()  # Print tables
+            #normaliser.dump()  # Print tables
             time.sleep(1/60)
         except KeyboardInterrupt:
-            normaliser.consumer.close()
+            break
 
 
 processes = []

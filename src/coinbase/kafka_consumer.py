@@ -5,14 +5,22 @@ from queue import Queue
 class ExchangeDataConsumer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'group.id': 'mygroup', 'client.id': 'kafka-coinbase-consumer'}
+        self.conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'group.id': 'coinbase-test-group',
+            'auto.offset.reset': 'earliest'
+        }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([self.topic])
+        self.consumer.subscribe(["test-coinbase-raw"])
+        print("Subscribed to topic test-coinbase-raw")
 
     def consume(self):
-        msg = self.consumer.poll(1.0)
+        msg = self.consumer.poll()
         if msg is None: 
-            print(msg)
             print("no message")
             return
 
