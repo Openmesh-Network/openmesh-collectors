@@ -40,3 +40,14 @@ class KrakenWsManagerFactory():
 
         ws_manager = WebsocketManager(url, subscribe, unsubscribe)
         return ws_manager
+
+def main():
+    ws = KrakenWsManagerFactory().get_ws_manager("XBT/USD")
+    while True:
+        try:
+            1+1
+        except KeyboardInterrupt:
+            break
+
+if __name__ == "__main__":
+    main()

@@ -7,13 +7,14 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
+import json
 
 from binance_ws_manager import BinanceWebsocketManager
 from binance_normalisation import NormaliseBinance
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
-
+from kafka_consumer import ExchangeDataConsumer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -21,11 +22,11 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
-        self.ws_manager = BinanceWebsocketManager(symbol)
 
         # Retrieve correct normalisation function
         self.normalise = NormaliseBinance().normalise
 
+        self.consumer = ExchangeDataConsumer(symbol)
 
         # Initialise tables
         self.lob_table = LobTable()
@@ -39,9 +40,6 @@ class Normaliser():
         self.lob_table_lock = Lock()
         self.metric_lock = Lock()
         self.lob_lock = Lock()
-
-        self.ws_manager.snapshot_received.wait()
-        self.put_entry(self.ws_manager.snapshot)
 
         # Start normalising the data
         self.normalise_thr = Thread(
@@ -75,9 +73,8 @@ class Normaliser():
         self.lob_table_lock.acquire()
         self.lob_lock.acquire()
         for event in lob_events:
-            if len(event) == 22:
-                self.lob_table.put_dict(event)
-                self.order_book_manager.handle_event(event)
+            self.lob_table.put_dict(event)
+            self.order_book_manager.handle_event(event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
@@ -105,10 +102,9 @@ class Normaliser():
         return
 
     def _dump(self):
-        # self._dump_lob_table()
+        self._dump_lob_table()
         self._dump_market_orders()
-        # self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_lob()
         self._dump_metrics()
         return
 
@@ -147,8 +143,10 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
-            self.put_entry(data)
+            data = self.consumer.consume()
+            if data:
+                #print(f"Normalising {data}")
+                self.put_entry(json.loads(data))
 
     def _metric_threads(self):
         while True:
@@ -157,7 +155,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("cls")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

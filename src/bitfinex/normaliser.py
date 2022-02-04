@@ -7,6 +7,7 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
+import json
 
 from bitfinex_ws_manager import BitfinexWebsocketManager
 from kafka_consumer import ExchangeDataConsumer
@@ -148,8 +149,9 @@ class Normaliser():
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.consumer.consume()
-            print(data)
-            self.put_entry(data)
+            if data:
+                data = json.loads(data)
+                self.put_entry(data)
 
     def _metric_threads(self):
         while True:

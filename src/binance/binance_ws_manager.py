@@ -1,6 +1,8 @@
+import sys
 from threading import Thread, Lock, Event
 from queue import Queue
 from websocket import WebSocketApp
+from confluent_kafka import Producer
 
 import json
 import time
@@ -19,14 +21,31 @@ class BinanceWebsocketManager():
         WebsocketManager (see KrakenWsManagerFactory in ws_factories.py for an example).
         """
         self.connect_lock = Lock()
-        self.ws = None
         self.queue = Queue()
+        self.ws = None
         self.url = "wss://stream.binance.com:9443/ws"
         self.snapshot_url = "https://api.binance.com/api/v3/depth"
         self.symbol = symbol
         self.snapshot_received = Event()
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
         self.get_snapshot()
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {}"
+                  .format(msg.topic(), msg.partition(), msg.offset()))
 
     def get_msg(self):
         """
@@ -43,15 +62,20 @@ class BinanceWebsocketManager():
                             params = dict(symbol=self.symbol.upper(), limit=5000)
                         ).json()
         self.snapshot["receive_timestamp"] = int(time.time()*10**3)
-        self.snapshot_received.set()
+        self.producer.produce(f"test-binance-raw", key="%s:%s" % ("Binance", self.url), value=json.dumps(self.snapshot), on_delivery=self._acked)
+        self.producer.poll(0)
 
     def _on_message(self, ws, message):
         message = json.loads(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
-        else:
-            raise TypeError(f"unrecognised message type {type(message)}")
-        self.queue.put(message)
+            try:
+                symbol = self.symbol
+                if self.producer:
+                    self.producer.produce(f"test-binance-raw", key="%s:%s" % ("Binance", self.url), value=json.dumps(message), on_delivery=self._acked)
+                    self.producer.poll(0)
+            except:
+                pass
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -167,3 +191,15 @@ class BinanceWebsocketManager():
     def reconnect(self) -> None:
         if self.ws is not None:
             self._reconnect(self.ws)
+
+def main():
+    ws = BinanceWebsocketManager("BTCUSDT")
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print("Quitting...")
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()

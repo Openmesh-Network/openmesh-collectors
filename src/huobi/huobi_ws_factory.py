@@ -35,5 +35,16 @@ class HuobiWsManagerFactory():
             ws_manager.send_json(request)
             
         trades_ws_manager = WebsocketManager(trades_url, subscribe_trades,unsubscribe_trades)
-        book_ws_manager = WebsocketManager(book_url, subscribe_book, subscribe_trades)
+        book_ws_manager = WebsocketManager(book_url, subscribe_book, unsubscribe_book)
         return book_ws_manager, trades_ws_manager
+
+def main():
+    ws = HuobiWsManagerFactory().get_ws_manager("btcusdt")
+    while True:
+        try:
+            pass
+        except KeyboardInterrupt:
+            break
+
+if __name__ == "__main__":
+    main()

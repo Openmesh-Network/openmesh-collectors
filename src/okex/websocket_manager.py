@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Callable
 from gzip import decompress
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -25,6 +25,23 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {}"
+                  .format(msg.topic(), msg.partition(), msg.offset()))
 
     def get_msg(self):
         """
@@ -36,18 +53,14 @@ class WebsocketManager():
         return self.queue.get()
 
     def _on_message(self, ws, message):
-        if isinstance(message, bytes) and "huobi" in self.url:
-            message = json.loads(decompress(message))
-        else:
-            message = json.loads(message)
-        
+        message = json.loads(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
-        elif isinstance(message, list):
-            message.append(int(time.time()*10**3))
-        else:
-            raise ValueError(f"message from {self.url} is of type {type(message)}")
-        self.queue.put(message)
+            try:
+                self.producer.produce(f"test-okex-raw", value=json.dumps(message), on_delivery=self._acked)
+                self.producer.poll(0)
+            except Exception as e:
+                print("An error occurred while producing: %s" % e)
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -129,7 +142,7 @@ class WebsocketManager():
         self.unsubscribe()
         self.subscribe()
 
-    def _on_close(self, ws):
+    def _on_close(self, ws, a, b):
         print("Connection Closed")
         self.unsubscribe(self)
         self._reconnect(ws)

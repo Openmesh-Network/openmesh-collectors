@@ -5,14 +5,25 @@ from queue import Queue
 class ExchangeDataConsumer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'group.id': 'mygroup', 'client.id': 'kafka-bitfinex-consumer'}
+        self.conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-consumer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'group.id': 'jay-test-group',
+            'auto.offset.reset': 'earliest'
+        }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([self.topic])
+        self.consumer.subscribe([f"test-bitfinex-raw"])
+        print(f"Subscribed to topic test-bitfinex-raw")
 
     def consume(self):
-        msg = self.consumer.poll(1.0)
+        msg = self.consumer.poll()
         if msg is None: 
-            print("no message from topic: %s" % self.topic)
+            print(msg)
+            print("no message")
             return
 
         if msg.error():
@@ -31,7 +42,7 @@ def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
     consumer = Consumer(conf)
 
-    consumer.subscribe(["tBTCUSD"])
+    consumer.subscribe(["BTC-USD"])
 
 
 if __name__ == "__main__":

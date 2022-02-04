@@ -48,7 +48,7 @@ class NormaliseBinance():
                     self._handle_lob_event(data, lob_events, ask, 2, lob_action)
                 self.caught_up = True
                 self.last_u = u
-            elif U == self.last_u + 1:
+            elif self.last_u and U == self.last_u + 1:
                 for bid in data["b"]:
                     lob_action = self._get_lob_action(bid)
                     if lob_action == 1:
@@ -73,6 +73,7 @@ class NormaliseBinance():
             "market_orders": market_orders
         }
 
+        #print("Normalisation complete")
         return normalised
     
     def _handle_lob_event(self, data, lob_events, order, side, lob_action, snapshot=False):

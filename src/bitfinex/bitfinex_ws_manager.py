@@ -18,8 +18,6 @@ class BitfinexWebsocketManager():
         both subscribe and unsubscribe MUST have one argument, which is an instance of 
         WebsocketManager (see KrakenWsManagerFactory in ws_factories.py for an example).
         """
-        conf = {'bootstrap.servers': 'localhost:19092,localhost:29092,localhost:39092', 'client.id': 'kafka-python-producer'}
-        self.producer = Producer(conf)
         self.connect_lock = Lock()
         self.ws = None
         self.temp_queue = Queue()
@@ -29,6 +27,23 @@ class BitfinexWebsocketManager():
         self.subscribed = Event()
         self.subscribed.clear()
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {} with key {}"
+                  .format(msg.topic(), msg.partition(), msg.offset(), msg.key()))
 
     def get_msg(self):
         """
@@ -41,7 +56,7 @@ class BitfinexWebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
-        #print(message)
+        print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
         elif isinstance(message, list):
@@ -53,8 +68,8 @@ class BitfinexWebsocketManager():
                     #self.producer.send("quickstart", message)
                     #self.producer.produce('BTC-USD', message)
                     #print(message)
-                    self.producer.produce(symbol, key="%s:%s" % ("Bitfinex", self.url), value=json.dumps(message))
-                    print(f"Produced {symbol}")
+                    self.producer.produce(f"test-bitfinex-raw", key="%s:%s" % ("Bitfinex", self.url), value=json.dumps(message), on_delivery=self._acked)
+                    self.producer.poll(0)
                 except Exception as e:
                     print("Error producing message: %s" % e)
         else:
@@ -146,7 +161,7 @@ class BitfinexWebsocketManager():
             "channel": "book",
             "symbol": self.symbol,
             "prec": "R0",
-            "len": "250"
+            "len": "250",
         }
         self.send_json(request)
 
