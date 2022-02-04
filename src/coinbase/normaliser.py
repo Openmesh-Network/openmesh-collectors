@@ -11,6 +11,7 @@ import requests
 import json
 from coinbase_ws_factory import CoinbaseWsManagerFactory
 from kafka_consumer import ExchangeDataConsumer
+from normalised_producer import NormalisedDataProducer
 from coinbase_normalisation import NormaliseCoinbase
 from table import LobTable, MarketOrdersTable
 from order_book import L3OrderBookManager
@@ -22,10 +23,12 @@ class Normaliser():
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.url = "wss://ws-feed.pro.coinbase.com"
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.replace('-', '')}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseCoinbase().normalise
 
@@ -86,11 +89,14 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                #self.producer.produce("%s:%s:LOB" % ("Coinbase", self.url), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
+            print(order)
             self.market_orders_table.put_dict(order)
+            self.producer.produce("%s:%s:TRADES" % ("Coinbase", self.url), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -114,8 +120,8 @@ class Normaliser():
     def _dump(self):
         """Modify to change the output format."""
         #self._dump_lob_table()
-        #self._dump_market_orders()
-        #self._dump_lob()
+        self._dump_market_orders()
+        self._dump_lob()
         #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
