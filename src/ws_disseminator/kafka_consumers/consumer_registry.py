@@ -1,5 +1,9 @@
 import asyncio
 from .bybit_ws import BybitWebsocket
+from .ftx_ws import FtxWebsocket
+from .kraken_ws import KrakenWebsocket
+from .async_wrapper import AsyncConsumer
+from .okex_consumer import OkexConsumer 
 
 
 class ConsumerRegistry():
@@ -15,4 +19,6 @@ class ConsumerRegistry():
 
     def _register(self):
         self.registry["bybit"] = BybitWebsocket()
-        # self.registry["bybit"] = BybitWsManagerFactory.get_ws_manager("bybit")
+        self.registry["ftx"] = FtxWebsocket()
+        self.registry["kraken"] = KrakenWebsocket()
+        # self.registry["okex"] = AsyncConsumer(OkexConsumer("BTCUSDT"))

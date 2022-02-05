@@ -21,6 +21,7 @@ import time
 import ssl
 import gzip
 import zlib
+import json
 from urllib.parse import urlparse
 
 import websocket
@@ -123,6 +124,31 @@ class NonInteractive(RawInput):
     def read(self):
         return self.raw_input("")
 
+supported_exchanges = ["bybit", "ftx", "kraken", "okex"]
+
+def parse_input(msg):
+    if len(msg) == 0 or msg[:1] != b'/':
+        return msg
+
+    args = msg.decode('utf-8')[1:].strip().split()
+    if len(args) == 1:
+        command = args[0]
+        if command == "exit":
+            return
+    elif len(args) == 2:
+        print(args)
+        if args[0] == "sub":
+            if args[1] not in supported_exchanges:
+                print(f"topic {args[1]} is not supported.")
+                return
+            x = json.dumps({"op": "subscribe", "topic": args[1]}).encode('utf-8')
+            return x
+        elif args[0] == "unsub":
+            if args[1] not in supported_exchanges:
+                print(f"topic {args[1]} is not supported.")
+                return
+            return json.dumps({"op": "unsubscribe", "topic": args[1]}).encode('utf-8')
+
 
 def main():
     start_time = time.time()
@@ -207,13 +233,17 @@ def main():
     thread.start()
 
     if args.text:
-        ws.send(args.text)
+        args.text = parse_input(args.text)
+        if args.text:
+            ws.send(args.text)
 
     while True:
         try:
             message = console.read()
-            ws.send(message)
-            if message == b"exit":
+            message = parse_input(message)
+            if message:
+                ws.send(message)
+            if message == b"/exit":
                 break
         except KeyboardInterrupt:
             ws.close()

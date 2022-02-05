@@ -1,33 +1,40 @@
 import websockets
 import asyncio
 import json
-import aioconsole
 
 
-class BybitWebsocket():
+class KrakenWebsocket():
     def __init__(self):
         self.msg_queue = asyncio.Queue()
-        self.url = 'wss://stream.bybit.com/realtime'
+        self.url = 'wss://ws.kraken.com'
     
     def __repr__(self):
-        return f"<BybitWebsocket: url={self.url}>"
+        return f"<KrakenWebsocket: url={self.url}>"
     
     def get_ws(self):
         return self.ws
 
-    def get_sub_msg(self):
-        symbol = "BTCUSD"
+    def get_sub_msg(ws_manager):
+        symbol = "XBT/USD"
         request = {
-            "op": "subscribe",
-            "args": ["orderBookL2_25." + symbol, "trade." + symbol]
+            "event": "subscribe",
+            "pair": [symbol],
+            "subscription": {
+                "name": "book",
+                "depth": 1000
+            }
         }
         return json.dumps(request).encode('utf-8')
 
-    def get_unsub_msg(self):
-        symbol = "BTCUSD"
+    def get_unsub_msg(ws_manager):
+        symbol = "XBT/USD"
         request = {
-            "op": "unsubscribe",
-            "args": ["orderBookL2_25." + symbol, "trade." + symbol]
+            "event": "unsubscribe",
+            "pair": [symbol],
+            "subscription": {
+                "name": "book",
+                "depth": 1000
+            }
         }
         return json.dumps(request).encode('utf-8')
     
@@ -58,5 +65,5 @@ class BybitWebsocket():
             await self.msg_queue.put(msg)
 
 if __name__ == "__main__":
-    ws = BybitWebsocket()
+    ws = KrakenWebsocket()
     asyncio.run(ws.start_ws())
