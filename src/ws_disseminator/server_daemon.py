@@ -38,7 +38,7 @@ async def stop_server():
 
 async def debug():
     while True:
-        relay.debug()
+        await relay.debug()
         await asyncio.sleep(1)
 
 def _read_config():

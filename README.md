@@ -22,6 +22,6 @@ Enter the folder of the desired exchange, and first run the relevant websocket s
 ### Websocket Dissemination
 Currently still in development. Configure `config.ini` in the root directory to set the address and port of the server, then run `python server.py` to start the server. To start a client, run the command `python client.py ws://<host>:<port>/` in a separate terminal instance. The server supports multiple clients connecting.
 
-After connecting, the client will start accepting console input. To subscribe to the data feed (currently hard coded to pipe ByBit websocket data), type `sub` into the console input and press enter. To unsubscribe, console input `dc` on the client. To disconnect and exit, console input `exit`. You may subscribe and unsubscribe as many times as you wish. 
+After connecting, the client will start accepting console input. To subscribe to a data feed, type `/sub <exchange>` into the console input and press enter. To unsubscribe, console input `/unsub <exchange>` on the client. To disconnect and exit, console input `/exit`. You may subscribe and unsubscribe as many times as you wish. Currently supports `bybit`, `ftx`, and `kraken`. `okex` is the test integration with the Aiven Kafka cluster, still need to learn how to set it up.
 
 The server will dump its state onto the terminal once every second.

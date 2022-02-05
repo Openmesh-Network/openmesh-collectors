@@ -1,6 +1,7 @@
 import asyncio
+import json
 
-from . import relay
+from . import relay, parse_message
 
 client_id = 0
 
@@ -9,9 +10,13 @@ class ClientHandler():
         self.id = client_id
         self.ws = ws 
         self.subscriptions = set()
+        self.lock = asyncio.Lock()
     
     def __repr__(self):
         return f"<ClientHandler: id={self.id}>"
+    
+    def get_id(self):
+        return self.id
     
     def get_subs(self):
         return self.subscriptions
@@ -28,12 +33,12 @@ class ClientHandler():
     async def shutdown(self):
         for sub in self.subscriptions:
             await relay.unsubscribe(sub, self)
-
-    def is_subscribe(self, msg: str):
-        return "sub" in msg
-
-    def is_unsubscribe(self, msg: str):
-        return "dc" in msg
+    
+    async def lock(self):
+        await self.lock.acquire()
+    
+    def unlock(self):
+        self.lock.release()
 
 async def handle_ws(ws):
     global client_id
@@ -61,20 +66,19 @@ async def _listen(client):
     ws = client.get_ws()
     print("Client Connected")
     async for message in ws:
-        if client.is_subscribe(message):
-            # Currently hard coded while I identify race conditions within the relay
-            message = {'topic': 'bybit'}
-            if message['topic'] in client.get_subs():
-                print(f"client_{client.id} already subscribed to {message['topic']}")
+        if parse_message.is_subscribe(message):
+            topic = json.loads(message)['topic']
+            if topic in client.get_subs():
+                print(f"client_{client.id} already subscribed to {topic}")
                 continue
-            await relay.subscribe(message['topic'], client)
-            client.add_sub(message['topic'])
-        elif client.is_unsubscribe(message):
-            message = {'topic': 'bybit'}
-            if message['topic'] not in client.get_subs():
-                print(f"client_{client_id} not subscribed to {message['topic']}")
+            await relay.subscribe(topic, client)
+            client.add_sub(topic)
+        elif parse_message.is_unsubscribe(message):
+            topic = json.loads(message)['topic']
+            if topic not in client.get_subs():
+                print(f"client_{client_id} not subscribed to {topic}")
                 continue
-            await relay.unsubscribe(message['topic'], client)
-            client.remove_sub(message['topic'])
+            await relay.unsubscribe(topic, client)
+            client.remove_sub(topic)
         else:
             print(f"client_{client.id}: {message}")

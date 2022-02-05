@@ -1,34 +1,33 @@
 import websockets
 import asyncio
 import json
-import aioconsole
 
 
-class BybitWebsocket():
+class FtxWebsocket():
     def __init__(self):
         self.msg_queue = asyncio.Queue()
-        self.url = 'wss://stream.bybit.com/realtime'
+        self.url = 'wss://ftx.com/ws/'
     
     def __repr__(self):
-        return f"<BybitWebsocket: url={self.url}>"
+        return f"<FtxWebsocket: url={self.url}>"
     
     def get_ws(self):
         return self.ws
 
     def get_sub_msg(self):
-        symbol = "BTCUSD"
-        request = {
-            "op": "subscribe",
-            "args": ["orderBookL2_25." + symbol, "trade." + symbol]
+        symbol = "BTC/USD"
+        request = {'op': 'subscribe', 
+        'channel': 'orderbook', 
+        'market': symbol
         }
         return json.dumps(request).encode('utf-8')
 
     def get_unsub_msg(self):
-        symbol = "BTCUSD"
-        request = {
-            "op": "unsubscribe",
-            "args": ["orderBookL2_25." + symbol, "trade." + symbol]
-        }
+        symbol = "BTC/USD"
+        request = {'op': 'unsubscribe', 
+            'channel': 'orderbook', 
+            'market': symbol
+            }
         return json.dumps(request).encode('utf-8')
     
     async def shutdown(self):
@@ -58,5 +57,5 @@ class BybitWebsocket():
             await self.msg_queue.put(msg)
 
 if __name__ == "__main__":
-    ws = BybitWebsocket()
+    ws = FtxWebsocket()
     asyncio.run(ws.start_ws())
