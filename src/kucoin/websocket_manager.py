@@ -54,6 +54,7 @@ class WebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
+        #print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
