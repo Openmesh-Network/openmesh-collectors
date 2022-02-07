@@ -11,6 +11,7 @@ class ClientHandler():
         self.ws = ws 
         self.subscriptions = set()
         self.lock = asyncio.Lock()
+        self.closed = False
     
     def __repr__(self):
         return f"<ClientHandler: id={self.id}>"
@@ -31,8 +32,11 @@ class ClientHandler():
         return self.ws
     
     async def shutdown(self):
+        self.closed = True
         for sub in self.subscriptions:
             await relay.unsubscribe(sub, self)
+        await self.ws.close()
+        print(f"client_{self.id} Shutdown")
     
     async def lock(self):
         await self.lock.acquire()
@@ -56,8 +60,8 @@ async def handle_ws(ws):
     except Exception as e:
         print(e)
     finally:
-        await client.shutdown()
-        print(f"client_{client.id} Shutdown")
+        if not client.closed:
+            await client.shutdown()
 
 async def _poll(client):
     await client.get_ws().wait_closed()

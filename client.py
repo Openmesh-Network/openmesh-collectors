@@ -124,7 +124,20 @@ class NonInteractive(RawInput):
     def read(self):
         return self.raw_input("")
 
-supported_exchanges = ["bybit", "ftx", "kraken", "okex"]
+supported_exchanges = [
+    "bybit", 
+    "ftx", 
+    "kraken", 
+    "binance", 
+    "bitfinex", 
+    "okex", 
+    "kucoin", 
+    "kraken-futures", 
+    "phemex", 
+    "coinbase",
+    "BTCUSD",
+    "BTCUSDT"
+]
 
 def parse_input(msg):
     if len(msg) == 0 or msg[:1] != b'/':
@@ -255,4 +268,7 @@ def main():
     ws.close()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except websocket._exceptions.WebsocketConnectionClosedException:
+        print("websocket closed, exiting client...")

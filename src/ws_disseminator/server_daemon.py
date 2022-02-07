@@ -20,8 +20,13 @@ async def start_server(arg_port=None):
     debug_task = asyncio.create_task(debug())
     done, pending = await asyncio.wait(
         [server_task, stop_task, debug_task],
+        # [server_task, stop_task],
         return_when = asyncio.FIRST_COMPLETED
     )
+    await shutdown(pending)
+
+async def shutdown(pending):
+    await relay.shutdown()
     for task in pending:
         task.cancel()
 
@@ -33,12 +38,11 @@ async def run_server(address, port):
 async def stop_server():
     print("Press Enter to exit")
     await aioconsole.ainput()
-    await relay.shutdown()
-    print("Relay Shutdown")
+    print("Exiting...")
 
 async def debug():
     while True:
-        await relay.debug()
+        relay.debug()
         await asyncio.sleep(1)
 
 def _read_config():

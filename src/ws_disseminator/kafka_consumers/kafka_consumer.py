@@ -1,29 +1,35 @@
-from confluent_kafka import Consumer, KafkaError, KafkaException
+from confluent_kafka import Consumer, KafkaError, KafkaException 
 import sys
-from queue import Queue
 
-class OkexConsumer():
+class KafkaConsumer():
     def __init__(self, topic):
-        self.topic = topic
+        suffix = ""
+        if topic not in ("BTCUSDT", "BTCUSD"):
+            suffix = "-raw"
+        self.topic = "test-" + topic + suffix
         self.conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
             'client.id': 'kafka-python-consumer',
-            'ssl.certificate.location': '../../jay.cert',
-            'ssl.key.location': '../../jay.key',
-            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'ssl.certificate.location': 'jay.cert',
+            'ssl.key.location': 'jay.key',
+            'ssl.ca.location': 'ca-aiven-cert.pem',
             'group.id': 'jay-test-group',
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([f"test-okex-raw"])
-        print(f"Subscribed to topic test-okex-raw")
-
+        self.consumer.subscribe([self.topic])
+    
     def consume(self):
-        msg = self.consumer.poll()
+        try:
+            return self._consume()
+        except RuntimeError as e:
+            print(e)
+            # print("kafka consumer closed")
+
+    def _consume(self):
+        msg = self.consumer.poll(timeout=0.1)
         if msg is None: 
-            print(msg)
-            print("no message")
             return
 
         if msg.error():
@@ -32,15 +38,19 @@ class OkexConsumer():
                                 (msg.topic(), msg.partition(), msg.offset()))
             elif msg.error():
                 raise KafkaException(msg.error())
-        
         else:
             return msg.value()
+    
+    def shutdown(self):
+        self.consumer.close()
+
 
 def main():
-    conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
-    consumer = Consumer(conf)
-
-    consumer.subscribe(["BTC-USD"])
+    consumer = KafkaConsumer("bybit")
+    while True:
+        msg = consumer.consume()
+        if msg:
+            print(msg)
 
 
 if __name__ == "__main__":
