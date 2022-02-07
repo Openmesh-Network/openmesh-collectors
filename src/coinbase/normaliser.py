@@ -16,7 +16,7 @@ from coinbase_normalisation import NormaliseCoinbase
 from table import LobTable, MarketOrdersTable
 from order_book import L3OrderBookManager
 from metrics import Metric
-
+import time
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -64,7 +64,7 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
-        self.normalise(self.get_snapshot())
+        self.put_entry(self.get_snapshot())
 
     def get_snapshot(self):
         data = requests.get(f'https://api.exchange.coinbase.com/products/{self.symbol}/book?level=3')
@@ -79,7 +79,10 @@ class Normaliser():
         """
         if not data:
             return
-        data = self.normalise(json.loads(data))
+        if isinstance(data, dict):
+            data = self.normalise(data)
+        else:
+            data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -89,14 +92,15 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
-                #self.producer.produce("%s:%s:LOB" % ("Coinbase", self.url), event)
+                self.producer.produce("%s/%s/LOB" % ("Coinbase", self.url), event)
+                time.sleep(0.001)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             print(order)
             self.market_orders_table.put_dict(order)
-            self.producer.produce("%s:%s:TRADES" % ("Coinbase", self.url), order)
+            self.producer.produce("%s/%s/TRADES" % ("Coinbase", self.url), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

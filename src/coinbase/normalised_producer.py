@@ -26,6 +26,7 @@ class NormalisedDataProducer():
 
     def produce(self, key, msg):
         self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+        self.producer.poll(0)
 
 def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
