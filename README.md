@@ -29,4 +29,4 @@ The server will dump its state onto the terminal once every second.
 Supported topics (topics are case sensitive):
 - `BTCUSD`
 - `BTCUSDT`
-- `<exchange>` where `exchange` is any topic is a Kafka topic with the name `test-<exchange>-raw`
+- `<exchange>` where `exchange` is any Kafka topic with the name `test-<exchange>-raw`
