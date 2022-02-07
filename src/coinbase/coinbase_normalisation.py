@@ -25,7 +25,8 @@ class NormaliseCoinbase():
         # If the message is not a trade or a book update, ignore it. This can be seen by if the 'type' of the response is 'subscriptions'.
 
         if "type" in data and data['type'] == 'match':
-            print("Trade occurred!!!")
+            #print("Trade occurred!!!")
+            pass
 
         if 'asks' in data:
             #print(json.dumps(data, indent=4))
@@ -146,7 +147,7 @@ class NormaliseCoinbase():
             side = 1 if data['side'] == 'buy' else 2
             order_id = data['maker_order_id']
 
-            print(data)
+            #print(data)
 
             market_orders.append(self.util.create_market_order(
                     order_id = order_id,
