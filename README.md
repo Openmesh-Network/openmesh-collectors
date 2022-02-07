@@ -20,8 +20,13 @@ Data is transferred from the exchange websockets to a local kafka cluster, with 
 Enter the folder of the desired exchange, and first run the relevant websocket script to begin collecting data from the exchange websocket and begin sending the data down the kafka pipeline. Afterwards, run `main.py` to begin the data normalisation for that given exchange. Modify the `_dump` function in `normaliser.py` to change the output format.
 
 ### Websocket Dissemination
-Currently still in development. Configure `config.ini` in the root directory to set the address and port of the server, then run `python server.py` to start the server. To start a client, run the command `python client.py ws://<host>:<port>/` in a separate terminal instance. The server supports multiple clients connecting.
+Currently still in development. Configure `config.ini` in the root directory to set the address and port of the server, then run `python server.py` to start the server. To start a client, run the command `python client.py ws://<host>:<port>/` in a separate terminal instance. The server supports multiple clients connecting. To terminate the server, hit the Enter key.
 
-After connecting, the client will start accepting console input. To subscribe to a data feed, type `/sub <exchange>` into the console input and press enter. To unsubscribe, console input `/unsub <exchange>` on the client. To disconnect and exit, console input `/exit`. You may subscribe and unsubscribe as many times as you wish. Currently supports `bybit`, `ftx`, and `kraken`. `okex` is the test integration with the Aiven Kafka cluster, still need to learn how to set it up.
+After connecting, the client will start accepting console input. To subscribe to a data feed, type `/sub <topic>` into the console input and press enter. To unsubscribe, console input `/unsub <topic>` on the client. To disconnect and exit, console input `/exit` (Ctrl-C if that doesn't work). You may subscribe and unsubscribe as many times as you wish. 
 
 The server will dump its state onto the terminal once every second.
+
+Supported topics (topics are case sensitive):
+- `BTCUSD`
+- `BTCUSDT`
+- `<exchange>` where `exchange` is any topic is a Kafka topic with the name `test-<exchange>-raw`

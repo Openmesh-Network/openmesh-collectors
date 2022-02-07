@@ -121,9 +121,9 @@ venv.bak/
 /site
 
 # security
-jay.cert
-jay.key
-ca-aiven-cert.pem
+*.cert
+*.key
+*.pem
 
 # Kucoin API
 src/kucoin/.env
