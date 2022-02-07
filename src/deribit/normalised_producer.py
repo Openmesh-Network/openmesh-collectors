@@ -1,4 +1,3 @@
-import time
 from confluent_kafka import Producer, KafkaError, KafkaException
 import sys
 from queue import Queue
@@ -13,7 +12,7 @@ class NormalisedDataProducer():
             'ssl.certificate.location': '../../jay.cert',
             'ssl.key.location': '../../jay.key',
             'ssl.ca.location': '../../ca-aiven-cert.pem',
-            'client.id': 'kucoin-normalised-producer',
+            'client.id': 'deribit-normalised-producer',
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)
@@ -26,11 +25,15 @@ class NormalisedDataProducer():
                   (msg.topic(), msg.partition(), msg.offset()))
 
     def produce(self, key, msg):
-        try:
-            self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
-            self.producer.poll(0)
-        except:
-            print("Queue is full; waiting")
-            self.producer.poll(0)
-            time.sleep(0.5)
-            self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+        self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+        self.producer.poll(0)
+
+def main():
+    conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}
+    consumer = Producer(conf)
+
+    consumer.subscribe(["BTC-USD"])
+
+
+if __name__ == "__main__":
+    main()
