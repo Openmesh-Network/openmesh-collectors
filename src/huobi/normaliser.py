@@ -15,7 +15,7 @@ from huobi_normalisation import NormaliseHuobi
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
-
+from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -26,6 +26,7 @@ class Normaliser():
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.upper()}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseHuobi().normalise
 
@@ -80,11 +81,13 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Huobi", "wss://api-aws.huobi.pro/feed"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Huobi", "wss://api-aws.huobi.pro/ws"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

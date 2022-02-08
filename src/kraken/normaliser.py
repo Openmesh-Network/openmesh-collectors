@@ -14,7 +14,7 @@ from kraken_normalisation import NormaliseKraken
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
-
+from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -25,6 +25,7 @@ class Normaliser():
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.replace('/', '')}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseKraken().normalise
 
@@ -79,11 +80,13 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Kraken", 'wss://ws.kraken.com'), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Kraken", 'wss://ws.kraken.com'), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

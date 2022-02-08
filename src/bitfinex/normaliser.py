@@ -15,6 +15,7 @@ from bitfinex_normalisation import NormaliseBitfinex
 from table import LobTable, MarketOrdersTable
 from l3_order_book import L3OrderBookManager
 from metrics import Metric
+from normalised_producer import NormalisedDataProducer
 
 
 class Normaliser():
@@ -27,7 +28,7 @@ class Normaliser():
         # self.ws_manager.subscribed.wait()
 
         self.consumer = ExchangeDataConsumer(symbol[1:])
-
+        self.producer = NormalisedDataProducer(f"test-{symbol[1:]}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseBitfinex().normalise
 
@@ -80,12 +81,14 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Bitfinex", "wss://api-pub.bitfinex.com/ws/2"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             if len(order) > 0:
                 self.market_orders_table.put_dict(order)
+                self.producer.produce("%s,%s,TRADES" % ("Bitfinex", "wss://api-pub.bitfinex.com/ws/2"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

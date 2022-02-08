@@ -58,10 +58,11 @@ class NormaliseKucoin():
 
             while not self.message_queue.empty():
                 order = self.message_queue.get()
-                if order[2] > self.snapshot_received:
+                if self.snapshot_received and order[2] > self.snapshot_received:
+                    print("Order sequence is greater than snapshot sequence")
                     self._handle_lob_event(order, order[4], order[3])
-
-
+                else:
+                    print("Order discarded; order sequence\t{} is less than snapshot sequence\t{}".format(order[2], self.snapshot_received))
         # If the message is not a trade or a book update, ignore it. This can be seen by if the JSON response contains an "type" key.
         elif data['type'] == 'ack' or data['type'] == 'welcome':
             print(f"Received message {json.dumps(data)}")
@@ -72,8 +73,9 @@ class NormaliseKucoin():
             order_data = data['data']['changes']
             for ask in order_data['asks']:
                 if self.snapshot_received is None:
-                    ask[3] = 2
-                    ask[4] = data['receive_timestamp']
+                    print("Snapshot not received yet")
+                    ask.append(2)
+                    ask.append(data['receive_timestamp'])
                     self.message_queue.put(ask)
                     continue
                 if int(ask[2]) < self.snapshot_received:
@@ -116,8 +118,8 @@ class NormaliseKucoin():
             for bid in order_data['bids']:
 
                 if self.snapshot_received is None:
-                    bid[3] = 1
-                    bid[4] = data['receive_timestamp']
+                    bid.append(1)
+                    bid.append(data['receive_timestamp'])
                     self.message_queue.put(bid)
                     continue
                 if int(bid[2]) < self.snapshot_received:

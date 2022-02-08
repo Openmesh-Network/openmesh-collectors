@@ -14,7 +14,7 @@ class KucoinWsManagerFactory():
         # Subscribe to channels
         def subscribe(ws_manager):
             request = {'type': 'subscribe', 
-            'topic': f'/market/level3:{symbol}', 
+            'topic': f'/market/level2:{symbol}', 
             'id': 1545910660739,
             "privateChannel": False,
             "response": True
@@ -27,7 +27,7 @@ class KucoinWsManagerFactory():
         # Unubscribe from channels
         def unsubscribe(ws_manager):
             request = {'type': 'unsubscribe', 
-            'topic': f'/market/level3:{symbol}', 
+            'topic': f'/market/level2:{symbol}', 
             'id': 1545910660739,
             "privateChannel": False,
             "response": True

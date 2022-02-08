@@ -68,8 +68,8 @@ class Normaliser():
             daemon=True
         )
         self.metrics_thr.start()
-        self.get_snapshot()
-        self.put_entry(self.get_snapshot())
+        #self.get_snapshot()
+        #self.put_entry(self.get_snapshot())
 
     def get_snapshot(self):
         # TODO: CAN GET LEVEL 3 DATA FROM KUCOIN VIA REST API. EXPLORE FURTHER
@@ -194,7 +194,6 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            return
             data = self.consumer.consume()
             if data:
                 self.put_entry(data)
