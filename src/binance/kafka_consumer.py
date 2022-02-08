@@ -8,11 +8,11 @@ class ExchangeDataConsumer():
         self.conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
-            'client.id': 'kafka-python-consumer',
+            'client.id': 'binance-python-consumer',
             'ssl.certificate.location': '../../jay.cert',
             'ssl.key.location': '../../jay.key',
             'ssl.ca.location': '../../ca-aiven-cert.pem',
-            'group.id': 'jay-test-group',
+            'group.id': 'binance-test-group',
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
@@ -20,7 +20,7 @@ class ExchangeDataConsumer():
         print(f"Subscribed to topic test-binance-raw")
 
     def consume(self):
-        msg = self.consumer.poll(1.0)
+        msg = self.consumer.poll()
         if msg is None: 
             print(msg)
             print("no message")

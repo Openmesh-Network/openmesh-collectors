@@ -14,7 +14,7 @@ from kraken_futures_normalisation import NormaliseKrakenFutures
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
-
+from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -22,9 +22,18 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         self.symbol = symbol
+        self.futures_mapping = {
+            "PI": "PERPETUAL",
+            "PV": "PERPETUAL_VANILLA",
+            "FI": "FUTURES",
+            "FV": "FUTURES_VANILLA",
+            "IN": "INDEX",
+            "RR": "REFERENCE RATE"
+        }
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{self._parse_symbol(symbol)}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseKrakenFutures().normalise
 
@@ -60,6 +69,17 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
+    def _parse_symbol(self, symbol):
+        """
+        Parses the symbol string into standardised format.
+
+        :param symbol: Symbol to parse.
+        :return: normalised symbol string.
+        """
+        product_code, product_ticker = symbol.split("_")
+        normalised_product_code = self.futures_mapping[product_code]
+        return f"{product_ticker}-{normalised_product_code}"
+
     def put_entry(self, data: dict):
         """
         Puts data into the table.
@@ -79,11 +99,13 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Kraken", "wss://futures.kraken.com/ws/v1"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Kraken", "wss://futures.kraken.com/ws/v1"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""

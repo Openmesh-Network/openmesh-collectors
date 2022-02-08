@@ -15,6 +15,7 @@ from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
 from kafka_consumer import ExchangeDataConsumer
+from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
@@ -27,7 +28,7 @@ class Normaliser():
         self.normalise = NormaliseBinance().normalise
 
         self.consumer = ExchangeDataConsumer(symbol)
-
+        self.producer = NormalisedDataProducer(f"test-{symbol}")
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()
@@ -75,12 +76,15 @@ class Normaliser():
         for event in lob_events:
             self.lob_table.put_dict(event)
             self.order_book_manager.handle_event(event)
+            self.producer.produce("%s,%s,LOB" % ("Binance", "wss://stream.binance.com:9443/ws"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             if len(order) > 0:
                 self.market_orders_table.put_dict(order)
+                self.producer.produce("%s,%s,TRADES" % ("Binance", "wss://stream.binance.com:9443/ws"), order)
+                
 
     def get_lob_events(self):
         """Returns the lob events table."""

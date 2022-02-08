@@ -22,12 +22,6 @@ class NormaliseCoinbase():
         lob_events = []
         market_orders = []
 
-        # If the message is not a trade or a book update, ignore it. This can be seen by if the 'type' of the response is 'subscriptions'.
-
-        if "type" in data and data['type'] == 'match':
-            #print("Trade occurred!!!")
-            pass
-
         if 'asks' in data:
             #print(json.dumps(data, indent=4))
             self.snapshot_received = float(data['sequence'])
@@ -64,82 +58,12 @@ class NormaliseCoinbase():
             while not self.lob_event_queue.empty():
                 event = self.lob_event_queue.get()
                 if float(event['sequence']) >= self.snapshot_received:
-                    lob_events.append(event)
+                    self._handle_lob_event(event)
 
+        # If the message is not a trade or a book update, ignore it. This can be seen by if the 'type' of the response is 'subscriptions'.
         elif data['type'] == 'subscriptions':
             print(f"Received message {json.dumps(data)}")
             return self.NO_EVENTS
-
-        elif data['type'] == 'open':
-            order_id = data['order_id']
-            side = data['side']
-            price = float(data['price'])
-            size = float(data['remaining_size'])
-
-            self.ACTIVE_ORDER_IDS.add(order_id)
-            event = self.util.create_lob_event(
-                quote_no=self.QUOTE_NO,
-                event_no=self.EVENT_NO,
-                order_id=order_id,
-                side=1 if side == 'buy' else 2,
-                price=price,
-                size=size,
-                lob_action=2,
-                event_timestamp=data['time'],
-                receive_timestamp=data['receive_timestamp']
-            )
-            if self.snapshot_received:
-                lob_events.append(event)
-            else:
-                event['sequence'] = data['sequence']
-                self.lob_event_queue.put(event)
-
-        elif data['type'] == 'done':
-            order_id = data['order_id']
-            if order_id in self.ACTIVE_ORDER_IDS:
-                self.ACTIVE_ORDER_IDS.remove(order_id)
-            side = 1 if data['side'] == 'buy' else 2
-            #size = float(data['size'])
-            event = self.util.create_lob_event(
-                quote_no=self.QUOTE_NO,
-                event_no=self.EVENT_NO,
-                order_id=order_id,
-                side=1 if side == 'buy' else 2,
-                price=-1,
-                size=-1,
-                lob_action=3,
-                event_timestamp=data['time'],
-                receive_timestamp=data['receive_timestamp']
-            )
-            if self.snapshot_received:
-                lob_events.append(event)
-            else:
-                event['sequence'] = data['sequence']
-                self.lob_event_queue.put(event)
-
-        elif data['type'] == 'change':
-            new_size = float(data['new_size'])
-            price = float(data['price'])
-            side = 1 if data['side'] == 'buy' else 2
-            order_id = data['order_id']
-
-            event = self.util.create_lob_event(
-                quote_no=self.QUOTE_NO,
-                event_no=self.EVENT_NO,
-                order_id=order_id,
-                side=side,
-                price=price,
-                size=new_size,
-                lob_action=4,
-                event_timestamp=data['time'],
-                receive_timestamp=data['receive_timestamp']
-            )
-
-            if self.snapshot_received:
-                lob_events.append(event)
-            else:
-                event['sequence'] = data['sequence']
-                self.lob_event_queue.put(event)
         
         elif data['type'] == 'match':
             size = float(data['size'])
@@ -189,6 +113,11 @@ class NormaliseCoinbase():
 
             self.QUOTE_NO += 1
 
+        elif data['type'] in ['done', 'open', 'change']:
+            event = self._handle_lob_event(data)
+            if event:
+                lob_events.append(event)
+
         elif data['type'] == 'received':
             return self.NO_EVENTS
 
@@ -205,3 +134,66 @@ class NormaliseCoinbase():
         }
 
         return normalised
+
+    def _handle_lob_event(self, data):
+        if not self.snapshot_received:
+            self.lob_event_queue.put(data)
+            return
+
+        if data['type'] == 'open':
+            order_id = data['order_id']
+            side = data['side']
+            price = float(data['price'])
+            size = float(data['remaining_size'])
+
+            self.ACTIVE_ORDER_IDS.add(order_id)
+            event = self.util.create_lob_event(
+                quote_no=self.QUOTE_NO,
+                event_no=self.EVENT_NO,
+                order_id=order_id,
+                side=1 if side == 'buy' else 2,
+                price=price,
+                size=size,
+                lob_action=2,
+                event_timestamp=data['time'],
+                receive_timestamp=data['receive_timestamp']
+            )
+
+        elif data['type'] == 'done':
+            order_id = data['order_id']
+            if order_id in self.ACTIVE_ORDER_IDS:
+                self.ACTIVE_ORDER_IDS.remove(order_id)
+            side = 1 if data['side'] == 'buy' else 2
+            #size = float(data['size'])
+            event = self.util.create_lob_event(
+                quote_no=self.QUOTE_NO,
+                event_no=self.EVENT_NO,
+                order_id=order_id,
+                side=1 if side == 'buy' else 2,
+                price=-1,
+                size=-1,
+                lob_action=3,
+                event_timestamp=data['time'],
+                receive_timestamp=data['receive_timestamp']
+            )          
+
+        elif data['type'] == 'change':
+            new_size = float(data['new_size'])
+            price = float(data['price'])
+            side = 1 if data['side'] == 'buy' else 2
+            order_id = data['order_id']
+
+            event = self.util.create_lob_event(
+                quote_no=self.QUOTE_NO,
+                event_no=self.EVENT_NO,
+                order_id=order_id,
+                side=side,
+                price=price,
+                size=new_size,
+                lob_action=4,
+                event_timestamp=data['time'],
+                receive_timestamp=data['receive_timestamp']
+            )
+
+        if event:
+            return event

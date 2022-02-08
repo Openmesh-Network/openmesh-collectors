@@ -13,6 +13,8 @@ class HuobiWsManagerFactory():
                 'id': 'id1'
             }
             ws_manager.send_json(request)
+            request['req'] = request.pop('sub')
+            ws_manager.send_json(request)
 
         def subscribe_trades(ws_manager):
             request = {'sub': f'market.{symbol}.trade.detail', 

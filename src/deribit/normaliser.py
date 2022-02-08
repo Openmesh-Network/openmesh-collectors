@@ -28,7 +28,7 @@ class Normaliser():
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
-        self.producer = NormalisedDataProducer(f'test-{symbol.replace("-", "")}')
+        self.producer = NormalisedDataProducer(f'test-{self._parse_symbol(symbol)}')
         # Retrieve correct normalisation function
         self.normalise = NormaliseDeribit().normalise
 
@@ -63,6 +63,10 @@ class Normaliser():
             daemon=True
         )
         self.metrics_thr.start()
+
+    def _parse_symbol(self, symbol):
+        ticker, product_code = symbol.split('-')
+        return f"{ticker}USD-{product_code}"
 
     def put_entry(self, data: dict):
         """

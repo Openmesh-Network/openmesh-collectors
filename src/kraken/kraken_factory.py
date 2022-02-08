@@ -42,7 +42,7 @@ class KrakenWsManagerFactory():
         return ws_manager
 
 def main():
-    ws = KrakenWsManagerFactory().get_ws_manager("XBT/USD")
+    ws = KrakenWsManagerFactory().get_ws_manager("BTC/USD")
     while True:
         try:
             1+1

@@ -88,6 +88,7 @@ class NormaliseBitfinex():
 
     def _handle_trade(self, data, market_orders, trade):
         side = 1 if trade[2] > 0 else 2
+        print(trade)
         market_orders.append(self.util.create_market_order(
             price = trade[3],
             trade_id = trade[0],
