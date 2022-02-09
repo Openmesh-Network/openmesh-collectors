@@ -7,12 +7,15 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
+import json
 
-from bitfinex_ws_manager import BitfinexWebsocketManager 
+from bitfinex_ws_manager import BitfinexWebsocketManager
+from kafka_consumer import ExchangeDataConsumer
 from bitfinex_normalisation import NormaliseBitfinex
 from table import LobTable, MarketOrdersTable
 from l3_order_book import L3OrderBookManager
 from metrics import Metric
+from normalised_producer import NormalisedDataProducer
 
 
 class Normaliser():
@@ -21,11 +24,13 @@ class Normaliser():
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
         # Initialise WebSocket handler
-        self.ws_manager = BitfinexWebsocketManager(symbol)
-        self.ws_manager.subscribed.wait()
+        # self.ws_manager = BitfinexWebsocketManager(symbol)
+        # self.ws_manager.subscribed.wait()
 
+        self.consumer = ExchangeDataConsumer(symbol[1:])
+        self.producer = NormalisedDataProducer(f"test-{symbol[1:]}")
         # Retrieve correct normalisation function
-        self.normalise = NormaliseBitfinex(self.ws_manager.book_channel_id, self.ws_manager.trades_channel_id).normalise
+        self.normalise = NormaliseBitfinex().normalise
 
         # Initialise tables
         self.lob_table = LobTable()
@@ -77,12 +82,14 @@ class Normaliser():
                 self.order_book_manager.handle_event(event)
                 event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
                 self.lob_table.put_dict(event)
+                self.producer.produce("%s,%s,LOB" % ("Bitfinex", "wss://api-pub.bitfinex.com/ws/2"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
             if len(order) == 7:
                 self.market_orders_table.put_dict(order)
+                self.producer.produce("%s,%s,TRADES" % ("Bitfinex", "wss://api-pub.bitfinex.com/ws/2"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -107,7 +114,6 @@ class Normaliser():
         # self._dump_lob_table()
         # self._dump_market_orders()
         self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -146,8 +152,10 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
-            self.put_entry(data)
+            data = self.consumer.consume()
+            if data:
+                data = json.loads(data)
+                self.put_entry(data)
 
     def _metric_threads(self):
         while True:

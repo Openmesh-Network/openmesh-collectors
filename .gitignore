@@ -120,6 +120,17 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# security
+*.cert
+*.key
+*.pem
+
+# Kucoin API
+src/kucoin/.env
+
+# helper bash scripts
+kafka-generate-ssl.sh
+
 # mypy
 .mypy_cache/
 .dmypy.json

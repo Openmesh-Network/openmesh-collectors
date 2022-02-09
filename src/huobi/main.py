@@ -30,7 +30,7 @@ def start_normaliser(exchange: str, symbol: str):
 
     while True:
         try:
-            normaliser.dump()  # Print tables
+            #normaliser.dump()  # Print tables
             time.sleep(1/60)
         except KeyboardInterrupt:
             break
@@ -66,7 +66,7 @@ def main():
         try:
             1+1 # Do nothing
         except KeyboardInterrupt:
-            break
+            sys.exit(0)
 
 if __name__ == "__main__":
     main()

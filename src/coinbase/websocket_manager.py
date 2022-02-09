@@ -8,7 +8,7 @@ from typing import Callable
 from gzip import decompress
 from urllib import request
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -28,6 +28,23 @@ class WebsocketManager():
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'kafka-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {}"
+                  .format(msg.topic(), msg.partition(), msg.offset()))
 
     def get_msg(self):
         """
@@ -43,14 +60,18 @@ class WebsocketManager():
             message = json.loads(decompress(message))
         else:
             message = json.loads(message)
-        
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
-        elif isinstance(message, list):
-            message.append(int(time.time()*10**3))
-        else:
-            raise ValueError(f"message from {self.url} is of type {type(message)}")
-        self.queue.put(message)
+            try:
+                symbol = message["product_id"].replace("-", "")
+                #print(symbol)
+                #self.producer.send("quickstart", message)
+                #self.producer.produce('BTC-USD', message)
+                self.producer.produce("test-coinbase-raw", key="%s:%s" % ("Coinbase", self.url), value=json.dumps(message), on_delivery=self._acked)
+                #print(f"Produced {symbol}")
+                self.producer.poll(0)
+            except:
+                pass
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -73,7 +94,7 @@ class WebsocketManager():
             self.url,
             on_message=self._wrap_callback(self._on_message),
             on_close=self._wrap_callback(self._on_close),
-            on_error=self._wrap_callback(self._on_error),
+            on_error=self._wrap_callback(self._on_error)
         )
 
         wst = Thread(target=self._run_websocket, args=(self.ws,))
