@@ -28,9 +28,11 @@ def start_normaliser(exchange: str, symbol: str):
     for metric in metrics_list:
         normaliser.add_metric(metric)
 
+    #time.sleep(20)
+
     while True:
         try:
-            normaliser.dump()  # Print tables
+            #normaliser.dump()  # Print tables
             time.sleep(1/60)
         except KeyboardInterrupt:
             break
@@ -61,7 +63,7 @@ def main():
         )
         processes.append(process)
         process.start()
-    
+
     while True:
         try:
             1+1 # Do nothing

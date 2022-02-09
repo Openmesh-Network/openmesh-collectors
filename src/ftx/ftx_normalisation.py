@@ -56,6 +56,7 @@ class NormaliseFtx():
                 ))
                 self.QUOTE_NO += 1
                 self.ORDER_ID += 1
+                self.EVENT_NO += 1
             for bid in order_data['bids']:
                 price = float(bid[0])
                 size = float(bid[1])
@@ -63,7 +64,6 @@ class NormaliseFtx():
                     lob_action = 3
                     if price in self.ACTIVE_LEVELS:
                         self.ACTIVE_LEVELS.remove(price)
-                    self.QUOTE_NO += 1
                 elif price in self.ACTIVE_LEVELS:
                     lob_action = 4
                 else:
@@ -83,6 +83,7 @@ class NormaliseFtx():
                 ))
                 self.QUOTE_NO += 1
                 self.ORDER_ID += 1
+                self.EVENT_NO += 1
 
         elif "liquidation" in data['data'][0]:
             trade = data['data'][0]

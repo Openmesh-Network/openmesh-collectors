@@ -4,25 +4,36 @@ normaliser
 Mediator class which provides a wrapper for normalising data from a websocket feed.
 Instantiates the correct websocket connection with an ID.
 """
+from email.mime import base
+import hashlib
 from threading import Thread, Lock
 from time import sleep
 import os
-
+import requests
+import json
 from kucoin_ws_factory import KucoinWsManagerFactory
+from kafka_consumer import ExchangeDataConsumer
 from kucoin_normalisation import NormaliseKucoin
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
-
+from normalised_producer import NormalisedDataProducer
+from dotenv import dotenv_values
+import base64
+import hmac
+import time
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.symbol = symbol
+        self.url = "https://api.kucoin.com"
         # Initialise WebSocket handler
-        self.ws_manager = KucoinWsManagerFactory.get_ws_manager(exchange_id, symbol)
-
+        #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.replace('-', '')}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseKucoin().normalise
 
@@ -57,6 +68,35 @@ class Normaliser():
             daemon=True
         )
         self.metrics_thr.start()
+        #self.get_snapshot()
+        #self.put_entry(self.get_snapshot())
+
+    def get_snapshot(self):
+        # TODO: CAN GET LEVEL 3 DATA FROM KUCOIN VIA REST API. EXPLORE FURTHER
+        api_info = dotenv_values(".env")
+        timestamp = int(time.time() * 1000)
+        str_to_sign = str(timestamp) + "GET" + "/api/v3/market/orderbook/level2?symbol=" + self.symbol
+        signature = base64.b64encode(
+            hmac.new(api_info['API_SECRET'].encode('utf-8'), str_to_sign.encode('utf-8'), hashlib.sha256).digest()
+        )
+        passphrase = base64.b64encode(hmac.new(
+            api_info['API_SECRET'].encode('utf-8'), api_info['API_PASSPHRASE'].encode('utf-8'), hashlib.sha256).digest()
+        )
+        data = requests.get(f'{self.url}/api/v3/market/orderbook/level2?symbol={self.symbol}', headers= {
+            "KC-API-KEY": api_info["API_KEY"]   ,
+            "KC-API-PASSPHRASE": passphrase,
+            "KC-API-TIMESTAMP": str(int(time.time() * 1000)),
+            "KC-API-KEY-VERSION": "2",
+            "KC-API-SIGN": signature
+        })
+        #print(json.dumps(data.json(), indent=4), flush=True)
+        #data = requests.get(f'{self.url}/api/v3/market/orderbook/level2?symbol={self.symbol}')
+        res = data.json()
+        #print(res['data']['bids'])
+        #print(len(res['data']['bids']) + len(res['data']['asks']))
+        #time.sleep(10)
+        res['receive_timestamp'] = str(int(time.time() * 1000))
+        return res
 
     def put_entry(self, data: dict):
         """
@@ -65,7 +105,12 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        data = self.normalise(data)
+        if not data:
+            return
+        if isinstance(data, dict):
+            data = self.normalise(data)
+        else:
+            data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -75,12 +120,16 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Kucoin", self.url), event)
+                time.sleep(0.001)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) == 7:
-                self.market_orders_table.put_dict(order)
+            self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Kucoin", self.url), order)
+            time.sleep(0.001)
+
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -102,10 +151,11 @@ class Normaliser():
         return
 
     def _dump(self):
-        # self._dump_lob_table()
+        """Modify to change the output format."""
+        #self._dump_lob_table()
         self._dump_market_orders()
-        # self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_lob()
+        #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -144,8 +194,9 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
-            self.put_entry(data)
+            data = self.consumer.consume()
+            if data:
+                self.put_entry(data)
 
     def _metric_threads(self):
         while True:

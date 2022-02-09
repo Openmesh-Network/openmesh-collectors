@@ -7,12 +7,15 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
-
+import requests
+import json
 from deribit_ws_factory import DeribitWsManagerFactory
+from kafka_consumer import ExchangeDataConsumer
 from deribit_normalisation import NormaliseDeribit
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
+from normalised_producer import NormalisedDataProducer
 
 
 class Normaliser():
@@ -20,9 +23,12 @@ class Normaliser():
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.symbol = symbol
+        self.url = 'wss://www.deribit.com/ws/api/v2'
         # Initialise WebSocket handler
-        self.ws_manager = DeribitWsManagerFactory.get_ws_manager(exchange_id, symbol)
-
+        #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f'test-{self._parse_symbol(symbol)}')
         # Retrieve correct normalisation function
         self.normalise = NormaliseDeribit().normalise
 
@@ -58,6 +64,10 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
+    def _parse_symbol(self, symbol):
+        ticker, product_code = symbol.split('-')
+        return f"{ticker}USD-{product_code}"
+
     def put_entry(self, data: dict):
         """
         Puts data into the table.
@@ -65,7 +75,9 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        data = self.normalise(data)
+        if not data:
+            return
+        data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -75,12 +87,13 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Deribit", self.url), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) == 7:
-                self.market_orders_table.put_dict(order)
+            self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Deribit", self.url), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -105,8 +118,8 @@ class Normaliser():
         """Modify to change the output format."""
         #self._dump_lob_table()
         #self._dump_market_orders()
-        #self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_lob()
+        #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -145,8 +158,10 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
-            self.put_entry(data)
+            data = self.consumer.consume()
+            if data:
+                #print(data)
+                self.put_entry(data)
 
     def _metric_threads(self):
         while True:
@@ -155,7 +170,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("clear")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

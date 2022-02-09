@@ -27,3 +27,15 @@ class OkexWsManagerFactory():
 
         ws_manager = WebsocketManager(url, subscribe, unsubscribe)
         return ws_manager
+
+
+def main():
+    ws = OkexWsManagerFactory().get_ws_manager("BTC-USDT")
+    while True:
+        try:
+            1+1
+        except KeyboardInterrupt:
+            break
+
+if __name__ == "__main__":
+    main()

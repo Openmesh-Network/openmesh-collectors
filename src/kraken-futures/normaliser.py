@@ -7,22 +7,33 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
-
-from kraken_futures_factory import KrakenFuturesWsManagerFactory
-from table import LobTable, MarketOrdersTable
-from jit_order_book import OrderBookManager
+import requests
+import json
+from kafka_consumer import ExchangeDataConsumer
 from kraken_futures_normalisation import NormaliseKrakenFutures
+from table import LobTable, MarketOrdersTable
+from order_book import OrderBookManager
 from metrics import Metric
-
+from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.symbol = symbol
+        self.futures_mapping = {
+            "PI": "PERPETUAL",
+            "PV": "PERPETUAL_VANILLA",
+            "FI": "FUTURES",
+            "FV": "FUTURES_VANILLA",
+            "IN": "INDEX",
+            "RR": "REFERENCE RATE"
+        }
         # Initialise WebSocket handler
-        self.ws_manager = KrakenFuturesWsManagerFactory().get_ws_manager(symbol)
-
+        #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{self._parse_symbol(symbol)}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseKrakenFutures().normalise
 
@@ -58,6 +69,17 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
+    def _parse_symbol(self, symbol):
+        """
+        Parses the symbol string into standardised format.
+
+        :param symbol: Symbol to parse.
+        :return: normalised symbol string.
+        """
+        product_code, product_ticker = symbol.split("_")
+        normalised_product_code = self.futures_mapping[product_code]
+        return f"{product_ticker}-{normalised_product_code}"
+
     def put_entry(self, data: dict):
         """
         Puts data into the table.
@@ -65,7 +87,9 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        data = self.normalise(data)
+        if not data:
+            return
+        data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -75,14 +99,13 @@ class Normaliser():
             if len(event) == 22:
                 self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
-                # self.writer.write_lob_event(event)
+                self.producer.produce("%s,%s,LOB" % ("Kraken", "wss://futures.kraken.com/ws/v1"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            if len(order) > 0:
-                self.market_orders_table.put_dict(order)
-                # self.writer.write_market_order(order)
+            self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Kraken", "wss://futures.kraken.com/ws/v1"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -104,10 +127,11 @@ class Normaliser():
         return
 
     def _dump(self):
-        # self._dump_lob_table()
+        """Modify to change the output format."""
+        #self._dump_lob_table()
         self._dump_market_orders()
-        # self._dump_lob()
-        self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_lob()
+        #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -146,8 +170,10 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
-            self.put_entry(data)
+            data = self.consumer.consume()
+            if data:
+                print(data)
+                self.put_entry(data)
 
     def _metric_threads(self):
         while True:
@@ -156,7 +182,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("cls")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

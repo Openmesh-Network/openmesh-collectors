@@ -5,7 +5,7 @@ from queue import Queue
 from typing import Callable
 from gzip import decompress
 from websocket import WebSocketApp
-
+from confluent_kafka import Producer
 
 class BitfinexWebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -27,6 +27,23 @@ class BitfinexWebsocketManager():
         self.subscribed = Event()
         self.subscribed.clear()
         self.connect()
+        conf = {
+            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
+            'security.protocol' : 'SSL', 
+            'client.id': 'bitfinex-python-producer',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
+        }
+        self.producer = Producer(conf)
+        
+    def _acked(self, err, msg):
+        if err is not None:
+            print("Failed to deliver message: {}".format(err))
+        else:
+            #delivered_records += 1
+            print("Produced record to topic {} partition [{}] @ offset {} with key {}"
+                  .format(msg.topic(), msg.partition(), msg.offset(), msg.key()))
 
     def get_msg(self):
         """
@@ -41,15 +58,25 @@ class BitfinexWebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
+        print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
         elif isinstance(message, list):
             message.append(int(time.time()*10**3))
+            if self.subscribed.is_set():
+                try:
+                    symbol = self.symbol[1:]
+                    #print(symbol)
+                    #self.producer.send("quickstart", message)
+                    #self.producer.produce('BTC-USD', message)
+                    #print(message)
+                    self.producer.produce(f"test-bitfinex-raw", key="%s:%s" % ("Bitfinex", self.url), value=json.dumps(message), on_delivery=self._acked)
+                    self.producer.poll(0)
+                except Exception as e:
+                    print("Error producing message: %s" % e)
         else:
             raise TypeError(f"unrecognised message type {type(message)}")
-        if self.subscribed.is_set():
-            self.queue.put(message)
-        else:
+        if not self.subscribed.is_set():
             self.temp_queue.put(message)
     
     def get_q_size(self):
@@ -120,12 +147,14 @@ class BitfinexWebsocketManager():
     def connect(self):
         """Connects to the websocket"""
         if self.ws:
+            print("Already connected")
             return
         with self.connect_lock:
             while not self.ws:
                 self._connect()
                 if self.ws:
                     self.subscribe()
+                    print("Subscribed")
                     return
     
     def subscribe(self):
@@ -134,7 +163,7 @@ class BitfinexWebsocketManager():
             "channel": "book",
             "symbol": self.symbol,
             "prec": "R0",
-            "len": "250"
+            "len": "250",
         }
         self.send_json(request)
 
@@ -191,3 +220,13 @@ class BitfinexWebsocketManager():
     def reconnect(self) -> None:
         if self.ws is not None:
             self._reconnect(self.ws)
+
+def main():
+    ws = BitfinexWebsocketManager(symbol="tBTCUSD")
+    ws.connect()
+    ws.subscribed.wait()
+    while True:
+        pass
+
+if __name__ == "__main__":
+    main()

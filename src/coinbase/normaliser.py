@@ -8,23 +8,27 @@ from threading import Thread, Lock
 from time import sleep
 import os
 import requests
-
+import json
 from coinbase_ws_factory import CoinbaseWsManagerFactory
+from kafka_consumer import ExchangeDataConsumer
+from normalised_producer import NormalisedDataProducer
 from coinbase_normalisation import NormaliseCoinbase
 from table import LobTable, MarketOrdersTable
 from l3_order_book import L3OrderBookManager
 from metrics import Metric
-
+import time
 
 class Normaliser():
     METRIC_CALCULATION_FREQUENCY = 100  # Times per second
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
+        self.url = "wss://ws-feed.pro.coinbase.com"
         self.symbol = symbol
         # Initialise WebSocket handler
-        self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
-
+        #self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.replace('-', '')}")
         # Retrieve correct normalisation function
         self.normalise = NormaliseCoinbase().normalise
 
@@ -60,8 +64,7 @@ class Normaliser():
         )
         self.metrics_thr.start()
 
-        #self.normalise(self.get_snapshot())
-        self.normalise(self.get_snapshot())
+        self.put_entry(self.get_snapshot())
 
     def get_snapshot(self):
         data = requests.get(f'https://api.exchange.coinbase.com/products/{self.symbol}/book?level=3')
@@ -74,7 +77,12 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        data = self.normalise(data)
+        if not data:
+            return
+        if isinstance(data, dict):
+            data = self.normalise(data)
+        else:
+            data = self.normalise(json.loads(data))
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
@@ -85,11 +93,15 @@ class Normaliser():
                 self.order_book_manager.handle_event(event)
                 event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
                 self.lob_table.put_dict(event)
+                self.producer.produce("%s,%s,LOB" % ("Coinbase", self.url), event)
+                time.sleep(0.001)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
+            print(order)
             self.market_orders_table.put_dict(order)
+            self.producer.produce("%s,%s,TRADES" % ("Coinbase", self.url), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -112,11 +124,11 @@ class Normaliser():
 
     def _dump(self):
         """Modify to change the output format."""
-        self._dump_lob_table()
-        # self._dump_market_orders()
-        # self._dump_lob()
-        # self.ws_manager.get_q_size()  # Queue backlog
-        # self._dump_metrics()
+        #self._dump_lob_table()
+        self._dump_market_orders()
+        self._dump_lob()
+        #self.ws_manager.get_q_size()  # Queue backlog
+        self._dump_metrics()
         return
 
     def add_metric(self, metric: Metric):
@@ -154,7 +166,8 @@ class Normaliser():
     def _normalise_thread(self):
         while True:
             # NOTE: This function blocks when there are no messages in the queue.
-            data = self.ws_manager.get_msg()
+            data = self.consumer.consume()
+            #print(data)
             self.put_entry(data)
 
     def _metric_threads(self):
@@ -164,7 +177,7 @@ class Normaliser():
 
     def _wrap_output(self, f):
         def wrapped():
-            os.system("cls")
+            #os.system("clear")
             print(
                 f"-------------------------------------------------START {self.name}-------------------------------------------------")
             f()

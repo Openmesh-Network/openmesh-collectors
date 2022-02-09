@@ -22,3 +22,12 @@ class CoinbaseWsManagerFactory():
             
         ws_manager = WebsocketManager(url,subscribe,unsubscribe)
         return ws_manager
+
+def main():
+    ws = CoinbaseWsManagerFactory().get_ws_manager("BTC-USD")
+    ws.connect()
+    while True:
+        pass
+
+if __name__ == '__main__':
+    main()

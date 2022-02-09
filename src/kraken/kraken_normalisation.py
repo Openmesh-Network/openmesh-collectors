@@ -26,7 +26,7 @@ class NormaliseKraken():
             return self.NO_EVENTS
 
         recv_ts = data[-1]
-        feed = data[-3] # data[-3] is the channel name
+        feed = data[2] # data[-3] is the channel name
         if feed == "book-1000": 
             data = data[1] # Dictionary of orderbook snapshot/updates
             if "bs" in data.keys(): # Snapshot bids
@@ -71,7 +71,8 @@ class NormaliseKraken():
         elif key == "a":
             if size == 0.0:
                 lob_action = 3
-                self.ACTIVE_ASK_LEVELS.remove(price)
+                if price in self.ACTIVE_ASK_LEVELS:
+                    self.ACTIVE_ASK_LEVELS.remove(price)
             elif price not in self.ACTIVE_ASK_LEVELS:
                 lob_action = 2
                 self.ACTIVE_ASK_LEVELS.add(price)
@@ -80,7 +81,8 @@ class NormaliseKraken():
         elif key == "b":
             if size == 0.0:
                 lob_action = 3
-                self.ACTIVE_BID_LEVELS.remove(price)
+                if price in self.ACTIVE_BID_LEVELS:
+                    self.ACTIVE_BID_LEVELS.remove(price)
             elif price not in self.ACTIVE_BID_LEVELS:
                 lob_action = 2
                 self.ACTIVE_BID_LEVELS.add(price)
