@@ -41,15 +41,16 @@ async def unsubscribe(topic_id: str, client):
 
 async def run_topic(topic_id):
     global n_published
-    async for msg in topic_broadcasters[topic_id]:
+    while not topic_broadcasters[topic_id].closed:
+        msg = await topic_broadcasters[topic_id].get()
         subs = client_subscriptions[topic_id]
         sockets = map(lambda client: client.get_ws(), subs)
         websockets.broadcast(sockets, msg)
         async with published_lock:
             n_published += 1
 
-async def get_backlog():
-    return sum([(await x.size()) for x in topic_broadcasters.values()])
+def get_backlog():
+    return sum([x.size() for x in topic_broadcasters.values()])
 
 async def create_topic(topic_id):
     consumer = await async_kafka.get_consumer(topic_id)
@@ -76,7 +77,7 @@ async def remove_topic(topic_id):
 
 async def debug():
     print(f"---------------ts: {int(time.time())}---------------")
-    print(f"Broadcast Backlog: {await get_backlog()}")
+    print(f"Broadcast Backlog: {get_backlog()}")
     print(f"Messages Broadcasted: {n_published}")
     print(f"Broadcasters: {topic_broadcasters}")
     print(f"Subscribers: {client_subscriptions}")
