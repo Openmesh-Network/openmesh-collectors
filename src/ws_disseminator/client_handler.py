@@ -36,7 +36,6 @@ class ClientHandler():
         for sub in self.subscriptions:
             await relay.unsubscribe(sub, self)
         await self.ws.close()
-        print(f"client_{self.id} Shutdown")
     
     async def lock(self):
         await self.lock.acquire()
@@ -62,6 +61,7 @@ async def handle_ws(ws):
     finally:
         if not client.closed:
             await client.shutdown()
+            print(f"client_{client.id} shutdown")
 
 async def _poll(client):
     await client.get_ws().wait_closed()

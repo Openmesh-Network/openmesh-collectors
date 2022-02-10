@@ -147,7 +147,7 @@ def parse_input(msg):
     if len(args) == 1:
         command = args[0]
         if command == "exit":
-            return
+            return msg
     elif len(args) == 2:
         print(args)
         if args[0] == "sub":
@@ -187,7 +187,7 @@ def main():
         console = NonInteractive()
     else:
         console = InteractiveConsole()
-        print("Press Ctrl+C to quit")
+        print("Type '/exit' and press Enter to quit")
 
     def recv():
         try:
@@ -253,22 +253,20 @@ def main():
     while True:
         try:
             message = console.read()
-            message = parse_input(message)
-            if message:
-                ws.send(message)
-            if message == b"/exit":
+            parsed = parse_input(message)
+            if message.decode('utf-8') == "/exit":
                 break
+            elif parsed:
+                ws.send(parsed)
         except KeyboardInterrupt:
-            ws.close()
-            return
+            break
         except EOFError:
-            ws.close()
             time.sleep(args.eof_wait)
-            return
+            break
     ws.close()
 
 if __name__ == "__main__":
     try:
         main()
-    except websocket._exceptions.WebsocketConnectionClosedException:
+    except websocket.WebSocketException:
         print("websocket closed, exiting client...")

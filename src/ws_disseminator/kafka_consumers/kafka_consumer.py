@@ -1,5 +1,7 @@
 from confluent_kafka import Consumer, KafkaError, KafkaException 
 import sys
+import asyncio
+import threading
 
 class KafkaConsumer():
     def __init__(self, topic):
@@ -19,6 +21,7 @@ class KafkaConsumer():
         }
         self.consumer = Consumer(self.conf)
         self.consumer.subscribe([self.topic])
+        self.queue = asyncio.Queue()
     
     def consume(self):
         try:
@@ -28,7 +31,7 @@ class KafkaConsumer():
             # print("kafka consumer closed")
 
     def _consume(self):
-        msg = self.consumer.poll(timeout=0.1)
+        msg = self.consumer.poll(timeout=10e-9)
         if msg is None: 
             return
 

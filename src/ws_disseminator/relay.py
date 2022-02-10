@@ -22,18 +22,10 @@ async def subscribe(topic_id: str, client):
     async with broadcaster_lock:
         async with subscriptions_lock:
             if topic_id not in topic_broadcasters.keys():
-                assert topic_id not in client_subscriptions.keys()
-                consumer = await async_kafka.get_consumer(topic_id)
-                if not consumer:
-                    subscriptions_lock.release()
-                    broadcaster_lock.release()
-                    return
-                topic_broadcasters[topic_id] = consumer
+                await create_topic(topic_id)
                 client_subscriptions[topic_id] = [client]
-
-                task = asyncio.create_task(run_topic(topic_id))
-                async with tasks_lock:
-                    tasks[topic_id] = task
+            elif client in client_subscriptions[topic_id]:
+                print(f"client is already subscribed to {topic_id}")
             else: 
                 client_subscriptions[topic_id].append(client)
 
@@ -42,17 +34,10 @@ async def unsubscribe(topic_id: str, client):
         async with subscriptions_lock:
             if client not in client_subscriptions[topic_id]:
                 print(f"client is not subscribed to {topic_id}")
-                return
-
-            client_subscriptions[topic_id].remove(client)
-            if len(client_subscriptions[topic_id]) == 0:
-                await async_kafka.shutdown_topic(topic_id)
-
-                del client_subscriptions[topic_id]
-                del topic_broadcasters[topic_id]
-                async with tasks_lock:
-                    tasks[topic_id].cancel()
-                del tasks[topic_id]
+            else:
+                client_subscriptions[topic_id].remove(client)
+                if len(client_subscriptions[topic_id]) == 0:
+                    await remove_topic(topic_id)
 
 async def run_topic(topic_id):
     global n_published
@@ -63,13 +48,35 @@ async def run_topic(topic_id):
         async with published_lock:
             n_published += 1
 
-async def shutdown():
-    async with tasks_lock:
-        for task in tasks:
-            task.cancel()
+async def get_backlog():
+    return sum([(await x.size()) for x in topic_broadcasters.values()])
 
-def debug():
+async def create_topic(topic_id):
+    consumer = await async_kafka.get_consumer(topic_id)
+    if not consumer:
+        # This will be replaced by a message parser in the future.
+        subscriptions_lock.release()
+        broadcaster_lock.release()
+        return
+    topic_broadcasters[topic_id] = consumer
+
+    task = asyncio.create_task(run_topic(topic_id))
+    async with tasks_lock:
+        tasks[topic_id] = task
+
+async def remove_topic(topic_id):
+    """Precondition: Topic is empty"""
+    await async_kafka.shutdown_topic(topic_id)
+
+    del client_subscriptions[topic_id]
+    del topic_broadcasters[topic_id]
+    async with tasks_lock:
+        tasks[topic_id].cancel()
+    del tasks[topic_id]
+
+async def debug():
     print(f"---------------ts: {int(time.time())}---------------")
+    print(f"Broadcast Backlog: {await get_backlog()}")
     print(f"Messages Broadcasted: {n_published}")
     print(f"Broadcasters: {topic_broadcasters}")
     print(f"Subscribers: {client_subscriptions}")
