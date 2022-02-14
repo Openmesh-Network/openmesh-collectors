@@ -135,6 +135,8 @@ supported_exchanges = [
     "kraken-futures", 
     "phemex", 
     "coinbase",
+    "deribit",
+    "huobi",
     "BTCUSD",
     "BTCUSDT"
 ]

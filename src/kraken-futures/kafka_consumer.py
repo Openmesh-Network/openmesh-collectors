@@ -22,8 +22,6 @@ class ExchangeDataConsumer():
     def consume(self):
         msg = self.consumer.poll()
         if msg is None: 
-            print(msg)
-            print("no message")
             return
 
         if msg.error():
