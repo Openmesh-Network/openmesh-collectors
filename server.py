@@ -7,4 +7,4 @@ if __name__ == "__main__":
         port = int(sys.argv[1])
     else:
         port = None
-    asyncio.run(start_server(port), debug=True)
+    asyncio.run(start_server(port), debug=False)

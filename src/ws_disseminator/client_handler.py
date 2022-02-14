@@ -68,7 +68,7 @@ async def _poll(client):
     
 async def _listen(client):
     ws = client.get_ws()
-    print("Client Connected")
+    print(f"client_{client.get_id()} connected")
     async for message in ws:
         if parse_message.is_subscribe(message):
             topic = json.loads(message)['topic']
