@@ -3,6 +3,7 @@ import asyncio
 import aioconsole
 import ssl
 import pathlib
+import signal
 from configparser import ConfigParser
 
 from .client_handler import handle_ws
@@ -11,37 +12,43 @@ from . import relay
 
 CONFIG_PATH = "config.ini"
 
+stop = None
+
 async def start_server(arg_port=None):
+    global stop
+
     host, port, cert, key = _read_config()
     if arg_port:
         port = arg_port
+    
     stop = asyncio.Future()
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(cert, key)
 
-    server_task = asyncio.create_task(run_server(host, port, ssl_context, stop))
-    stop_task = asyncio.create_task(stop_server(stop))
-    debug_task = asyncio.create_task(debug(stop))
+    signal.signal(signal.SIGUSR1, stop_server)
+
+    server_task = asyncio.create_task(run_server(host, port, ssl_context))
+    # stop_task = asyncio.create_task(stop_server(stop))
+    debug_task = asyncio.create_task(debug())
     await asyncio.gather(
         server_task, 
-        stop_task, 
+        # stop_task, 
         debug_task
     )
     print("Server Shut Down")
 
-async def run_server(host, port, ssl_context, stop):
+async def run_server(host, port, ssl_context):
     print("Server Listening")
     async with websockets.serve(handle_ws, host, port, ssl=ssl_context):
         await stop
 
-async def stop_server(stop):
-    print("Press Enter to exit")
-    await aioconsole.ainput()
-    print("Exiting...")
+
+def stop_server(signum, frame):
+    print("Interrupt signal received.")
     stop.set_result(True)
 
-async def debug(stop):
+async def debug():
     while not stop.done():
         await relay.debug()
         await asyncio.sleep(1)
