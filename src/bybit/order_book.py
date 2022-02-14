@@ -79,12 +79,12 @@ class OrderBookManager:
         if lob_event['side'] == 2:
             row = OrderBookManager._get_row_by_price(self.sell_orders.table, price)
             self.sell_orders.table[row]['size'] = size
-            if price <= self.best_sell_order['price']:
+            if not self.best_but_order is None and price <= self.best_sell_order['price']:
                 self.best_sell_order = {"price": price, "size": size}
         elif lob_event['side'] == 1:
             row = OrderBookManager._get_row_by_price(self.buy_orders.table, price)
             self.buy_orders.table[row]['size'] = size
-            if price >= self.best_buy_order['price']:
+            if not self.best_buy_order is None and price >= self.best_buy_order['price']:
                 self.best_buy_order = {"price": price, "size": size}
 
     def delete(self, lob_event):
@@ -99,7 +99,7 @@ class OrderBookManager:
             if row == -1:
                 return
             self.sell_orders.del_row(row)
-            if price == self.best_sell_order['price']:
+            if not self.best_sell_order is None and price == self.best_sell_order['price']:
                 price_ind = OrderBookManager._get_new_best_price(self.sell_orders.table, 2)
                 self.best_sell_order = {
                     'price': self.sell_orders.table[price_ind]['price'], 
@@ -110,7 +110,7 @@ class OrderBookManager:
             if row == -1:
                 return
             self.buy_orders.del_row(row)
-            if price == self.best_buy_order['price']:
+            if not self.best_but_order is None and price == self.best_buy_order['price']:
                 price_ind = OrderBookManager._get_new_best_price(self.buy_orders.table, 1)
                 self.best_buy_order = {
                     'price': self.buy_orders.table[price_ind]['price'], 

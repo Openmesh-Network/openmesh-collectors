@@ -1,3 +1,10 @@
+# One-off files
+test_conf.config
+
+# Log files
+*.ids 
+*.out
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
