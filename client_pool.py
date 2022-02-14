@@ -85,12 +85,11 @@ async def main():
 async def dump(n_clients, stop):
     while not stop.done():
         print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}", flush=True)
-        await asyncio.sleep(10)
+        await asyncio.sleep(600)
 
 async def dump_handler(signum, n_clients):
     print(f"[{datetime.now()}] system: dump signal {signum} received")
     print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}", flush=True)
-    await asyncio.sleep(10)
 
 async def shutdown(signum, tasks, stop):
     print(f"[{datetime.now()}] system: shutdown signal {signum} received")
