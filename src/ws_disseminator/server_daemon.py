@@ -1,9 +1,8 @@
 import websockets
 import asyncio
-import aioconsole
 import ssl
-import pathlib
 import signal
+import functools
 from configparser import ConfigParser
 
 from .client_handler import handle_ws
@@ -16,19 +15,19 @@ stop = None
 
 async def start_server(arg_port=None):
     global stop
-
     host, port, cert, key = _read_config()
     if arg_port:
         port = arg_port
     
     stop = asyncio.Future()
+    loop = asyncio.get_event_loop()
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(cert, key)
     ssl_context=None
 
-    signal.signal(signal.SIGUSR1, stop_server)
-    signal.signal(signal.SIGUSR2, debug)
+    loop.add_signal_handler(signal.SIGUSR1, lambda: asyncio.create_task(stop_server(10)))
+    loop.add_signal_handler(signal.SIGUSR2, lambda: asyncio.create_task(debug(12)))
 
     server_task = asyncio.create_task(run_server(host, port, ssl_context))
     await stop
@@ -39,13 +38,13 @@ async def run_server(host, port, ssl_context):
     async with websockets.serve(handle_ws, host, port, ssl=ssl_context):
         await stop
 
-def stop_server(signum, frame):
-    global stop
-    print("Interrupt signal received.")
+async def stop_server(signum):
+    print(f"\nStop signal (signum {signum}) received.")
     stop.set_result(True)
+    print("Stopping server...")
 
-def debug(signum, frame):
-    print("\n")
+async def debug(signum):
+    print(f"\nDump signal (signum {signum}) received")
     relay.debug()
 
 def _read_config():
