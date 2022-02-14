@@ -29,7 +29,7 @@ for s in ${producer_paths[@]}; do
 done
 
 echo "Running main server."
-python3.9 server.py > log.out 2>err.out &
+python3.9 server.py 2>&1 &
 SERVER_PID=$!
 pids+=("$SERVER_PID")
 
