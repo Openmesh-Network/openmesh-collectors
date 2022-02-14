@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Reads pids from the 'pids.ids' file and kills all of them.
+
+readarray -d '' PIDS < <(cat pids.ids)
+
+for pid in ${PIDS[@]}; do
+    echo "Stopping pid $pid"
+    pkill -9 -P $pid
+    kill -10 $pid
+done

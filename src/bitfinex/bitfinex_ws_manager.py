@@ -22,7 +22,7 @@ class BitfinexWebsocketManager():
         self.ws = None
         self.temp_queue = Queue()
         self.queue = Queue()
-        self.url = "wss://api-pub.bitfinex.com/ws/2"
+        self.url = "wss://api-pub.bitfinex.c2"
         self.symbol = symbol
         self.subscribed = Event()
         self.subscribed.clear()
@@ -31,9 +31,9 @@ class BitfinexWebsocketManager():
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
             'client.id': 'bitfinex-python-producer',
-            'ssl.certificate.location': '../../jay.cert',
-            'ssl.key.location': '../../jay.key',
-            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'ssl.certificate.location': 'jay.cert',
+            'ssl.key.location': 'jay.key',
+            'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
         

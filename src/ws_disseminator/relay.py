@@ -1,6 +1,6 @@
 import websockets
 import asyncio
-import time
+import datetime
 
 from .kafka_consumers import async_kafka
 
@@ -76,7 +76,7 @@ async def remove_topic(topic_id):
     del tasks[topic_id]
 
 async def debug():
-    print(f"---------------ts: {int(time.time())}---------------")
+    print(f"---------------ts: {datetime.datetime.now()}---------------")
     print(f"Broadcast Backlog: {get_backlog()}")
     print(f"Messages Broadcasted: {n_published}")
     print(f"Broadcasters: {topic_broadcasters}")

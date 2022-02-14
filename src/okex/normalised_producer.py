@@ -9,9 +9,9 @@ class NormalisedDataProducer():
         self.conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
-            'ssl.certificate.location': '../../jay.cert',
-            'ssl.key.location': '../../jay.key',
-            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'ssl.certificate.location': 'jay.cert',
+            'ssl.key.location': 'jay.key',
+            'ssl.ca.location': 'ca-aiven-cert.pem',
             'client.id': 'okex-normalised-producer',
         }
         self.producer = Producer(self.conf)

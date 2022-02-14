@@ -25,12 +25,13 @@ async def start_server(arg_port=None):
 
     ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ssl_context.load_cert_chain(cert, key)
+    ssl_context=None
 
     signal.signal(signal.SIGUSR1, stop_server)
 
-    server_task = asyncio.create_task(run_server(host, port, ssl_context))
+    server_task = asyncio.create_task(run_server(host, port, ssl_context, stop))
     # stop_task = asyncio.create_task(stop_server(stop))
-    debug_task = asyncio.create_task(debug())
+    debug_task = asyncio.create_task(debug(stop))
     await asyncio.gather(
         server_task, 
         # stop_task, 
@@ -38,17 +39,16 @@ async def start_server(arg_port=None):
     )
     print("Server Shut Down")
 
-async def run_server(host, port, ssl_context):
+async def run_server(host, port, ssl_context, stop):
     print("Server Listening")
     async with websockets.serve(handle_ws, host, port, ssl=ssl_context):
         await stop
-
 
 def stop_server(signum, frame):
     print("Interrupt signal received.")
     stop.set_result(True)
 
-async def debug():
+async def debug(stop):
     while not stop.done():
         await relay.debug()
         await asyncio.sleep(1)
