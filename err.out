@@ -1,14 +1,35 @@
-Executing <Task pending name='Task-2' coro=<run_server() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/server_daemon.py:44> wait_for=<_GatheringFuture pending cb=[<TaskWakeupMethWrapper object at 0x7fea07574b80>()] created at /usr/lib/python3.9/asyncio/tasks.py:704> cb=[gather.<locals>._done_callback() at /usr/lib/python3.9/asyncio/tasks.py:764] created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.132 seconds
-Executing <Task pending name='Task-12' coro=<AsyncKafkaConsumer.run_consumer() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/kafka_consumers/kafka_consumer.py:38> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.9/asyncio/futures.py:384, <TaskWakeupMethWrapper object at 0x7fea06ca2580>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.137 seconds
-Executing <Task pending name='Task-12' coro=<AsyncKafkaConsumer.run_consumer() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/kafka_consumers/kafka_consumer.py:38> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.9/asyncio/futures.py:384, <TaskWakeupMethWrapper object at 0x7fea06ca24c0>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.110 seconds
-Executing <Task pending name='Task-12' coro=<AsyncKafkaConsumer.run_consumer() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/kafka_consumers/kafka_consumer.py:38> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.9/asyncio/futures.py:384, <TaskWakeupMethWrapper object at 0x7fea06ca27c0>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.138 seconds
-Executing <Task pending name='Task-12' coro=<AsyncKafkaConsumer.run_consumer() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/kafka_consumers/kafka_consumer.py:38> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.9/asyncio/futures.py:384, <TaskWakeupMethWrapper object at 0x7fea06ca2790>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.159 seconds
-Executing <Task pending name='Task-12' coro=<AsyncKafkaConsumer.run_consumer() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/kafka_consumers/kafka_consumer.py:38> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/lib/python3.9/asyncio/futures.py:384, <TaskWakeupMethWrapper object at 0x7fea06ca2580>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.109 seconds
-Executing <Task pending name='Task-13' coro=<run_topic() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/relay.py:45> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x7fea06ca2490>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.118 seconds
-Executing <Task pending name='Task-10' coro=<_listen() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py:72> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x7fea06ca2760>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> cb=[_wait.<locals>._on_completion() at /usr/lib/python3.9/asyncio/tasks.py:513] created at /usr/lib/python3.9/asyncio/tasks.py:361> took 10.513 seconds
-Executing <Task pending name='Task-10' coro=<_listen() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py:72> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x7fea06ca2190>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> cb=[_wait.<locals>._on_completion() at /usr/lib/python3.9/asyncio/tasks.py:513] created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.167 seconds
-Executing <Task pending name='Task-10' coro=<_listen() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py:72> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x7fea06ca2970>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> cb=[_wait.<locals>._on_completion() at /usr/lib/python3.9/asyncio/tasks.py:513] created at /usr/lib/python3.9/asyncio/tasks.py:361> took 8.197 seconds
-%5|1644819746.691|REQTMOUT|kafka-python-consumer#consumer-3| [thrd:GroupCoordinator]: GroupCoordinator/1: Timed out LeaveGroupRequest in flight (after 5724ms, timeout #0): possibly held back by preceeding MetadataRequest with timeout in 54000ms
-%4|1644819746.691|REQTMOUT|kafka-python-consumer#consumer-3| [thrd:GroupCoordinator]: GroupCoordinator/1: Timed out 1 in-flight, 0 retry-queued, 0 out-queue, 0 partially-sent requests
-%3|1644819746.692|FAIL|kafka-python-consumer#consumer-3| [thrd:GroupCoordinator]: GroupCoordinator: 1 request(s) timed out: disconnect (after 37065ms in state UP)
-Executing <Task pending name='Task-6' coro=<WebSocketServerProtocol.handler() running at /home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/server.py:231> wait_for=<Future pending cb=[<TaskWakeupMethWrapper object at 0x7fea075a4220>()] created at /usr/lib/python3.9/asyncio/base_events.py:424> created at /home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/server.py:148> took 5.746 seconds
+Executing <Task pending name='Task-2' coro=<run_server() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/server_daemon.py:39> wait_for=<_GatheringFuture pending cb=[<TaskWakeupMethWrapper object at 0x7feb6abe7b80>()] created at /usr/lib/python3.9/asyncio/tasks.py:704> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.124 seconds
+connection handler failed
+Traceback (most recent call last):
+  File "/mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py", line 53, in handle_ws
+    done, pending = await asyncio.wait(
+  File "/usr/lib/python3.9/asyncio/tasks.py", line 413, in wait
+    return await _wait(fs, timeout, return_when, loop)
+  File "/usr/lib/python3.9/asyncio/tasks.py", line 529, in _wait
+    await waiter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/server.py", line 231, in handler
+    await self.ws_handler(self)
+  File "/mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py", line 63, in handle_ws
+    await client.shutdown()
+  File "/mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/client_handler.py", line 38, in shutdown
+    await self.ws.close()
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 749, in close
+    await asyncio.wait_for(
+  File "/usr/lib/python3.9/asyncio/tasks.py", line 481, in wait_for
+    return fut.result()
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 1215, in write_close_frame
+    await self.write_frame(True, OP_CLOSE, data, _state=State.CLOSING)
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 1187, in write_frame
+    self.write_frame_sync(fin, opcode, data)
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/protocol.py", line 1158, in write_frame_sync
+    frame.write(
+  File "/home/raymant/.local/lib/python3.9/site-packages/websockets/legacy/framing.py", line 146, in write
+    write(self.new_frame.serialize(mask=mask, extensions=extensions))
+  File "/usr/lib/python3.9/asyncio/selector_events.py", line 903, in write
+    raise RuntimeError('Cannot call write() after write_eof()')
+RuntimeError: Cannot call write() after write_eof()

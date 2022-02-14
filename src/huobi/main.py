@@ -48,7 +48,8 @@ def main():
         exchange = "huobi"
 
     # Ticker symbols specified in config files in the "symbols" directory
-    config_path = exchange + ".ini"
+    # config_path = exchange + ".ini"
+    config_path = "config.ini"
     config.read(config_path)
     symbols = json.loads(config["symbols"][exchange])
     for symbol in symbols:

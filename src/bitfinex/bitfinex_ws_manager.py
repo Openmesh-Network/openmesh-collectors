@@ -22,7 +22,7 @@ class BitfinexWebsocketManager():
         self.ws = None
         self.temp_queue = Queue()
         self.queue = Queue()
-        self.url = "wss://api-pub.bitfinex.c2"
+        self.url = "wss://api-pub.bitfinex.com/ws/2"
         self.symbol = symbol
         self.subscribed = Event()
         self.subscribed.clear()
@@ -58,7 +58,6 @@ class BitfinexWebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
-        print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
         elif isinstance(message, list):

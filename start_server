@@ -7,7 +7,7 @@ function find_paths {
 }
 
 function py_bg {
-    python3.9 $1 > /dev/null 2>&1 &
+    python3.9 $1 2>&1 > /dev/null &
     if [ $# -eq 2 ]; then
         pids+=("$!")
     fi

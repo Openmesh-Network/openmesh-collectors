@@ -75,7 +75,7 @@ async def remove_topic(topic_id):
         tasks[topic_id].cancel()
     del tasks[topic_id]
 
-async def debug():
+def debug():
     print(f"---------------ts: {datetime.datetime.now()}---------------")
     print(f"Broadcast Backlog: {get_backlog()}")
     print(f"Messages Broadcasted: {n_published}")
