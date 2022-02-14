@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+#
+# Starts all Kafka consumers, normalisers, and the main websocket server.
+
+function find_paths {
+    readarray -d '' $1 < <(find . -name "$2")
+}
+
+function py_bg {
+    python3.9 $1 > /dev/null 2>&1 &
+    if [ $# -eq 2 ]; then
+        pids+=("$!")
+    fi
+}
+
+pids=()
+
+find_paths ws_paths "*ws*.py"
+find_paths producer_paths "main.py"
+
+for s in ${ws_paths[@]}; do
+    echo "Running $s collector in background..."
+    py_bg "$s" pids
+done
+
+for s in ${producer_paths[@]}; do
+    echo "Running $s producer in background..."
+    py_bg "$s" pids
+done
+
+echo "Running main server."
+python3.9 server.py > log.out 2>err.out &
+SERVER_PID=$!
+pids+=("$SERVER_PID")
+
+echo "Server PID: $SERVER_PID"
+echo "PIDS: ${pids[@]}"
+echo "${pids[@]}" > pids.ids
