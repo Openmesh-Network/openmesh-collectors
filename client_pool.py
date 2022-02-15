@@ -29,6 +29,7 @@ topics = [
 ]
 
 total_messages = 0
+clients_connected = 0
 
 async def subscribe(ws):
     for topic in topics:
@@ -64,6 +65,7 @@ async def send_rand(ws):
 
 async def start_dummy_client(cid):
     async with websockets.connect("ws://" + host + ":" + port + "/") as ws:
+        clients_connected += 1
         try:
             print(f"[{datetime.now()}] {cid}: started")
             await subscribe(ws)
@@ -75,6 +77,8 @@ async def start_dummy_client(cid):
             print(f"[{datetime.now()}] {cid}: websocket task cancelled, unsubscribing...")
             await unsubscribe(ws)
             print(f"[{datetime.now()}] {cid}: unsubscribed")
+        finally:
+            clients_connected -= 1
 
 async def main():
     if len(sys.argv) == 2:
@@ -92,6 +96,7 @@ async def main():
     
     for i in range(n_clients):
         tasks.append(asyncio.create_task(start_dummy_client(i)))
+        await asyncio.sleep(0.5)
     print(f"[{datetime.now()}] system: started {n_clients} clients")
 
     asyncio.create_task(dump(n_clients, stop))
@@ -99,12 +104,12 @@ async def main():
 
 async def dump(n_clients, stop):
     while not stop.done():
-        print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}", flush=True)
-        await asyncio.sleep(600)
+        print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}, clients_connected={clients_connected}", flush=True)
+        await asyncio.sleep(10)
 
 async def dump_handler(signum, n_clients):
     print(f"[{datetime.now()}] system: dump signal {signum} received")
-    print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}", flush=True)
+    print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}, clients_connected={clients_connected}", flush=True)
 
 async def shutdown(signum, tasks, stop):
     print(f"[{datetime.now()}] system: shutdown signal {signum} received")

@@ -19,9 +19,6 @@ tasks = {}
 published_lock = asyncio.Lock()
 n_published = 0
 
-connected_lock = asyncio.Lock()
-clients_connected = 0
-
 async def subscribe(topic_id: str, client):
     global clients_connected
     async with broadcaster_lock:
@@ -30,26 +27,22 @@ async def subscribe(topic_id: str, client):
                 await create_topic(topic_id)
                 client_subscriptions[topic_id] = [client]
             elif client in client_subscriptions[topic_id]:
-                log("relay", f"client is already subscribed to {topic_id}")
+                # log("relay", f"client is already subscribed to {topic_id}")
                 return
             else: 
                 client_subscriptions[topic_id].append(client)
-            async with connected_lock:
-                clients_connected += 1
 
 async def unsubscribe(topic_id: str, client):
     global clients_connected
     async with broadcaster_lock:
         async with subscriptions_lock:
             if client not in client_subscriptions[topic_id]:
-                log("relay", f"client is not subscribed to {topic_id}")
+                # log("relay", f"client is not subscribed to {topic_id}")
                 return
             else:
                 client_subscriptions[topic_id].remove(client)
                 if len(client_subscriptions[topic_id]) == 0:
                     await remove_topic(topic_id)
-            async with connected_lock:
-                clients_connected -= 1
 
 async def run_topic(topic_id):
     global n_published

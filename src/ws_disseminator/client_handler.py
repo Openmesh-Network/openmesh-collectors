@@ -74,14 +74,14 @@ async def _listen(client):
         if parse_message.is_subscribe(message):
             topic = json.loads(message)['topic']
             if topic in client.get_subs():
-                log("client_handler", f"client_{client.id} already subscribed to {topic}")
+                # log("client_handler", f"client_{client.id} already subscribed to {topic}")
                 continue
             await relay.subscribe(topic, client)
             client.add_sub(topic)
         elif parse_message.is_unsubscribe(message):
             topic = json.loads(message)['topic']
             if topic not in client.get_subs():
-                log("client_handler", f"client_{client_id} not subscribed to {topic}")
+                # log("client_handler", f"client_{client_id} not subscribed to {topic}")
                 continue
             await relay.unsubscribe(topic, client)
             client.remove_sub(topic)
