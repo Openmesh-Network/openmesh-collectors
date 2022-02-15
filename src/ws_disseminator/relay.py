@@ -1,6 +1,5 @@
 import websockets
 import asyncio
-import datetime
 
 from .logger import log, slog
 from .kafka_consumers import async_kafka
@@ -19,8 +18,11 @@ tasks = {}
 published_lock = asyncio.Lock()
 n_published = 0
 
+connected_lock = asyncio.Lock()
+active_subscriptions = 0
+
 async def subscribe(topic_id: str, client):
-    global clients_connected
+    global active_subscriptions
     async with broadcaster_lock:
         async with subscriptions_lock:
             if topic_id not in topic_broadcasters.keys():
@@ -31,9 +33,11 @@ async def subscribe(topic_id: str, client):
                 return
             else: 
                 client_subscriptions[topic_id].append(client)
+            async with connected_lock:
+                active_subscriptions += 1
 
 async def unsubscribe(topic_id: str, client):
-    global clients_connected
+    global active_subscriptions
     async with broadcaster_lock:
         async with subscriptions_lock:
             if client not in client_subscriptions[topic_id]:
@@ -43,6 +47,8 @@ async def unsubscribe(topic_id: str, client):
                 client_subscriptions[topic_id].remove(client)
                 if len(client_subscriptions[topic_id]) == 0:
                     await remove_topic(topic_id)
+            async with connected_lock:
+                active_subscriptions -= 1
 
 async def run_topic(topic_id):
     global n_published
@@ -81,4 +87,4 @@ async def remove_topic(topic_id):
     del tasks[topic_id]
 
 def dump():
-    slog(f"backlog: {get_backlog()}\tn_published: {n_published}\tclients_connected: {clients_connected}")
+    slog(f"backlog: {get_backlog()}\tn_published: {n_published}\tactive_subscriptions: {active_subscriptions}")
