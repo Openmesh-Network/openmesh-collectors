@@ -1,0 +1,4 @@
+[2022-02-15 14:23:49] server: listening
+[2022-02-15 14:23:53] server: stop signal (signum 10) received.
+[2022-02-15 14:23:53] server: stopping...
+[2022-02-15 14:23:53] server: shut down

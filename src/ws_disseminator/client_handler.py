@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from . import relay, parse_message
+from .logger import log
 
 client_id = 0
 
@@ -61,28 +62,28 @@ async def handle_ws(ws):
     finally:
         if not client.closed:
             await client.shutdown()
-            print(f"client_{client.id} shutdown")
+            # print(f"client_{client.id} shutdown")
 
 async def _poll(client):
     await client.get_ws().wait_closed()
     
 async def _listen(client):
     ws = client.get_ws()
-    print(f"client_{client.get_id()} connected")
+    # print(f"client_{client.get_id()} connected")
     async for message in ws:
         if parse_message.is_subscribe(message):
             topic = json.loads(message)['topic']
             if topic in client.get_subs():
-                print(f"client_{client.id} already subscribed to {topic}")
+                log("client_handler", f"client_{client.id} already subscribed to {topic}")
                 continue
             await relay.subscribe(topic, client)
             client.add_sub(topic)
         elif parse_message.is_unsubscribe(message):
             topic = json.loads(message)['topic']
             if topic not in client.get_subs():
-                print(f"client_{client_id} not subscribed to {topic}")
+                log("client_handler", f"client_{client_id} not subscribed to {topic}")
                 continue
             await relay.unsubscribe(topic, client)
             client.remove_sub(topic)
         else:
-            print(f"client_{client.id}: {message}")
+            log("client_handler", f"client_{client.id}: {message}")

@@ -2,7 +2,8 @@
 #
 # Reads pids from the 'pids.ids' file and kills all of them.
 
-readarray -d '' PIDS < <(cat pids.ids)
+# readarray -d '' PIDS < <(cat pids.ids)
+mapfile -d $'\0' PIDS < <(cat pids.ids)
 
 for pid in ${PIDS[@]}; do
     echo "Stopping pid $pid"
