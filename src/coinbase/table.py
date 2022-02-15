@@ -18,7 +18,7 @@ import numpy as np
 
 class Table():
 
-    INITIAL_CAPACITY = 10  # Initial height of array upon init.
+    INITIAL_CAPACITY = 10000  # Initial height of array upon init.
 
     def __init__(self, colnames: list, dtype: list):
         """
@@ -113,7 +113,8 @@ class Table():
         :return: None
         """
         if self.height >= self.capacity:
-            self._expand_table()
+            # self._expand_table()
+            self._reset_table()
 
         row = self.height
         self._set_list(row, data)
@@ -135,7 +136,8 @@ class Table():
         :return: None
         """
         if self.height >= self.capacity:
-            self._expand_table()
+            # self._expand_table()
+            self._reset_table()
 
         row = self.height
         self._set_dict(row, data)
@@ -189,6 +191,9 @@ class Table():
         extension = np.zeros(self.capacity, dtype=self.dtype)
         self.table = np.concatenate((self.table, extension))
         self.capacity *= 2
+    
+    def _reset_table(self):
+        self.table = np.zeros(self.capacity, dtype = self.dtype)
 
 
 class TableUtil():
