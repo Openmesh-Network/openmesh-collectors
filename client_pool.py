@@ -4,9 +4,12 @@ import asyncio
 import websockets
 import signal
 import json
+import random
 
 host = "194.233.73.248"
 port = "30205"
+
+random.seed(30205)
 
 topics = [
     "bybit", 
@@ -48,11 +51,23 @@ async def recv_messages(ws):
     async for msg in ws:
         total_messages += 1
 
+async def send_rand(ws):
+    while True:
+        op = "subscribe" if random.randint(0, 1) == 0 else "unsubscribe"
+        topic = topics[random.randint(0,len(topics)-1)]
+        request = {
+            "op": op,
+            "topic": topic
+        }
+        await ws.send(json.dumps(request))
+        await asyncio.sleep(random.randint(0,10))
+
 async def start_dummy_client(cid):
     async with websockets.connect("ws://" + host + ":" + port + "/") as ws:
         try:
             print(f"[{datetime.now()}] {cid}: started")
             await subscribe(ws)
+            asyncio.create_task(send_rand(ws))
             await recv_messages(ws)
         except websockets.ConnectionClosed:
             print(f"[{datetime.now()}] {cid}: websocket connection closed")
