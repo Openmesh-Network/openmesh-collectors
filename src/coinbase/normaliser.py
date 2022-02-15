@@ -92,15 +92,11 @@ class Normaliser():
             if len(event) == 22:
                 self.order_book_manager.handle_event(event)
                 event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
-                self.lob_table.put_dict(event)
                 self.producer.produce("%s,%s,LOB" % ("Coinbase", self.url), event)
-                time.sleep(0.001)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            print(order)
-            self.market_orders_table.put_dict(order)
             self.producer.produce("%s,%s,TRADES" % ("Coinbase", self.url), order)
 
     def get_lob_events(self):

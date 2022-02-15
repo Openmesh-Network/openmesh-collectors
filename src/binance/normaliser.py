@@ -74,7 +74,6 @@ class Normaliser():
         self.lob_table_lock.acquire()
         self.lob_lock.acquire()
         for event in lob_events:
-            self.lob_table.put_dict(event)
             self.order_book_manager.handle_event(event)
             self.producer.produce("%s,%s,LOB" % ("Binance", "wss://stream.binance.com:9443/ws"), event)
         self.lob_lock.release()
@@ -82,7 +81,6 @@ class Normaliser():
 
         for order in market_orders:
             if len(order) > 0:
-                self.market_orders_table.put_dict(order)
                 self.producer.produce("%s,%s,TRADES" % ("Binance", "wss://stream.binance.com:9443/ws"), order)
                 
 

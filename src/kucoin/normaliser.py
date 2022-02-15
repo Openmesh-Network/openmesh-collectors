@@ -118,17 +118,13 @@ class Normaliser():
         self.lob_lock.acquire()
         for event in lob_events:
             if len(event) == 22:
-                self.lob_table.put_dict(event)
                 self.order_book_manager.handle_event(event)
                 self.producer.produce("%s,%s,LOB" % ("Kucoin", self.url), event)
-                time.sleep(0.001)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            self.market_orders_table.put_dict(order)
             self.producer.produce("%s,%s,TRADES" % ("Kucoin", self.url), order)
-            time.sleep(0.001)
 
 
     def get_lob_events(self):
