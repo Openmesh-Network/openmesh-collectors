@@ -1,5 +1,6 @@
 # One-off files
 test_conf.config
+config.ini
 
 # Log files
 *.ids 

@@ -1,4 +1,3 @@
-from tkinter import W
 from table import TableUtil
 from queue import Queue
 import json

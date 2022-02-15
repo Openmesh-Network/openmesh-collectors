@@ -3,10 +3,12 @@ import sys
 import asyncio
 import threading
 
+from ..logger import log
+
 class AsyncKafkaConsumer():
     def __init__(self, topic):
         suffix = ""
-        if topic not in ("BTCUSDT", "BTCUSD"):
+        if not topic.isupper():
             suffix = "-raw"
         self.topic = "test-" + topic + suffix
         self.conf = {
@@ -60,6 +62,7 @@ class AsyncKafkaConsumer():
                 sys.stderr.write('%% %s [%d] reached end at offset %d\n' %
                                 (msg.topic(), msg.partition(), msg.offset()))
             elif msg.error():
+                log(self.topic, "consumer encountered an error")
                 raise KafkaException(msg.error())
         else:
             return msg.value()

@@ -7,6 +7,7 @@ from configparser import ConfigParser
 
 from .client_handler import handle_ws
 from . import relay
+from .logger import slog, log
 
 
 CONFIG_PATH = "config.ini"
@@ -27,25 +28,25 @@ async def start_server(arg_port=None):
     ssl_context=None
 
     loop.add_signal_handler(signal.SIGUSR1, lambda: asyncio.create_task(stop_server(10)))
-    loop.add_signal_handler(signal.SIGUSR2, lambda: asyncio.create_task(debug(12)))
+    loop.add_signal_handler(signal.SIGUSR2, lambda: asyncio.create_task(dump(12)))
 
     server_task = asyncio.create_task(run_server(host, port, ssl_context))
     await stop
-    print("Server Shut Down")
+    slog("shut down")
 
 async def run_server(host, port, ssl_context):
-    print("Server Listening")
+    slog("listening")
     async with websockets.serve(handle_ws, host, port, ssl=ssl_context):
         await stop
 
 async def stop_server(signum):
-    print(f"\nStop signal (signum {signum}) received.")
+    slog(f"stop signal (signum {signum}) received.")
     stop.set_result(True)
-    print("Stopping server...")
+    slog("stopping...")
 
-async def debug(signum):
-    print(f"\nDump signal (signum {signum}) received")
-    relay.debug()
+async def dump(signum):
+    slog(f"dump signal (signum {signum}) received")
+    relay.dump()
 
 def _read_config():
     parser = ConfigParser()
