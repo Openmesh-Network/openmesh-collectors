@@ -3,7 +3,8 @@
 # Starts all Kafka consumers, normalisers, and the main websocket server.
 
 function find_paths {
-    readarray -d '' $1 < <(find . -name "$2")
+    # readarray -d '' $1 < <(find . -name "$2")
+    mapfile -d $'\0' $1 < <(find . -name "$2" -print0)
 }
 
 pids=()

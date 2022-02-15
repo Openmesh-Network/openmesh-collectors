@@ -8,7 +8,7 @@ from ..logger import log
 class AsyncKafkaConsumer():
     def __init__(self, topic):
         suffix = ""
-        if topic not in ("BTCUSDT", "BTCUSD"):
+        if not topic.isupper():
             suffix = "-raw"
         self.topic = "test-" + topic + suffix
         self.conf = {
