@@ -5,7 +5,7 @@ import websockets
 import signal
 import json
 
-host = "194.233.73.249"
+host = "194.233.73.248"
 port = "30205"
 
 topics = [
