@@ -6,6 +6,11 @@ function find_paths {
     readarray -d '' $1 < <(find . -name "$2")
 }
 
+pids=()
+
+find_paths ws_paths "*ws*.py"
+find_paths producer_paths "main.py"
+
 function py_bg {
     python3.9 $1 2>&1 > /dev/null &
     if [ $# -eq 2 ]; then
@@ -13,48 +18,49 @@ function py_bg {
     fi
 }
 
-pids=()
-
-find_paths ws_paths "*ws*.py"
-find_paths producer_paths "main.py"
-
-if [ $# -eq 1 ]; then
-    if [ "$1" = "collectors" ]; then
-        echo "Running collectors only"
-        for s in ${ws_paths[@]}; do
-            echo "Running $s collector in background..."
-            py_bg "$s" pids
-        done
-
-        for s in ${producer_paths[@]}; do
-            echo "Running $s producer in background..."
-            py_bg "$s" pids
-        done
-    elif [ "$1" = "server" ]; then
-        echo "Running server only"
-        echo "Running main server."
-        python3.9 server.py 2>&1 &
-        SERVER_PID=$!
-        pids+=("$SERVER_PID")
-    else
-        echo "Second argument should be 'collectors' or 'server'"
-        exit 1
-    fi
-else 
+function run_ws_collectors {
     for s in ${ws_paths[@]}; do
         echo "Running $s collector in background..."
         py_bg "$s" pids
     done
+}
 
+function run_normalisers {
     for s in ${producer_paths[@]}; do
         echo "Running $s producer in background..."
         py_bg "$s" pids
     done
+}
 
+function run_server {
     echo "Running main server."
-    python3.9 server.py 2>&1 &
+    python3.9 server.py > log.out &
     SERVER_PID=$!
     pids+=("$SERVER_PID")
+}
+
+if [ $# -eq 1 ]; then
+    if [ "$1" = "ws_collectors" ]; then
+        echo "Running collectors only"
+        run_ws_collectors
+    elif [ "$1" = "normalisers" ]; then
+        echo "Running normalisers only"
+        run_normalisers
+    elif [ "$1" = "server" ]; then
+        echo "Running server only"
+        run_server
+    elif [ "$1" = "cs" ]; then
+        echo "Running collector and server"
+        run_ws_collectors
+        run_server
+    else
+        echo "Second argument should be 'ws_collectors', 'normalisers', 'cs' or 'server'"
+        exit 1
+    fi
+else 
+    run_ws_collectors
+    run_normalisers
+    run_server
 fi
 
 echo "Server PID: $SERVER_PID"
