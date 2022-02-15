@@ -1,3 +1,4 @@
+from tkinter import W
 from table import TableUtil
 from queue import Queue
 import json
@@ -141,6 +142,9 @@ class NormaliseCoinbase():
         if not self.snapshot_received:
             self.lob_event_queue.put(data)
             return
+
+        if 'type' not in data.keys():
+            return 
 
         if data['type'] == 'open':
             order_id = data['order_id']
