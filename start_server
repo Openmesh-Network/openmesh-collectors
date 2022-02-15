@@ -2,15 +2,15 @@
 #
 # Starts all Kafka consumers, normalisers, and the main websocket server.
 
-function find_paths {
-    # readarray -d '' $1 < <(find . -name "$2")
-    mapfile -d $'\0' $1 < <(find . -name "$2" -print0)
-}
+ws_paths=()
+while IFS=  read -r -d $'\0'; do
+    ws_paths+=("$REPLY")
+done < <(find . -name "*ws*.py" -print0)
 
-pids=()
-
-find_paths ws_paths "*ws*.py"
-find_paths producer_paths "main.py"
+producer_paths=()
+while IFS=  read -r -d $'\0'; do
+    producer_paths+=("$REPLY")
+done < <(find . -name "main.py" -print0)
 
 function py_bg {
     python3.9 $1 2>&1 > /dev/null &
