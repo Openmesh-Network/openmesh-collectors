@@ -42,7 +42,7 @@ function run_server {
 
 if [ $# -eq 1 ]; then
     if [ "$1" = "ws_collectors" ]; then
-        echo "Running collectors only"
+        echo "Running raw collectors only"
         run_ws_collectors
     elif [ "$1" = "normalisers" ]; then
         echo "Running normalisers only"
@@ -50,12 +50,16 @@ if [ $# -eq 1 ]; then
     elif [ "$1" = "server" ]; then
         echo "Running server only"
         run_server
+    elif [ "$1" = "collectors" ]; then
+        echo "Running collectors only"
+        run_ws_collectors
+        run_normalisers
     elif [ "$1" = "cs" ]; then
-        echo "Running collector and server"
+        echo "Running raw collectors and server"
         run_ws_collectors
         run_server
     else
-        echo "Second argument should be 'ws_collectors', 'normalisers', 'cs' or 'server'"
+        echo "Second argument should be 'ws_collectors', 'normalisers', 'collectors', 'cs' or 'server'"
         exit 1
     fi
 else 
