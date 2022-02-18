@@ -14,6 +14,7 @@ Classes:
 from numba import jit
 from tabulate import tabulate
 import numpy as np
+import json
 
 
 class Table():
@@ -50,7 +51,6 @@ class Table():
         """returns the size of the table"""
         return self.height
 
-    @jit
     def get_cell(self, col: str, row: int):
         """
         returns the cell in the given column and row.
@@ -65,7 +65,6 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row][col]
 
-    @jit
     def set_cell(self, col: str, row: int, data):
         """
         Sets the cell in the given column and row.
@@ -92,7 +91,6 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row]
 
-    @jit
     def set_list(self, row: int, data: list):
         """
         Sets the row at the given index to the given list.
@@ -105,7 +103,6 @@ class Table():
             #    f"Index {row} out of bounds (Length: {self.height}).")
         self._set_list(row, data)
 
-    @jit
     def put_list(self, data: list):
         """
         Appends a row to the table.
@@ -166,7 +163,6 @@ class Table():
               headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
 
-    @jit
     def _set_list(self, row: int, data: list):
         if len(data) != self.width:
             raise ValueError()
@@ -194,7 +190,6 @@ class Table():
     
     def _reset_table(self):
         self.table = np.zeros(self.capacity, dtype = self.dtype)
-
 
 class TableUtil():
     """Useful methods for working with tables."""

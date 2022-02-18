@@ -14,11 +14,12 @@ Classes:
 from numba import jit
 from tabulate import tabulate
 import numpy as np
+import json
 
 
 class Table():
 
-    INITIAL_CAPACITY = 10  # Initial height of array upon init.
+    INITIAL_CAPACITY = 10000  # Initial height of array upon init.
 
     def __init__(self, colnames: list, dtype: list):
         """
@@ -50,7 +51,6 @@ class Table():
         """returns the size of the table"""
         return self.height
 
-    @jit
     def get_cell(self, col: str, row: int):
         """
         returns the cell in the given column and row.
@@ -65,7 +65,6 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row][col]
 
-    @jit
     def set_cell(self, col: str, row: int, data):
         """
         Sets the cell in the given column and row.
@@ -92,7 +91,6 @@ class Table():
                 f"Index {row} out of bounds (Length: {self.height}).")
         return self.table[row]
 
-    @jit
     def set_list(self, row: int, data: list):
         """
         Sets the row at the given index to the given list.
@@ -105,7 +103,6 @@ class Table():
             #    f"Index {row} out of bounds (Length: {self.height}).")
         self._set_list(row, data)
 
-    @jit
     def put_list(self, data: list):
         """
         Appends a row to the table.
@@ -113,7 +110,8 @@ class Table():
         :return: None
         """
         if self.height >= self.capacity:
-            self._expand_table()
+            # self._expand_table()
+            self._reset_table()
 
         row = self.height
         self._set_list(row, data)
@@ -135,7 +133,8 @@ class Table():
         :return: None
         """
         if self.height >= self.capacity:
-            self._expand_table()
+            # self._expand_table()
+            self._reset_table()
 
         row = self.height
         self._set_dict(row, data)
@@ -164,7 +163,6 @@ class Table():
               headers=self.colnames, tablefmt="fancy_grid"))
         print("\n")
 
-    @jit
     def _set_list(self, row: int, data: list):
         if len(data) != self.width:
             raise ValueError()
@@ -189,7 +187,9 @@ class Table():
         extension = np.zeros(self.capacity, dtype=self.dtype)
         self.table = np.concatenate((self.table, extension))
         self.capacity *= 2
-
+    
+    def _reset_table(self):
+        self.table = np.zeros(self.capacity, dtype = self.dtype)
 
 class TableUtil():
     """Useful methods for working with tables."""
@@ -331,26 +331,26 @@ class LobTable(Table):
         types = [
             "i8",
             "i8",
+            "U36",
+            "i8",
+            "i8",
+            "f8",
+            "f8",
+            "i8",
+            "datetime64[ms]",
+            "datetime64[ms]",
+            "i8",
             "i8",
             "i8",
             "i8",
             "f8",
-            "f8",
             "i8",
             "i8",
-            "i8",
-            "i8",
-            "i8",
-            "i8",
+            "U36",
+            "U36",
             "i8",
             "f8",
-            "i8",
-            "i8",
-            "i8",
-            "i8",
-            "U37",
-            "i8",
-            "i8"
+            "f8"
         ]
         dtype = list(zip(colnames, types))
         super().__init__(colnames, dtype)
@@ -372,9 +372,9 @@ class MarketOrdersTable(Table):
             "msg_original_type"
         ]
         dtype = [
-            ("order_id", "i8"),
+            ("order_id", "U36"),
             ("price", "f8"),
-            ("trade_id", "U37"),
+            ("trade_id", "i8"),
             ("timestamp", "datetime64[ms]"),
             ("side", "i8"),
             ("size", "f8"),

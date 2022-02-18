@@ -64,12 +64,13 @@ async def send_rand(ws):
         await asyncio.sleep(random.randint(0,10))
 
 async def start_dummy_client(cid):
+    global clients_connected
     async with websockets.connect("ws://" + host + ":" + port + "/") as ws:
         clients_connected += 1
         try:
             print(f"[{datetime.now()}] {cid}: started")
             await subscribe(ws)
-            asyncio.create_task(send_rand(ws))
+            # asyncio.create_task(send_rand(ws))
             await recv_messages(ws)
         except websockets.ConnectionClosed:
             print(f"[{datetime.now()}] {cid}: websocket connection closed")
@@ -96,7 +97,6 @@ async def main():
     
     for i in range(n_clients):
         tasks.append(asyncio.create_task(start_dummy_client(i)))
-        await asyncio.sleep(0.5)
     print(f"[{datetime.now()}] system: started {n_clients} clients")
 
     asyncio.create_task(dump(n_clients, stop))
@@ -105,7 +105,7 @@ async def main():
 async def dump(n_clients, stop):
     while not stop.done():
         print(f"[{datetime.now()}] system: total_messages={total_messages}, avg_messages={total_messages/n_clients}, clients_connected={clients_connected}", flush=True)
-        await asyncio.sleep(10)
+        await asyncio.sleep(300)
 
 async def dump_handler(signum, n_clients):
     print(f"[{datetime.now()}] system: dump signal {signum} received")

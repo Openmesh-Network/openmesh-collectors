@@ -28,7 +28,7 @@ class Normaliser():
         self.normalise = NormaliseBinance().normalise
 
         self.consumer = ExchangeDataConsumer(symbol)
-        self.producer = NormalisedDataProducer(f"test-{symbol}")
+        self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()

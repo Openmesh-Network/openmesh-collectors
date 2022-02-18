@@ -33,7 +33,7 @@ class Normaliser():
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
-        self.producer = NormalisedDataProducer(f"test-{self._parse_symbol(symbol)}")
+        self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
         # Retrieve correct normalisation function
         self.normalise = NormaliseKrakenFutures().normalise
 

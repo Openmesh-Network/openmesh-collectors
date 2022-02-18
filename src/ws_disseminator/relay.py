@@ -21,6 +21,11 @@ n_published = 0
 connected_lock = asyncio.Lock()
 active_subscriptions = 0
 
+topics = [
+    "phemex-raw",
+    "phemex-normalised",
+]
+
 async def subscribe(topic_id: str, client):
     global active_subscriptions
     async with broadcaster_lock:
@@ -28,11 +33,15 @@ async def subscribe(topic_id: str, client):
             if topic_id not in topic_broadcasters.keys():
                 await create_topic(topic_id)
                 client_subscriptions[topic_id] = [client]
+                if topic_id.endswith("-normalised"):
+                    await client.send_json(topic_broadcasters[topic_id].get_snapshot())
             elif client in client_subscriptions[topic_id]:
                 # log("relay", f"client is already subscribed to {topic_id}")
                 return
             else: 
                 client_subscriptions[topic_id].append(client)
+                if topic_id.endswith("-normalised"):
+                    await client.send_json(topic_broadcasters[topic_id].get_snapshot())
             async with connected_lock:
                 active_subscriptions += 1
 
@@ -85,6 +94,10 @@ async def remove_topic(topic_id):
     async with tasks_lock:
         tasks[topic_id].cancel()
     del tasks[topic_id]
+
+async def prestart():
+    for topic in topics:
+        await create_topic(topic)
 
 def dump():
     slog(f"backlog: {get_backlog()}\tn_published: {n_published}\tactive_subscriptions: {active_subscriptions}")

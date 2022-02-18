@@ -124,23 +124,6 @@ class NonInteractive(RawInput):
     def read(self):
         return self.raw_input("")
 
-supported_exchanges = [
-    "bybit", 
-    "ftx", 
-    "kraken", 
-    "binance", 
-    "bitfinex", 
-    "okex", 
-    "kucoin", 
-    "kraken-futures", 
-    "phemex", 
-    "coinbase",
-    "deribit",
-    "huobi",
-    "BTCUSD",
-    "BTCUSDT"
-]
-
 def parse_input(msg):
     if len(msg) == 0 or msg[:1] != b'/':
         return msg
@@ -153,17 +136,9 @@ def parse_input(msg):
     elif len(args) == 2:
         print(args)
         if args[0] == "sub":
-            if args[1] not in supported_exchanges:
-                print(f"topic {args[1]} is not supported.")
-                return
-            x = json.dumps({"op": "subscribe", "topic": args[1]}).encode('utf-8')
-            return x
+            return json.dumps({"op": "subscribe", "topic": args[1]}).encode('utf-8')
         elif args[0] == "unsub":
-            if args[1] not in supported_exchanges:
-                print(f"topic {args[1]} is not supported.")
-                return
             return json.dumps({"op": "unsubscribe", "topic": args[1]}).encode('utf-8')
-
 
 def main():
     start_time = time.time()

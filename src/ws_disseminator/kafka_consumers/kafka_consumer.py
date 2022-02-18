@@ -2,15 +2,17 @@ from confluent_kafka import Consumer, KafkaError, KafkaException
 import sys
 import asyncio
 import threading
+import json
 
 from ..logger import log
+from .l2_order_book import OrderBookManager
+from .l3_order_book import L3OrderBookManager
+from ..parse_message import sub_type
 
 class AsyncKafkaConsumer():
     def __init__(self, topic):
-        suffix = ""
-        if not topic.isupper():
-            suffix = "-raw"
-        self.topic = "test-" + topic + suffix
+        self.exchange = "-".join(topic.split("-")[:-1])
+        self.topic = topic
         self.conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
@@ -27,6 +29,16 @@ class AsyncKafkaConsumer():
         self.queue = asyncio.Queue()
         self.closed = False
 
+        normalised = self.topic.endswith("-normalised")
+        if not normalised or self.topic.isupper():
+            self.order_book = None
+        elif self.topic in ("coinbase", "bitfinex"):
+            self.order_book = L3OrderBookManager()
+            self.granularity = "L3"
+        else:
+            self.order_book = OrderBookManager()
+            self.granularity = "L2"
+
     def __repr__(self):
         return f"AsyncKafkaConsumer: topic={self.topic}"
 
@@ -39,6 +51,10 @@ class AsyncKafkaConsumer():
                 async with self.consumer_lock:
                     msg = await asyncio.to_thread(self._consume)
                 if msg:
+                    if self.order_book:
+                        msg_d = json.loads(msg)
+                        if "lob_action" in msg_d.keys():
+                            self.order_book.handle_event(msg_d)
                     await self.queue.put(msg)
             except RuntimeError as e:
                 print(e)
@@ -48,6 +64,13 @@ class AsyncKafkaConsumer():
         self.closed = True
         async with self.consumer_lock:
             await asyncio.to_thread(self.consumer.shutdown)
+    
+    def get_snapshot(self):
+        if not self.order_book:
+            return None
+        snapshot = self.order_book.get_snapshot()
+        snapshot['exchange'] = self.exchange
+        return snapshot
     
     def size(self):
         return self.queue.qsize()

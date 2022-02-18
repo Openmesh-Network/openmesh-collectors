@@ -25,8 +25,8 @@ class Normaliser():
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
-        self.producer = NormalisedDataProducer(f"test-{symbol[1:]}")
+        self.consumer = ExchangeDataConsumer(f"{exchange_id}-raw")
+        self.producer = NormalisedDataProducer(f"{exchange_id}-normalised")
         # Retrieve correct normalisation function
         self.normalise = NormalisePhemex().normalise
 
@@ -80,12 +80,12 @@ class Normaliser():
         for event in lob_events:
             if len(event) == 22:
                 self.order_book_manager.handle_event(event)
-                self.producer.produce("%s,%s,LOB" % ("Phemex", "wss://phemex.com/ws"), event)
+                self.producer.produce("%s,%s,LOB" % ("phemex", "wss://phemex.com/ws"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            self.producer.produce("%s,%s,TRADES" % ("Phemex", "wss://phemex.com/ws"), order)
+            self.producer.produce("%s,%s,TRADES" % ("phemex", "wss://phemex.com/ws"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -152,7 +152,7 @@ class Normaliser():
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.consumer.consume()
             if data:
-                print(data)
+                # print(data)
                 self.put_entry(data)
 
     def _metric_threads(self):

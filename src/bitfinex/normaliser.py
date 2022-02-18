@@ -28,7 +28,8 @@ class Normaliser():
         # self.ws_manager.subscribed.wait()
 
         self.consumer = ExchangeDataConsumer(symbol[1:])
-        self.producer = NormalisedDataProducer(f"test-{symbol[1:]}")
+        self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
+
         # Retrieve correct normalisation function
         self.normalise = NormaliseBitfinex().normalise
 

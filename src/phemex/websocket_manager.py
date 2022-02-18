@@ -57,7 +57,7 @@ class WebsocketManager():
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
-                self.producer.produce(f"test-phemex-raw", value=json.dumps(message), on_delivery=self._acked)
+                self.producer.produce(f"phemex-raw", value=json.dumps(message), on_delivery=self._acked)
                 self.producer.poll(0)
             except Exception as e:
                 print("An error occurred while producing: %s" % e)

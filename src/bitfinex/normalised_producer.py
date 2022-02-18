@@ -12,7 +12,7 @@ class NormalisedDataProducer():
             'ssl.certificate.location': 'jay.cert',
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
-            'client.id': 'bitfinex-normalised-producer',
+            'client.id': topic + 'normalised-producer',
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)
