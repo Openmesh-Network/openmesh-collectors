@@ -24,6 +24,7 @@ topics = [
     "coinbase",
     "deribit",
     "huobi",
+    "dydx",
     "BTCUSD",
     "BTCUSDT"
 ]
@@ -64,6 +65,7 @@ async def send_rand(ws):
         await asyncio.sleep(random.randint(0,10))
 
 async def start_dummy_client(cid):
+    global clients_connected
     async with websockets.connect("ws://" + host + ":" + port + "/") as ws:
         clients_connected += 1
         try:
