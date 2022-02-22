@@ -30,9 +30,9 @@ class WebsocketManager():
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
             'client.id': 'kafka-python-producer',
-            'ssl.certificate.location': '../../jay.cert',
-            'ssl.key.location': '../../jay.key',
-            'ssl.ca.location': '../../ca-aiven-cert.pem',
+            'ssl.certificate.location': 'jay.cert',
+            'ssl.key.location': 'jay.key',
+            'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
         
