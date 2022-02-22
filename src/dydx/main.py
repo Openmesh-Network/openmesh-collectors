@@ -30,7 +30,7 @@ def start_normaliser(exchange: str, symbol: str):
 
     while True:
         try:
-            normaliser.dump()  # Print tables
+            #normaliser.dump()  # Print tables
             time.sleep(1/60)
         except KeyboardInterrupt:
             break
@@ -45,11 +45,11 @@ def main():
     if len(sys.argv) > 1:
         exchange = sys.argv[1:]
     else:
-        exchange = "ftx"
+        exchange = "dydx"
 
     # Ticker symbols specified in config files in the "symbols" directory
     # config_path = exchange + ".ini"
-    config_path = "config.ini"
+    config_path = "../../config.ini"
     config.read(config_path)
     symbols = json.loads(config["symbols"][exchange])
     for symbol in symbols:

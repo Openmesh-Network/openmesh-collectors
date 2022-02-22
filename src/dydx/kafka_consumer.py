@@ -9,15 +9,15 @@ class ExchangeDataConsumer():
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
             'client.id': 'kafka-python-consumer',
-            'ssl.certificate.location': 'jay.cert',
-            'ssl.key.location': 'jay.key',
-            'ssl.ca.location': 'ca-aiven-cert.pem',
+            'ssl.certificate.location': '../../jay.cert',
+            'ssl.key.location': '../../jay.key',
+            'ssl.ca.location': '../../ca-aiven-cert.pem',
             'group.id': 'jay-test-group',
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([f"test-ftx-raw"])
-        print(f"Subscribed to topic test-ftx-raw")
+        self.consumer.subscribe([f"dydx-raw"])
+        print(f"Subscribed to topic dydx-raw")
 
     def consume(self):
         msg = self.consumer.poll()

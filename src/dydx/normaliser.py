@@ -9,9 +9,9 @@ from time import sleep
 import os
 import requests
 import json
-from ftx_ws_factory import FtxWsManagerFactory
+from dydx_ws_factory import DydxWsManagerFactory
 from kafka_consumer import ExchangeDataConsumer
-from ftx_normalisation import NormaliseFtx
+from dydx_normalisation import NormaliseDydx
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
@@ -25,10 +25,10 @@ class Normaliser():
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(symbol.replace("/", ""))
-        self.producer = NormalisedDataProducer(f"test-{symbol.replace('/', '')}")
+        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.producer = NormalisedDataProducer(f"test-{symbol.replace('-', '')}")
         # Retrieve correct normalisation function
-        self.normalise = NormaliseFtx().normalise
+        self.normalise = NormaliseDydx().normalise
 
         # Initialise tables
         self.lob_table = LobTable()
@@ -80,12 +80,12 @@ class Normaliser():
         for event in lob_events:
             if len(event) == 22:
                 self.order_book_manager.handle_event(event)
-                self.producer.produce("%s,%s,LOB" % ("FTX", "wss://ftx.com/ws"), event)
+                self.producer.produce("%s,%s,LOB" % ("Dydx", "wss://api.dydx.exchange/v3/ws"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            self.producer.produce("%s,%s,TRADES" % ("FTX", "wss://ftx.com/ws"), order)
+            self.producer.produce("%s,%s,TRADES" % ("Dydx", 'wss://api.dydx.exchange/v3/ws'), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -152,7 +152,7 @@ class Normaliser():
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.consumer.consume()
             if data:
-                print(data)
+                #print(data)
                 self.put_entry(data)
 
     def _metric_threads(self):
