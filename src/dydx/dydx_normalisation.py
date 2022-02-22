@@ -1,5 +1,7 @@
 from table import TableUtil
 import json
+import dateutil.parser
+import time
 
 class NormaliseDydx():
     NO_EVENTS = {"lob_events": [], "market_orders": []}
@@ -17,86 +19,33 @@ class NormaliseDydx():
         market_orders = []
 
         # Snapshot
-        if data['type'] == 'subscribed':
+        if data['type'] == 'subscribed' and data['channel'] == 'v3_orderbook':
             orders = data['contents']
             for bid in orders['bids']:
-                pass
+                self._handle_lob_event(bid, 1, data['receive_timestamp'], lob_events)
+            for ask in orders['asks']:
+                self._handle_lob_event(ask, 2, data['receive_timestamp'], lob_events)
 
         # Handling new LOB events
-        if 'asks' in data['data']:
-            ts = float(data['data']['time'])
-            order_data = data['data']
+        elif data['type'] == 'channel_data' and data['channel'] == 'v3_orderbook':
+            order_data = data['contents']
             for ask in order_data['asks']:
-                price = float(ask[0])
-                size = float(ask[1])
-                # For dydx, if the order size is 0, it means that the level is being removed
-                if size == 0:
-                    lob_action = 3
-                    if price in self.ACTIVE_LEVELS:
-                        self.ACTIVE_LEVELS.remove(price)
-                    self.QUOTE_NO += 1
-                # If the price is already in the active levels, it means that the level is being updated with a new size
-                elif price in self.ACTIVE_LEVELS:
-                    lob_action = 4
-                # Otherwise, it means that a new price level is being inserted
-                else:
-                    lob_action = 2
-                    self.ACTIVE_LEVELS.add(price)
-                # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
-                lob_events.append(self.util.create_lob_event(
-                    quote_no=self.QUOTE_NO,
-                    event_no=self.EVENT_NO,
-                    order_id=self.ORDER_ID,
-                    side=2,
-                    price=price,
-                    size=size if size else -1,
-                    lob_action=lob_action,
-                    send_timestamp=ts,
-                    receive_timestamp=data["receive_timestamp"],
-                    order_type=0
-                ))
-                self.QUOTE_NO += 1
-                self.ORDER_ID += 1
-                self.EVENT_NO += 1
+                self._handle_lob_event(ask, 2, data['receive_timestamp'], lob_events)
             for bid in order_data['bids']:
-                price = float(bid[0])
-                size = float(bid[1])
-                if size == 0:
-                    lob_action = 3
-                    if price in self.ACTIVE_LEVELS:
-                        self.ACTIVE_LEVELS.remove(price)
-                elif price in self.ACTIVE_LEVELS:
-                    lob_action = 4
-                else:
-                    lob_action = 2
-                    self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
-                    quote_no=self.QUOTE_NO,
-                    event_no=self.EVENT_NO,
-                    order_id=self.ORDER_ID,
-                    side=1,
-                    price=price,
-                    size=size if size else -1,
-                    lob_action=lob_action,
-                    send_timestamp=ts,
-                    receive_timestamp=data["receive_timestamp"],
-                    order_type=0
-                ))
-                self.QUOTE_NO += 1
-                self.ORDER_ID += 1
-                self.EVENT_NO += 1
+                self._handle_lob_event(bid, 1, data['receive_timestamp'], lob_events)
 
-        elif "liquidation" in data['data'][0]:
-            trade = data['data'][0]
-            market_orders.append(self.util.create_market_order(
-                order_id=self.ORDER_ID,
-                trade_id=trade['id'],
-                price=float(trade['price']),
-                timestamp=trade['time'],
-                side=1 if trade['side'] == 'Buy' else 2,
-                size=float(trade['size'])
-            ))
-            self.ORDER_ID += 1
+        elif data['type'] == 'channel_data' and data['channel'] == 'v3_trades':
+            for trade in data['contents']['trades']:
+                timestamp = time.mktime(dateutil.parser.isoparse(trade['createdAt']).timetuple())
+                print(timestamp)
+                market_orders.append(self.util.create_market_order(
+                    order_id=self.ORDER_ID,
+                    price=float(trade['price']),
+                    timestamp=timestamp,
+                    side=1 if trade['side'] == 'BUY' else 2,
+                    size=float(trade['size'])
+                ))
+                self.ORDER_ID += 1
 
         # If the data is in an unexpected format, ignore it
         else:
@@ -111,3 +60,34 @@ class NormaliseDydx():
         }
 
         return normalised
+
+    def _handle_lob_event(self, data, side, receive_timestamp, lob_events):
+        if isinstance(data, dict):
+            price = float(data['price'])
+            size = float(data['size'])
+        else:
+            price = float(data[0])
+            size = float(data[1])
+        if size == 0:
+            lob_action = 3
+            if price in self.ACTIVE_LEVELS:
+                self.ACTIVE_LEVELS.remove(price)
+        elif price in self.ACTIVE_LEVELS:
+            lob_action = 4
+        else:
+            lob_action = 2
+            self.ACTIVE_LEVELS.add(price)
+        lob_events.append(self.util.create_lob_event(
+            quote_no=self.QUOTE_NO,
+            event_no=self.EVENT_NO,
+            order_id=self.ORDER_ID,
+            side=side,
+            price=price,
+            size=size if size else -1,
+            lob_action=lob_action,
+            receive_timestamp=receive_timestamp,
+            order_type=0
+        ))
+        self.QUOTE_NO += 1
+        self.ORDER_ID += 1
+        self.EVENT_NO += 1

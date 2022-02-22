@@ -6,6 +6,7 @@ from typing import Callable
 from gzip import decompress
 from websocket import WebSocketApp
 from confluent_kafka import Producer
+import dateutil.parser
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
@@ -57,9 +58,12 @@ class WebsocketManager():
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
+                # if 'channel' in message and message['channel'] == 'v3_trades':
+                #     timestamp = time.mktime(dateutil.parser.isoparse(message['contents']['trades'][0]['createdAt']).timetuple())
+                #     print(timestamp)
                 self.producer.produce(f"dydx-raw", value=json.dumps(message), on_delivery=self._acked)
                 self.producer.poll(0)
-                print(message)
+                #print(message)
             except Exception as e:
                 print("An error occurred while producing: %s" % e)
     
