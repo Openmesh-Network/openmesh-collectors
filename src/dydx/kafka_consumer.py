@@ -16,8 +16,8 @@ class ExchangeDataConsumer():
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([f"dydx-raw"])
-        print(f"Subscribed to topic dydx-raw")
+        self.consumer.subscribe([f"test-dydx-raw"])
+        print(f"Subscribed to topic test-dydx-raw")
 
     def consume(self):
         msg = self.consumer.poll()

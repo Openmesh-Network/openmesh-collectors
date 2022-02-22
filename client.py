@@ -137,6 +137,7 @@ supported_exchanges = [
     "coinbase",
     "deribit",
     "huobi",
+    "dydx",
     "BTCUSD",
     "BTCUSDT"
 ]

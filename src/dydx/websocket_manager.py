@@ -25,7 +25,6 @@ class WebsocketManager():
         self.url = url
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
-        self.connect()
         conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
@@ -35,6 +34,7 @@ class WebsocketManager():
             'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
+        self.connect()
         
     def _acked(self, err, msg):
         if err is not None:
@@ -61,7 +61,7 @@ class WebsocketManager():
                 # if 'channel' in message and message['channel'] == 'v3_trades':
                 #     timestamp = time.mktime(dateutil.parser.isoparse(message['contents']['trades'][0]['createdAt']).timetuple())
                 #     print(timestamp)
-                self.producer.produce(f"dydx-raw", value=json.dumps(message), on_delivery=self._acked)
+                self.producer.produce(f"test-dydx-raw", value=json.dumps(message), on_delivery=self._acked)
                 self.producer.poll(0)
                 #print(message)
             except Exception as e:
