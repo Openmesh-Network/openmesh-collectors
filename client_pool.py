@@ -25,6 +25,7 @@ topics = [
     "deribit",
     "huobi",
     "dydx",
+    "apollox",
     "BTCUSD",
     "BTCUSDT"
 ]
