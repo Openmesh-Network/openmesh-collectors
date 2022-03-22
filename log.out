@@ -1,8 +1,4 @@
-[2022-02-25 19:33:04] server: listening
-[2022-02-25 19:34:52] async_kafka: bybit consumer started
-[2022-02-25 19:34:55] async_kafka: bybit consumer stopped
-[2022-02-25 19:35:23] async_kafka: apollox consumer started
-[2022-02-25 19:35:57] server: stop signal (signum 10) received.
-[2022-02-25 19:35:57] server: stopping...
-[2022-02-25 19:35:57] server: shut down
-[2022-02-25 19:35:57] async_kafka: apollox consumer stopped
+[2022-03-22 19:34:17] server: listening
+[2022-03-22 19:34:29] server: stop signal (signum 10) received.
+[2022-03-22 19:34:29] server: stopping...
+[2022-03-22 19:34:29] server: shut down

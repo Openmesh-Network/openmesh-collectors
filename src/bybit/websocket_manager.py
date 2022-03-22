@@ -13,7 +13,7 @@ from confluent_kafka import Producer
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
 
-    def __init__(self, url: str, subscribe: Callable, unsubscribe: Callable):
+    def __init__(self, url: str, subscribe: Callable, unsubscribe: Callable, symbol: str):
         """
         subscribe is a function that's called right after the websocket connects.
         unsubscribe is a function that's called just before the websocket disconnects.
@@ -25,8 +25,10 @@ class WebsocketManager():
         self.ws = None
         self.queue = Queue()
         self.url = url
+        self.indicators_url = "https://api.bybit.com/v2/public/tickers"
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
+        self.symbol = symbol
         self.connect()
         conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
@@ -37,7 +39,28 @@ class WebsocketManager():
             'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
+        self.loop = asyncio.get_event_loop()
+        self.indicators_task = self.loop.create_task(self._get_indicators_periodically())
+        try:
+            self.loop.run_until_complete(self.indicators_task)
+        finally:
+            self.loop.close()
         
+    async def _get_indicators_periodically(self):
+        while True:
+            indicator_data = requests.get(self.indicators_url, params={"symbol": self.symbol}).json()['result'][0]
+            self.producer.produce(f"test-bybit-indicators", key="%s:%s" % ("Bybit", self.url), value=json.dumps({
+                'topic': 'indicators.BTCUSD',
+                'open_interest': indicator_data['open_interest'],
+                'open_value': float(indicator_data['open_value']),
+                'funding_rate': float(indicator_data['funding_rate']),
+                'mark_price': float(indicator_data['mark_price']),
+                'index_price': float(indicator_data['index_price']),
+                'total_volume': indicator_data['total_volume'],
+                'total_turnover': float(indicator_data['total_turnover']),
+            }), on_delivery=self._acked)
+            await asyncio.sleep(1)
+
     def _acked(self, err, msg):
         if err is not None:
             print("Failed to deliver message: {}".format(err))
@@ -57,7 +80,6 @@ class WebsocketManager():
 
     def _on_message(self, ws, message):
         message = json.loads(message)
-        #print(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:

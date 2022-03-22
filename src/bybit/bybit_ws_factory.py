@@ -24,7 +24,7 @@ class BybitWsManagerFactory():
             ws_manager.send_json(request)
 
             
-        ws_manager = WebsocketManager(url,subscribe,unsubscribe)
+        ws_manager = WebsocketManager(url,subscribe,unsubscribe,symbol)
         return ws_manager
 
 def main():
