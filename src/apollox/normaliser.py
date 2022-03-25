@@ -7,14 +7,14 @@ Instantiates the correct websocket connection with an ID.
 from threading import Thread, Lock
 from time import sleep
 import os
-import requests
 import json
-from phemex_ws_factory import PhemexWsManagerFactory
-from kafka_consumer import ExchangeDataConsumer
-from phemex_normalisation import NormalisePhemex
+
+from apollox_ws_manager import ApolloXWebsocketManager
+from apollox_normalisation import NormaliseApolloX
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric
+from kafka_consumer import ExchangeDataConsumer
 from normalised_producer import NormalisedDataProducer
 
 class Normaliser():
@@ -22,19 +22,17 @@ class Normaliser():
 
     def __init__(self, exchange_id: str, symbol: str):
         self.name = exchange_id + ":" + symbol
-        self.symbol = symbol
         # Initialise WebSocket handler
-        #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(f"test-{exchange_id}-raw")
-        self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
-        # Retrieve correct normalisation function
-        self.normalise = NormalisePhemex().normalise
 
+        # Retrieve correct normalisation function
+        self.normalise = NormaliseApolloX().normalise
+
+        self.consumer = ExchangeDataConsumer(symbol)
+        self.producer = NormalisedDataProducer(f"test-{symbol}")
         # Initialise tables
         self.lob_table = LobTable()
         self.market_orders_table = MarketOrdersTable()
         self.order_book_manager = OrderBookManager()
-        # self.writer = DataWriter(exchange_id, symbol)
 
         # Metric observers
         self.metrics = []
@@ -69,23 +67,22 @@ class Normaliser():
         :param data: Data to be put into the table.
         :return: None
         """
-        if not data:
-            return
-        data = self.normalise(json.loads(data))
+        data = self.normalise(data)
         lob_events = data["lob_events"]
         market_orders = data["market_orders"]
 
         self.lob_table_lock.acquire()
         self.lob_lock.acquire()
         for event in lob_events:
-            if len(event) == 22:
-                self.order_book_manager.handle_event(event)
-                self.producer.produce("%s,%s,LOB" % ("phemex", "wss://phemex.com/ws"), event)
+            self.order_book_manager.handle_event(event)
+            self.producer.produce("%s,%s,LOB" % ("ApolloX", "wss://fstream.apollox.finance/ws"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            self.producer.produce("%s,%s,TRADES" % ("phemex", "wss://phemex.com/ws"), order)
+            if len(order) > 0:
+                self.producer.produce("%s,%s,TRADES" % ("ApolloX", "wss://fstream.apollox.finance/ws"), order)
+                
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -107,11 +104,9 @@ class Normaliser():
         return
 
     def _dump(self):
-        """Modify to change the output format."""
-        #self._dump_lob_table()
+        self._dump_lob_table()
         self._dump_market_orders()
         self._dump_lob()
-        #self.ws_manager.get_q_size()  # Queue backlog
         self._dump_metrics()
         return
 
@@ -152,8 +147,8 @@ class Normaliser():
             # NOTE: This function blocks when there are no messages in the queue.
             data = self.consumer.consume()
             if data:
-                # print(data)
-                self.put_entry(data)
+                #print(f"Normalising {data}")
+                self.put_entry(json.loads(data))
 
     def _metric_threads(self):
         while True:

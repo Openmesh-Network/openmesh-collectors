@@ -1,1 +1,0 @@
-Executing <Task pending name='Task-2' coro=<run_server() running at /mnt/c/Users/Rayman/Desktop/l3_data_collection/src/ws_disseminator/server_daemon.py:39> wait_for=<_GatheringFuture pending cb=[<TaskWakeupMethWrapper object at 0x7f7853549b80>()] created at /usr/lib/python3.9/asyncio/tasks.py:704> created at /usr/lib/python3.9/asyncio/tasks.py:361> took 0.169 seconds

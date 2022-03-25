@@ -1,6 +1,0 @@
-[2022-02-17 17:07:36] server: listening
-[2022-02-17 17:07:40] async_kafka: phemex-normalised consumer started
-[2022-02-17 17:22:03] async_kafka: phemex-normalised consumer stopped
-[2022-02-17 17:22:19] server: stop signal (signum 10) received.
-[2022-02-17 17:22:19] server: stopping...
-[2022-02-17 17:22:19] server: shut down

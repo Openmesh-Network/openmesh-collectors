@@ -1,19 +1,17 @@
 import json
 import time
-import asyncio
-import requests
 from threading import Thread, Lock
 from queue import Queue
 from typing import Callable
 from gzip import decompress
-from urllib import request
 from websocket import WebSocketApp
 from confluent_kafka import Producer
+import dateutil.parser
 
 class WebsocketManager():
     _CONNECT_TIMEOUT_S = 5
 
-    def __init__(self, url: str, subscribe: Callable, unsubscribe: Callable, symbol: str):
+    def __init__(self, url: str, subscribe: Callable, unsubscribe: Callable):
         """
         subscribe is a function that's called right after the websocket connects.
         unsubscribe is a function that's called just before the websocket disconnects.
@@ -25,11 +23,8 @@ class WebsocketManager():
         self.ws = None
         self.queue = Queue()
         self.url = url
-        self.indicators_url = "https://api.bybit.com/v2/public/tickers"
         self.subscribe = subscribe
         self.unsubscribe = unsubscribe
-        self.symbol = symbol
-        self.connect()
         conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
             'security.protocol' : 'SSL', 
@@ -39,28 +34,8 @@ class WebsocketManager():
             'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
-        self.loop = asyncio.get_event_loop()
-        self.indicators_task = self.loop.create_task(self._get_indicators_periodically())
-        try:
-            self.loop.run_until_complete(self.indicators_task)
-        finally:
-            self.loop.close()
+        self.connect()
         
-    async def _get_indicators_periodically(self):
-        while True:
-            indicator_data = requests.get(self.indicators_url, params={"symbol": self.symbol}).json()['result'][0]
-            self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps({
-                'topic': 'indicators.BTCUSD',
-                'open_interest': indicator_data['open_interest'],
-                'open_value': float(indicator_data['open_value']),
-                'funding_rate': float(indicator_data['funding_rate']),
-                'mark_price': float(indicator_data['mark_price']),
-                'index_price': float(indicator_data['index_price']),
-                'total_volume': indicator_data['total_volume'],
-                'total_turnover': float(indicator_data['total_turnover']),
-            }), on_delivery=self._acked)
-            await asyncio.sleep(1)
-
     def _acked(self, err, msg):
         if err is not None:
             print("Failed to deliver message: {}".format(err))
@@ -83,9 +58,12 @@ class WebsocketManager():
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
-                self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps(message), on_delivery=self._acked)
-                #print(f"Produced {symbol}")
+                # if 'channel' in message and message['channel'] == 'v3_trades':
+                #     timestamp = time.mktime(dateutil.parser.isoparse(message['contents']['trades'][0]['createdAt']).timetuple())
+                #     print(timestamp)
+                self.producer.produce(f"test-dydx-raw", value=json.dumps(message), on_delivery=self._acked)
                 self.producer.poll(0)
+                #print(message)
             except Exception as e:
                 print("An error occurred while producing: %s" % e)
     
@@ -110,7 +88,7 @@ class WebsocketManager():
             self.url,
             on_message=self._wrap_callback(self._on_message),
             on_close=self._wrap_callback(self._on_close),
-            on_error=self._wrap_callback(self._on_error)
+            on_error=self._wrap_callback(self._on_error),
         )
 
         wst = Thread(target=self._run_websocket, args=(self.ws,))
@@ -146,9 +124,6 @@ class WebsocketManager():
             pass
             # self._reconnect(ws)
 
-    def _get_url(self):
-        return self.url
-
     def _reconnect(self, ws):
         """Closes a connection and attempts to reconnect"""
         assert ws is not None, '_reconnect should only be called with an existing ws'
@@ -172,7 +147,7 @@ class WebsocketManager():
         self.unsubscribe()
         self.subscribe()
 
-    def _on_close(self, ws):
+    def _on_close(self, ws, a, b):
         print("Connection Closed")
         self.unsubscribe(self)
         self._reconnect(ws)

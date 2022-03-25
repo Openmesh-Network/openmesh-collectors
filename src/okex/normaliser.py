@@ -25,7 +25,7 @@ class Normaliser():
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.consumer = ExchangeDataConsumer(f"test-{exchange_id}-raw")
         self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
         # Retrieve correct normalisation function
         self.normalise = NormaliseOkex().normalise

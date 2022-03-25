@@ -1,19 +1,18 @@
-import json
-import time
-import asyncio
-import requests
-from threading import Thread, Lock
+import sys
+from threading import Thread, Lock, Event
 from queue import Queue
-from typing import Callable
-from gzip import decompress
-from urllib import request
 from websocket import WebSocketApp
 from confluent_kafka import Producer
 
-class WebsocketManager():
+import json
+import time
+import requests
+
+
+class ApolloXWebsocketManager():
     _CONNECT_TIMEOUT_S = 5
 
-    def __init__(self, url: str, subscribe: Callable, unsubscribe: Callable, symbol: str):
+    def __init__(self, symbol: str):
         """
         subscribe is a function that's called right after the websocket connects.
         unsubscribe is a function that's called just before the websocket disconnects.
@@ -22,13 +21,12 @@ class WebsocketManager():
         WebsocketManager (see KrakenWsManagerFactory in ws_factories.py for an example).
         """
         self.connect_lock = Lock()
-        self.ws = None
         self.queue = Queue()
-        self.url = url
-        self.indicators_url = "https://api.bybit.com/v2/public/tickers"
-        self.subscribe = subscribe
-        self.unsubscribe = unsubscribe
+        self.ws = None
+        self.url = "wss://fstream.apollox.finance/ws/"
+        self.snapshot_url = "https://fapi.apollox.finance/fapi/v1/depth"
         self.symbol = symbol
+        self.snapshot_received = Event()
         self.connect()
         conf = {
             'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
@@ -39,28 +37,8 @@ class WebsocketManager():
             'ssl.ca.location': 'ca-aiven-cert.pem',
         }
         self.producer = Producer(conf)
-        self.loop = asyncio.get_event_loop()
-        self.indicators_task = self.loop.create_task(self._get_indicators_periodically())
-        try:
-            self.loop.run_until_complete(self.indicators_task)
-        finally:
-            self.loop.close()
+        self.get_snapshot()
         
-    async def _get_indicators_periodically(self):
-        while True:
-            indicator_data = requests.get(self.indicators_url, params={"symbol": self.symbol}).json()['result'][0]
-            self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps({
-                'topic': 'indicators.BTCUSD',
-                'open_interest': indicator_data['open_interest'],
-                'open_value': float(indicator_data['open_value']),
-                'funding_rate': float(indicator_data['funding_rate']),
-                'mark_price': float(indicator_data['mark_price']),
-                'index_price': float(indicator_data['index_price']),
-                'total_volume': indicator_data['total_volume'],
-                'total_turnover': float(indicator_data['total_turnover']),
-            }), on_delivery=self._acked)
-            await asyncio.sleep(1)
-
     def _acked(self, err, msg):
         if err is not None:
             print("Failed to deliver message: {}".format(err))
@@ -77,17 +55,27 @@ class WebsocketManager():
               is the UTC timestamp of when the message was received in milliseconds.
         """
         return self.queue.get()
+    
+    def get_snapshot(self):
+        self.snapshot = requests.get(
+                            self.snapshot_url, 
+                            params = dict(symbol=self.symbol.upper())
+                        ).json()
+        self.snapshot["receive_timestamp"] = int(time.time()*10**3)
+        self.producer.produce(f"test-apollox-raw", key="%s:%s" % ("ApolloX", self.url), value=json.dumps(self.snapshot), on_delivery=self._acked)
+        self.producer.poll(0)
 
     def _on_message(self, ws, message):
         message = json.loads(message)
         if isinstance(message, dict):
             message["receive_timestamp"] = int(time.time()*10**3)
             try:
-                self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps(message), on_delivery=self._acked)
-                #print(f"Produced {symbol}")
-                self.producer.poll(0)
-            except Exception as e:
-                print("An error occurred while producing: %s" % e)
+                symbol = self.symbol
+                if self.producer:
+                    self.producer.produce(f"test-apollox-raw", key="%s:%s" % ("ApolloX", self.url), value=json.dumps(message), on_delivery=self._acked)
+                    self.producer.poll(0)
+            except:
+                pass
     
     def get_q_size(self):
         """Returns the size of the queue"""
@@ -110,7 +98,7 @@ class WebsocketManager():
             self.url,
             on_message=self._wrap_callback(self._on_message),
             on_close=self._wrap_callback(self._on_close),
-            on_error=self._wrap_callback(self._on_error)
+            on_error=self._wrap_callback(self._on_error),
         )
 
         wst = Thread(target=self._run_websocket, args=(self.ws,))
@@ -123,7 +111,7 @@ class WebsocketManager():
             if time.time() - ts > self._CONNECT_TIMEOUT_S:
                 self.ws = None
                 raise Exception(
-                    f"Failed to connect to websocket url {self._get_url()}")
+                    f"Failed to connect to websocket url {self.url}")
             time.sleep(0.1)
 
     def _wrap_callback(self, f):
@@ -146,9 +134,6 @@ class WebsocketManager():
             pass
             # self._reconnect(ws)
 
-    def _get_url(self):
-        return self.url
-
     def _reconnect(self, ws):
         """Closes a connection and attempts to reconnect"""
         assert ws is not None, '_reconnect should only be called with an existing ws'
@@ -165,8 +150,30 @@ class WebsocketManager():
             while not self.ws:
                 self._connect()
                 if self.ws:
-                    self.subscribe(self)
+                    self.subscribe()
                     return
+    
+    def subscribe(self):
+        request = {
+            "method": "SUBSCRIBE",
+            "params": [
+                self.symbol.lower() + "@aggTrade",
+                self.symbol.lower() + "@depth@100ms"
+            ],
+            "id": 1
+        }
+        self.send_json(request)
+    
+    def unsubscribe(self):
+        request = {
+            "method": "UNSUBSCRIBE",
+            "params": [
+                self.symbol.lower() + "@aggTrade",
+                self.symbol.lower() + "@depth@100ms"
+            ],
+            "id": 2
+        }
+        self.send_json(request)
     
     def resubscribe(self):
         self.unsubscribe()
@@ -184,3 +191,15 @@ class WebsocketManager():
     def reconnect(self) -> None:
         if self.ws is not None:
             self._reconnect(self.ws)
+
+def main():
+    ws = ApolloXWebsocketManager("BTCUSDT")
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        print("Quitting...")
+        sys.exit(0)
+
+if __name__ == "__main__":
+    main()
