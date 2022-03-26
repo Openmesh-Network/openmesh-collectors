@@ -20,7 +20,7 @@ class NormaliseBybit():
         market_orders = []
 
         # If the message is not a trade or a book update, ignore it. This can be seen by if the JSON response contains an "type" key.
-        if "topic" not in data.keys():
+        if "topic" not in data.keys() or data["topic"].startswith("indicators"):
             print(f"Received message {json.dumps(data)}")
             return self.NO_EVENTS
         

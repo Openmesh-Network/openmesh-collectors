@@ -13,6 +13,7 @@ class NormalisedDataProducer():
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
             'client.id': 'kraken-normalised-producer',
+            'linger.ms': 100
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)
