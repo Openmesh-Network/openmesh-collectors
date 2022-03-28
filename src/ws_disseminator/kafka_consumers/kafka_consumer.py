@@ -4,9 +4,11 @@ import asyncio
 import threading
 import json
 
+from src.orderbooks.orderbook import LobUpdateError
+
 from ..logger import log
-from .l2_order_book import OrderBookManager
-from .l3_order_book import L3OrderBookManager
+from src.orderbooks.l2 import L2Lob
+from src.orderbooks.l3 import L3Lob
 from ..parse_message import sub_type
 
 class AsyncKafkaConsumer():
@@ -20,23 +22,24 @@ class AsyncKafkaConsumer():
             'ssl.certificate.location': 'jay.cert',
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
-            'group.id': 'jay-test-group',
+            'group.id': 'ws-test-group',
             'auto.offset.reset': 'earliest'
         }
         self.consumer = Consumer(self.conf)
-        self.consumer.subscribe([self.topic])
+        self.consumer.subscribe(["test-" + self.topic])
         self.consumer_lock = asyncio.Lock()
         self.queue = asyncio.Queue()
         self.closed = False
+        self.quote_no = None
 
         normalised = self.topic.endswith("-normalised")
         if not normalised or self.topic.isupper():
             self.order_book = None
         elif self.topic in ("coinbase", "bitfinex"):
-            self.order_book = L3OrderBookManager()
+            self.order_book = L3Lob()
             self.granularity = "L3"
         else:
-            self.order_book = OrderBookManager()
+            self.order_book = L2Lob()
             self.granularity = "L2"
 
     def __repr__(self):
@@ -54,7 +57,12 @@ class AsyncKafkaConsumer():
                     if self.order_book:
                         msg_d = json.loads(msg)
                         if "lob_action" in msg_d.keys():
-                            self.order_book.handle_event(msg_d)
+                            try:
+                                self.order_book.handle_event(msg_d)
+                            except LobUpdateError:
+                                pass
+                            if "quote_no" in msg_d.keys():
+                                self.quote_no = msg_d['quote_no']
                     await self.queue.put(msg)
             except RuntimeError as e:
                 print(e)
@@ -68,8 +76,9 @@ class AsyncKafkaConsumer():
     def get_snapshot(self):
         if not self.order_book:
             return None
-        snapshot = self.order_book.get_snapshot()
+        snapshot = json.loads(self.order_book.snapshot())
         snapshot['exchange'] = self.exchange
+        snapshot['quote_no'] = self.quote_no
         return snapshot
     
     def size(self):

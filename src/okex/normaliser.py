@@ -26,7 +26,10 @@ class Normaliser():
         # Initialise WebSocket handler
         #self.ws_manager = deribWsManagerFactory.get_ws_manager(exchange_id, symbol)
         self.consumer = ExchangeDataConsumer(f"test-{exchange_id}-raw")
-        self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
+        self.producers = [
+            NormalisedDataProducer(f"test-{exchange_id}-normalised")
+            # NormalisedDataProducer(f"test-{symbol.replace('-', '')}")
+        ]
         # Retrieve correct normalisation function
         self.normalise = NormaliseOkex().normalise
 
@@ -80,12 +83,14 @@ class Normaliser():
         for event in lob_events:
             if len(event) == 22:
                 self.order_book_manager.handle_event(event)
-                self.producer.produce("%s,%s,LOB" % ("Okex", "wss://ws.okex.com:8443/ws/v5/public"), event)
+                for producer in self.producers:
+                    producer.produce("%s,%s,LOB" % ("Okex", "wss://ws.okex.com:8443/ws/v5/public"), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
 
         for order in market_orders:
-            self.producer.produce("%s,%s,TRADES" % ("Okex", "wss://ws.okex.com:8443/ws/v5/public"), order)
+            for producer in self.producers:
+                producer.produce("%s,%s,TRADES" % ("Okex", "wss://ws.okex.com:8443/ws/v5/public"), order)
 
     def get_lob_events(self):
         """Returns the lob events table."""
@@ -109,10 +114,10 @@ class Normaliser():
     def _dump(self):
         """Modify to change the output format."""
         #self._dump_lob_table()
-        self._dump_market_orders()
-        self._dump_lob()
+        # self._dump_market_orders()
+        # self._dump_lob()
         #self.ws_manager.get_q_size()  # Queue backlog
-        self._dump_metrics()
+        # self._dump_metrics()
         return
 
     def add_metric(self, metric: Metric):
