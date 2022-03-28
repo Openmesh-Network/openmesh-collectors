@@ -11,30 +11,26 @@ class L2Lob(Orderbook):
 
     def handle_event(self, event: dict):
         self._check_fields(event)
-        if event['lob_action'] == 2:
-            self._insert(event)
-        elif event['lob_action'] == 3:
-            self._delete(event)
-        elif event['lob_action'] == 4:
-            self._update(event)
-    
-    def _insert(self, event):
         side, size, price = self._unpack_event(event)
         book = self.bids if side == BID else self.asks
+        if event['lob_action'] == INSERT:
+            self._insert(book, size, price)
+        elif event['lob_action'] == REMOVE:
+            self._remove(book, price)
+        elif event['lob_action'] == UPDATE:
+            self._update(book, size, price)
+    
+    def _insert(self, book, size, price):
         if price in book.keys():
             raise LobUpdateError("Inserting when price level already exists")
         book[price] = size
 
-    def _delete(self, event):
-        side, size, price = self._unpack_event(event)
-        book = self.bids if side == BID else self.asks
+    def _remove(self, book, price):
         if price not in book.keys():
-            raise LobUpdateError("Deleting when price level doesn't exist")
+            raise LobUpdateError("Removing when price level doesn't exist")
         del book[price]
 
-    def _update(self, event):
-        side, size, price = self._unpack_event(event)
-        book = self.bids if side == BID else self.asks
+    def _update(self, book, size, price):
         if price not in book.keys():
             raise LobUpdateError("Updating when price level doesn't exist")
         book[price] = size
