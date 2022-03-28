@@ -50,7 +50,7 @@ class WebsocketManager():
         while True:
             indicator_data = requests.get(self.indicators_url, params={"symbol": self.symbol}).json()['result'][0]
             self.producer.produce(f"test-bybit-raw", key="%s:%s" % ("Bybit", self.url), value=json.dumps({
-                'topic': 'indicators.BTCUSD',
+                'topic': f'indicators.{self.symbol}',
                 'open_interest': indicator_data['open_interest'],
                 'open_value': float(indicator_data['open_value']),
                 'funding_rate': float(indicator_data['funding_rate']),

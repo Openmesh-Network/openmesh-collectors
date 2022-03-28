@@ -13,7 +13,12 @@ class NormalisedDataProducer():
             'ssl.certificate.location': 'jay.cert',
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
+<<<<<<< HEAD
             'client.id': topic + 'normalised-producer',
+=======
+            'client.id': 'kucoin-normalised-producer',
+            'linger.ms': 100
+>>>>>>> 544c0a734f59949745c6337f95744ca1c6e22f68
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)

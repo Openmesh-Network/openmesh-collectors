@@ -124,28 +124,6 @@ class NonInteractive(RawInput):
     def read(self):
         return self.raw_input("")
 
-<<<<<<< HEAD
-=======
-supported_exchanges = [
-    "bybit", 
-    "ftx", 
-    "kraken", 
-    "binance", 
-    "bitfinex", 
-    "okex", 
-    "kucoin", 
-    "kraken-futures", 
-    "phemex", 
-    "coinbase",
-    "deribit",
-    "huobi",
-    "dydx",
-    "apollox",
-    "BTCUSD",
-    "BTCUSDT"
-]
-
->>>>>>> f815d435fc692c76c36e9022ee1de12d94b13cb4
 def parse_input(msg):
     if len(msg) == 0 or msg[:1] != b'/':
         return msg

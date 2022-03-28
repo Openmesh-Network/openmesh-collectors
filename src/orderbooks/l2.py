@@ -1,6 +1,7 @@
 import json
 
-from src.orderbooks.orderbook import Orderbook
+from src.orderbooks.orderbook import Orderbook, LobUpdateError
+from src.orderbooks.lob_enums import *
 
 
 class L2Lob(Orderbook):
@@ -18,13 +19,25 @@ class L2Lob(Orderbook):
             self._update(event)
     
     def _insert(self, event):
-        pass
+        side, size, price = self._unpack_event(event)
+        book = self.bids if side == BID else self.asks
+        if price in book.keys():
+            raise LobUpdateError("Inserting when price level already exists")
+        book[price] = size
 
     def _delete(self, event):
-        pass
+        side, size, price = self._unpack_event(event)
+        book = self.bids if side == BID else self.asks
+        if price not in book.keys():
+            raise LobUpdateError("Deleting when price level doesn't exist")
+        del book[price]
 
     def _update(self, event):
-        pass
+        side, size, price = self._unpack_event(event)
+        book = self.bids if side == BID else self.asks
+        if price not in book.keys():
+            raise LobUpdateError("Updating when price level doesn't exist")
+        book[price] = size
     
     def snapshot(self):
         lob = {'bids': self.bids, 'asks': self.asks}
@@ -37,3 +50,6 @@ class L2Lob(Orderbook):
                 'side' not in keys or \
                 'size' not in keys:
             raise KeyError("Key is not present in LOB event.")
+    
+    def _unpack_event(self, event: dict):
+        return event['side'], event['size'], event['price']
