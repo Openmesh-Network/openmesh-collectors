@@ -35,7 +35,7 @@ class AsyncKafkaConsumer():
         normalised = self.topic.endswith("-normalised")
         if not normalised or self.topic.isupper():
             self.order_book = None
-        elif self.topic in ("coinbase", "bitfinex"):
+        elif self.topic in ("coinbase-normalised", "bitfinex-normalised"):
             self.order_book = L3Lob()
             self.granularity = "L3"
         else:

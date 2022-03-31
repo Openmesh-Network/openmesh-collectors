@@ -13,13 +13,11 @@ class NormalisedDataProducer():
             'ssl.certificate.location': 'jay.cert',
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
-<<<<<<< HEAD
-            'client.id': topic + 'normalised-producer',
-=======
             'client.id': 'deribit-normalised-producer',
-            'linger.ms': '100',
-            'queue.buffering.max.messages': '200000'
->>>>>>> 544c0a734f59949745c6337f95744ca1c6e22f68
+            'linger.ms': 100,
+            'queue.buffering.max.messages': '200000',
+            'queue.buffering.max.ms': 60000, # is this too long?
+            'batch.num.messages': 100, # is this too small?
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)
@@ -32,12 +30,6 @@ class NormalisedDataProducer():
                   (msg.topic(), msg.partition(), msg.offset()))
 
     def produce(self, key, msg):
-<<<<<<< HEAD
-        msg['exchange'] = "deribit"
-        msg['topic'] = self.topic
-        self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
-        self.producer.poll(0)
-=======
         try:
             self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
             self.producer.poll(0)
@@ -46,7 +38,6 @@ class NormalisedDataProducer():
             self.producer.poll(0.1)
             time.sleep(0.5)
             self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
->>>>>>> 544c0a734f59949745c6337f95744ca1c6e22f68
 
 def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}

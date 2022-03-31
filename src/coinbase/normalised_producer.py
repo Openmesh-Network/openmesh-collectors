@@ -2,6 +2,7 @@ from confluent_kafka import Producer, KafkaError, KafkaException
 import sys
 from queue import Queue
 import json
+import time
 
 class NormalisedDataProducer():
     def __init__(self, topic):
@@ -12,12 +13,11 @@ class NormalisedDataProducer():
             'ssl.certificate.location': 'jay.cert',
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
-<<<<<<< HEAD
-            'client.id': topic + 'normalised-producer',
-=======
             'client.id': 'coinbase-normalised-producer',
+            'queue.buffering.max.messages': 500000, # is this too small?
+            'queue.buffering.max.ms': 60000, # is this too long?
+            'batch.num.messages': 100, # is this too small?
             'linger.ms': 100
->>>>>>> 544c0a734f59949745c6337f95744ca1c6e22f68
         }
         self.producer = Producer(self.conf)
         print("Created producer for topic %s" % self.topic)
@@ -32,8 +32,14 @@ class NormalisedDataProducer():
     def produce(self, key, msg):
         msg['exchange'] = "coinbase"
         msg['topic'] = self.topic
-        self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
-        self.producer.poll(0)
+        try:
+            self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+            self.producer.poll(0)
+        except BufferError:
+            print("Queue is full; waiting")
+            time.sleep(0.1)
+            self.producer.poll(0.1)
+            self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
 
 def main():
     conf = {'bootstrap.servers': 'localhost:9092', 'group.id': 'mygroup', 'client.id': 'kafka-python-consumer'}

@@ -131,6 +131,24 @@ class TestL3Lob():
         orderbook.handle_event(event)
         sc = json.loads(orderbook.snapshot(), parse_float=float, parse_int=int)
         self.assert_order_exists(sc, BID, "10000.0", 1, 7.5, "1")
+
+    def test_HandleEvent_UpdateEventToDifferentPrice_ResetsPositionInQueue(self, orderbook, event, insert_event):
+        event['size'] = 5.0
+        event['order_id'] = "2"
+        orderbook.handle_event(event)
+        event['size'] = 3.0
+        event['order_id'] = "3"
+        event['price'] = 10001.0
+        orderbook.handle_event(event)
+        event['lob_action'] = UPDATE
+        event['size'] = 1.0
+        event['price'] = 10001.0
+        event['order_id'] = "1"
+        orderbook.handle_event(event)
+        sc = json.loads(orderbook.snapshot(), parse_float=float, parse_int=int)
+        self.assert_order_exists(sc, BID, "10001.0", 0, 3.0, "3")
+        self.assert_order_exists(sc, BID, "10001.0", 1, 1.0, "1")
+        self.assert_order_exists(sc, BID, "10000.0", 0, 5.0, "2")
     
     def test_HandleEvent_UpdateEventToSmallerSize_KeepsPositionInQueue(self, orderbook, event, insert_event):
         event['size'] = 5.0
@@ -178,3 +196,18 @@ class TestL3Lob():
         event['lob_action'] = REMOVE
         with pytest.raises(LobUpdateError):
             orderbook.handle_event(event)
+
+    def test_HandleEvent_RemoveExistingOrder_ShouldNotDependOnPriceInEvent(self, orderbook, event, insert_event):
+        event['lob_action'] = REMOVE
+        event['price'] = -1
+        orderbook.handle_event(event)
+        sc = json.loads(orderbook.snapshot())
+        assert len(sc['bids']) == 0
+
+    def test_HandleEvent_RemoveOrderThatDoesntExist_ShouldIgnoreMessage(self, orderbook, event, insert_event):
+        event['lob_action'] = REMOVE
+        event['price'] = -1
+        event['order_id'] = "2"
+        orderbook.handle_event(event)
+        sc = json.loads(orderbook.snapshot())
+        assert len(sc['bids']) == 0

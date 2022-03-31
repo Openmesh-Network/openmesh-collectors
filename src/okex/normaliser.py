@@ -12,6 +12,7 @@ import json
 from okex_ws_factory import OkexWsManagerFactory
 from kafka_consumer import ExchangeDataConsumer
 from okex_normalisation import NormaliseOkex
+from src.orderbooks.orderbook import LobUpdateError
 from table import LobTable, MarketOrdersTable
 from order_book import OrderBookManager
 from metrics import Metric

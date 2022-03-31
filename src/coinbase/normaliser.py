@@ -27,7 +27,8 @@ class Normaliser():
         self.symbol = symbol
         # Initialise WebSocket handler
         #self.ws_manager = CoinbaseWsManagerFactory.get_ws_manager(exchange_id, symbol)
-        self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        # self.consumer = ExchangeDataConsumer(symbol.replace("-", ""))
+        self.consumer = ExchangeDataConsumer(f"test-{exchange_id}-raw")
         self.producer = NormalisedDataProducer(f"test-{exchange_id}-normalised")
         # Retrieve correct normalisation function
         self.normalise = NormaliseCoinbase().normalise
@@ -91,7 +92,7 @@ class Normaliser():
         for event in lob_events:
             if len(event) == 22:
                 self.order_book_manager.handle_event(event)
-                event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
+                # event["size_ahead"], event["orders_ahead"] = self.order_book_manager.get_ahead(event)
                 self.producer.produce("%s,%s,LOB" % ("Coinbase", self.url), event)
         self.lob_lock.release()
         self.lob_table_lock.release()
