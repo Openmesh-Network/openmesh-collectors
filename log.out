@@ -1,8 +1,0 @@
-[2022-03-30 12:18:10] server: listening
-[2022-03-30 12:18:26] async_kafka: coinbase-normalised consumer started
-[2022-03-30 12:20:34] async_kafka: coinbase-normalised consumer stopped
-[2022-03-30 12:20:37] async_kafka: coinbase-normalised consumer started
-[2022-03-30 12:26:41] server: stop signal (signum 10) received.
-[2022-03-30 12:26:41] server: stopping...
-[2022-03-30 12:26:41] server: shut down
-[2022-03-30 12:26:41] async_kafka: coinbase-normalised consumer stopped
