@@ -1,6 +1,6 @@
 import json
 import time
-from helpers.tableutil import create_lob_event, create_market_order
+from helpers.util import create_lob_event, create_market_order
 
 ORDER_ID = 0
 QUOTE_NO = 0
@@ -8,7 +8,6 @@ EVENT_NO = 0
 NO_EVENTS = {"lob_events": [], "market_orders": []}
 
 def normalise(data) -> dict:
-    """Rayman"""
     global ORDER_ID, QUOTE_NO, EVENT_NO
     lob_events = []
     market_orders = []
