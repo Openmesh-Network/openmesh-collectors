@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 import json
 
 class NormaliseFtx():
@@ -8,11 +8,7 @@ class NormaliseFtx():
     EVENT_NO = 0
     ORDER_ID = 0
 
-    def __init__(self):
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Jay"""
         lob_events = []
         market_orders = []
 
@@ -42,7 +38,7 @@ class NormaliseFtx():
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
                 # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -69,7 +65,7 @@ class NormaliseFtx():
                 else:
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -87,7 +83,7 @@ class NormaliseFtx():
 
         elif "liquidation" in data['data'][0]:
             trade = data['data'][0]
-            market_orders.append(self.util.create_market_order(
+            market_orders.append(create_market_order(
                 order_id=self.ORDER_ID,
                 trade_id=trade['id'],
                 price=float(trade['price']),
