@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 import json
 
 class NormaliseKrakenFutures():
@@ -9,13 +9,7 @@ class NormaliseKrakenFutures():
     EVENT_NO = 0
     ORDER_ID = 0
 
-    def __init__(self):
-        # Useful utility functions for quickly creating table entries
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Rayman"""
-
         # This function currently only supports LOB events and trade data.
         lob_events = []
         market_orders = []
@@ -30,7 +24,7 @@ class NormaliseKrakenFutures():
             # There's no table column for the product_id/ticker??
             ts = data["timestamp"]
             for bid in data["bids"]:
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     side=1,  # Buy order
@@ -45,7 +39,7 @@ class NormaliseKrakenFutures():
                 self.ACTIVE_BID_LEVELS.add(bid["price"])
                 self.QUOTE_NO += 1
             for ask in data["asks"]:
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     side=2,  # Sell order
@@ -81,7 +75,7 @@ class NormaliseKrakenFutures():
                 else:
                     self.ACTIVE_ASK_LEVELS.add(price)
 
-            lob_events.append(self.util.create_lob_event(
+            lob_events.append(create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 side=1 if data["side"] == "buy" else 2,
@@ -112,7 +106,7 @@ class NormaliseKrakenFutures():
         return normalised
 
     def _handle_market_order(self, market_orders, trade):
-        market_orders.append(self.util.create_market_order(
+        market_orders.append(create_market_order(
             order_id=self.ORDER_ID,
             price=trade["price"],
             trade_id=trade["uid"],

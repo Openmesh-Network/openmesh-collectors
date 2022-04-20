@@ -1,4 +1,5 @@
 from confluent_kafka import Producer, KafkaError, KafkaException
+import asyncio
 import sys
 import json
 
@@ -12,7 +13,7 @@ class KafkaProducer():
             'ssl.key.location': 'jay.key',
             'ssl.ca.location': 'ca-aiven-cert.pem',
             'client.id': f'{topic}-producer',
-            'linger.ms': 100
+            'queue.buffering.max.messages': 1000000,
         }
         self.producer = Producer(self.conf)
 
@@ -20,8 +21,17 @@ class KafkaProducer():
         if err is not None:
             print("Failed to deliver message: %s: %s" % (msg.topic(), msg.partition(), msg.key(), msg.value()), file = sys.stderr)
 
-    def produce(self, key, msg):
+    async def produce(self, key, msg):
         if isinstance(msg, bytes):
             msg = json.loads(msg)
-        self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
-        self.producer.poll(0)
+        produced = False
+        while not produced:
+            try:
+                produced = True
+                self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+                self.producer.poll(0)
+            except BufferError as e:
+                print(e)
+                self.producer.flush()
+                print("Queue flushed")
+                produced = False
