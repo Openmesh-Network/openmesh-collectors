@@ -6,12 +6,14 @@ import json
 
 from normalise.apollox_normalisation import NormaliseApolloX
 from helpers.read_config import get_symbols
-from helpers.enrich_data import enrich_raw, enrich_lob_events, enrich_market_orders
+from helpers.enrich_data import enrich_lob_events, enrich_market_orders, enrich_raw
 from sink_connector.kafka_producer import KafkaProducer
 from sink_connector.ws_to_kafka import produce_messages
+from source_connector.websocket_connector import connect
 
 url = "wss://fstream.apollox.finance/ws/"
 snapshot_url = "https://fapi.apollox.finance/fapi/v1/depth"
+
 
 async def main():
     raw_producer = KafkaProducer("apollox-raw")
@@ -19,28 +21,23 @@ async def main():
     trades_producer = KafkaProducer("apollox-trades")
     symbols = get_symbols('apollox')
     normalise = NormaliseApolloX().normalise
-    async for ws in websockets.connect(url):
-        try:
-            t0 = time.time()
-            # Subscribe
-            for symbol in symbols:
-                subscribe_message = {
-                    "method": "SUBSCRIBE",
-                    "params": [
-                        symbol.lower() + "@aggTrade",
-                        symbol.lower() + "@depth@100ms"
-                    ],
-                    "id": 1
-                }
-                await ws.send(json.dumps(subscribe_message))
-                await produce_snapshot(symbol, raw_producer, normalised_producer, normalise)
-            
-            await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
-        except websockets.ConnectionClosedError as e:
-            t1 = time.time()
-            print(e)
-            print(f"{t1 - t0} seconds elapsed before disconnection")
-            continue
+    await connect(url, handle_apollox, raw_producer, normalised_producer, trades_producer, normalise, symbols)
+
+
+async def handle_apollox(ws, raw_producer, normalised_producer, trades_producer, normalise, symbols):
+    for symbol in symbols:
+        subscribe_message = {
+            "method": "SUBSCRIBE",
+            "params": [
+                symbol.lower() + "@aggTrade",
+                symbol.lower() + "@depth@100ms"
+            ],
+            "id": 1
+        }
+        await ws.send(json.dumps(subscribe_message))
+        await produce_snapshot(symbol, raw_producer, normalised_producer, normalise)
+    
+    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
 
 
 async def produce_snapshot(symbol, raw_producer, normalised_producer, normalise):
