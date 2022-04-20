@@ -14,7 +14,6 @@ from source_connector.websocket_connector import connect
 url = "wss://fstream.apollox.finance/ws/"
 snapshot_url = "https://fapi.apollox.finance/fapi/v1/depth"
 
-
 async def main():
     raw_producer = KafkaProducer("apollox-raw")
     normalised_producer = KafkaProducer("apollox-normalised")
@@ -22,7 +21,6 @@ async def main():
     symbols = get_symbols('apollox')
     normalise = NormaliseApolloX().normalise
     await connect(url, handle_apollox, raw_producer, normalised_producer, trades_producer, normalise, symbols)
-
 
 async def handle_apollox(ws, raw_producer, normalised_producer, trades_producer, normalise, symbols):
     for symbol in symbols:
@@ -38,7 +36,6 @@ async def handle_apollox(ws, raw_producer, normalised_producer, trades_producer,
         await produce_snapshot(symbol, raw_producer, normalised_producer, normalise)
     
     await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
-
 
 async def produce_snapshot(symbol, raw_producer, normalised_producer, normalise):
     async with aiohttp.ClientSession() as session:

@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 import json
 
 class NormaliseKraken():
@@ -9,13 +9,7 @@ class NormaliseKraken():
     EVENT_NO = 0
     ORDER_ID = 0
 
-    def __init__(self):
-        # Useful utility functions for quickly creating table entries
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Rayman"""
-
         # This function currently only supports LOB events and trade data.
         lob_events = []
         market_orders = []
@@ -89,7 +83,7 @@ class NormaliseKraken():
             else:
                 lob_action = 4
 
-        lob_events.append(self.util.create_lob_event(
+        lob_events.append(create_lob_event(
             quote_no=self.QUOTE_NO,
             event_no=self.EVENT_NO,
             side=side,
@@ -103,7 +97,7 @@ class NormaliseKraken():
         self.QUOTE_NO += 1
 
     def _handle_market_order(self, market_orders, trade):
-        market_orders.append(self.util.create_market_order(
+        market_orders.append(create_market_order(
             order_id=self.ORDER_ID,
             price=float(trade[0]),
             timestamp=int(float(trade[2])*10e3),

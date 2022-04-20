@@ -19,7 +19,6 @@ async def main():
     symbols = get_symbols('bybit')
     await connect(url, handle_bybit, raw_producer, normalised_producer, trades_producer, symbols)
 
-
 async def handle_bybit(ws, raw_producer, normalised_producer, trades_producer, symbols):
     for symbol in symbols:
         subscribe_message = {
