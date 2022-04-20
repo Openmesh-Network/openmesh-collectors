@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 
 import json
 
@@ -9,11 +9,7 @@ class NormaliseOkex():
     EVENT_NO = 0
     ORDER_ID = 0
 
-    def __init__(self):
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Jay"""
         lob_events = []
         market_orders = []
 
@@ -44,7 +40,7 @@ class NormaliseOkex():
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
                 # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -72,7 +68,7 @@ class NormaliseOkex():
                 else:
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -90,7 +86,7 @@ class NormaliseOkex():
         elif data['arg']['channel'] == 'trades':
             trade = data['data'][0]
             # Okex only sends one trade per message, so we can simply extract the data and create a market order
-            market_orders.append(self.util.create_market_order(
+            market_orders.append(create_market_order(
                 order_id=self.ORDER_ID,
                 price=float(trade['px']),
                 trade_id=trade['tradeId'],
