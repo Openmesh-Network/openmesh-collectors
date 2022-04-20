@@ -1,3 +1,18 @@
+from gzip import decompress
+import json
+
+
+async def preprocess(msg, *args):
+    try:
+        json.loads(msg)
+    except (TypeError, UnicodeDecodeError) as e:
+        # Huobi is annoying with the way they pingpong
+        msg = decompress(msg)
+        msg_dict = json.loads(msg)
+        if 'ping' in msg_dict:
+            await args[0].send(json.dumps({'pong': msg_dict['ping']}))
+    return msg
+
 def create_lob_event(quote_no=-1,
                     event_no=-1,
                     order_id=-1,

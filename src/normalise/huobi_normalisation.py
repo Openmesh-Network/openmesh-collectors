@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 from queue import Queue
 import json
 
@@ -10,12 +10,10 @@ class NormaliseHuobi():
     ORDER_ID = 0
 
     def __init__(self):
-        self.util = TableUtil()
         self.lob_event_queue = Queue()
         self.snapshot_received = None
 
     def normalise(self, data) -> dict:
-        """Jay"""
         lob_events = []
         market_orders = []
 
@@ -31,7 +29,7 @@ class NormaliseHuobi():
                 price = float(ask[0])
                 size = float(ask[1])
                 side = 2
-                event = self.util.create_lob_event(
+                event = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -46,7 +44,7 @@ class NormaliseHuobi():
                 price = float(bid[0])
                 size = float(bid[1])
                 side = 1
-                event = self.util.create_lob_event(
+                event = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -73,7 +71,7 @@ class NormaliseHuobi():
         elif 'tick' in data and "data" in data['tick']:
             trades = data['tick']['data']
             for trade in trades:
-                market_orders.append(self.util.create_market_order(
+                market_orders.append(create_market_order(
                     order_id=self.ORDER_ID,
                     trade_id=trade['tradeId'],
                     price=float(trade['price']),
@@ -85,7 +83,8 @@ class NormaliseHuobi():
 
         # If the data is in an unexpected format, ignore it
         else:
-            print(f"Received unrecognised message {json.dumps(data)}")
+            if 'ping' not in data.keys():
+                print(f"Received unrecognised message {json.dumps(data)}")
             return self.NO_EVENTS
 
         # Creating final normalised data dictionary which will be returned to the Normaliser
@@ -115,7 +114,7 @@ class NormaliseHuobi():
                 lob_action = 2
                 self.ACTIVE_LEVELS.add(price)
             # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
-            lob_events.append(self.util.create_lob_event(
+            lob_events.append(create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 order_id=self.ORDER_ID,
@@ -143,7 +142,7 @@ class NormaliseHuobi():
             else:
                 lob_action = 2
                 self.ACTIVE_LEVELS.add(price)
-            lob_events.append(self.util.create_lob_event(
+            lob_events.append(create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 order_id=self.ORDER_ID,

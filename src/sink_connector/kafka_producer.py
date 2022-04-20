@@ -21,5 +21,7 @@ class KafkaProducer():
             print("Failed to deliver message: %s: %s" % (msg.topic(), msg.partition(), msg.key(), msg.value()), file = sys.stderr)
 
     def produce(self, key, msg):
+        if isinstance(msg, bytes):
+            msg = json.loads(msg)
         self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
         self.producer.poll(0)
