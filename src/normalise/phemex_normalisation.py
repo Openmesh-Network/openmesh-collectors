@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 
 import json
 
@@ -13,11 +13,7 @@ class NormalisePhemex():
     EVENT_NO = 0
     ORDER_ID = 0
 
-    def __init__(self):
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Will"""
         lob_events = []
         market_orders = []
 
@@ -47,7 +43,7 @@ class NormalisePhemex():
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
                 # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -74,7 +70,7 @@ class NormalisePhemex():
                 else:
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -92,7 +88,7 @@ class NormalisePhemex():
         elif "trades" in data:
             msg = data['type']
             for trade in data['trades']:
-                market_orders.append(self.util.create_market_order(
+                market_orders.append(create_market_order(
                     order_id=self.ORDER_ID,
                     price=float(trade[2]) / 100000000,
                     timestamp=float(trade[0]),
