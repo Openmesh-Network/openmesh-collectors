@@ -5,7 +5,11 @@ import time
 from helpers.enrich_data import enrich_lob_events, enrich_market_orders, enrich_raw
 from helpers.util import preprocess
 
+n_produced = 0
+
 async def produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise):
+    global n_produced
+    asyncio.create_task(monitor_productions())
     async for msg in ws:
         msg = await preprocess(msg, ws)
         await raw_producer.produce(str(time.time()), msg)
@@ -19,3 +23,9 @@ async def produce_messages(ws, raw_producer, normalised_producer, trades_produce
             await normalised_producer.produce(str(time.time()), event)
         for trade in market_orders:
             await trades_producer.produce(str(time.time()), trade)
+        n_produced += 1
+
+async def monitor_productions():
+    while True:
+        print(f"Total Messages Processed: {n_produced}")
+        await asyncio.sleep(1)

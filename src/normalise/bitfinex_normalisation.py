@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 
 import json
 
@@ -11,11 +11,7 @@ class NormaliseBitfinex():
 
     LONG_MAX = 2**63-1
 
-    def __init__(self):
-        self.util = TableUtil()
-
     def normalise(self, data) -> dict:
-        """Rayman"""
         lob_events = []
         market_orders = []
     
@@ -71,7 +67,7 @@ class NormaliseBitfinex():
     
     def _handle_lob_event(self, data, lob_events, order, lob_action):
         side = 1 if order[2] > 0 else 2
-        lob_events.append(self.util.create_lob_event(
+        lob_events.append(create_lob_event(
             quote_no = self.QUOTE_NO,
             event_no = self.EVENT_NO,
             order_id = order[0],
@@ -89,7 +85,7 @@ class NormaliseBitfinex():
     def _handle_trade(self, data, market_orders, trade):
         side = 1 if trade[2] > 0 else 2
         print(trade)
-        market_orders.append(self.util.create_market_order(
+        market_orders.append(create_market_order(
             order_id = self.ORDER_ID,
             price = trade[3],
             trade_id = trade[0],
