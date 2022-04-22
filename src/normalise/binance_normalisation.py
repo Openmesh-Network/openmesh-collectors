@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 
 import json
 
@@ -12,13 +12,11 @@ class NormaliseBinance():
     LONG_MAX = 2**63-1
 
     def __init__(self):
-        self.util = TableUtil()
         self.last_update_id = -1
         self.caught_up = False
         self.last_u = None
 
     def normalise(self, data) -> dict:
-        """Rayman"""
         lob_events = []
         market_orders = []
 
@@ -77,7 +75,7 @@ class NormaliseBinance():
         return normalised
     
     def _handle_lob_event(self, data, lob_events, order, side, lob_action, snapshot=False):
-        lob_events.append(self.util.create_lob_event(
+        lob_events.append(create_lob_event(
             quote_no = self.QUOTE_NO,
             event_no = self.EVENT_NO,
             side = side,
@@ -92,7 +90,7 @@ class NormaliseBinance():
         self.QUOTE_NO += 1
 
     def _handle_trade(self, data, market_orders):
-        market_orders.append(self.util.create_market_order(
+        market_orders.append(create_market_order(
             order_id = self.ORDER_ID,
             price = float(data["p"]),
             trade_id = data["t"],

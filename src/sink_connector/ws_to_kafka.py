@@ -25,6 +25,17 @@ async def produce_messages(ws, raw_producer, normalised_producer, trades_produce
             await trades_producer.produce(str(time.time()), trade)
         n_produced += 1
 
+async def produce_message(message, raw_producer, normalised_producer, trades_producer, normalise):
+    await raw_producer.produce(str(time.time()), message)
+
+    enriched = enrich_raw(json.loads(message))
+    lob_events, market_orders = normalise(enriched)
+    enrich_lob_events(lob_events)
+    enrich_market_orders(market_orders)
+
+    for event in lob_events:
+        await normalised_producer.produce(str(time.time()), event)
+
 async def monitor_productions():
     while True:
         print(f"Total Messages Processed: {n_produced}")

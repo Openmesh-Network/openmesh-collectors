@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 from queue import Queue
 import json
 
@@ -13,12 +13,10 @@ class NormaliseCoinbase():
     LONG_MAX = 2**63-1
 
     def __init__(self):
-        self.util = TableUtil()
         self.snapshot_received = None
         self.lob_event_queue = Queue()
 
     def normalise(self, data) -> dict:
-        """Jay"""
         lob_events = []
         market_orders = []
 
@@ -30,7 +28,7 @@ class NormaliseCoinbase():
                 price = float(ask[0])
                 size = float(ask[1])
                 side = 2
-                event = self.util.create_lob_event(
+                event = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=order_id,
@@ -46,7 +44,7 @@ class NormaliseCoinbase():
                 price = float(bid[0])
                 size = float(bid[1])
                 side = 1
-                event = self.util.create_lob_event(
+                event = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=order_id,
@@ -75,7 +73,7 @@ class NormaliseCoinbase():
 
             #print(data)
 
-            market_orders.append(self.util.create_market_order(
+            market_orders.append(create_market_order(
                     order_id = order_id,
                     trade_id = int(data['trade_id']),
                     price = price,
@@ -87,7 +85,7 @@ class NormaliseCoinbase():
 
             self.ORDER_ID += 1
 
-            event = self.util.create_lob_event(
+            event = create_lob_event(
                     quote_no = self.QUOTE_NO,
                     event_no = self.EVENT_NO,
                     order_id = order_id,
@@ -152,7 +150,7 @@ class NormaliseCoinbase():
             size = float(data['remaining_size'])
 
             self.ACTIVE_ORDER_IDS.add(order_id)
-            event = self.util.create_lob_event(
+            event = create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 order_id=order_id,
@@ -170,7 +168,7 @@ class NormaliseCoinbase():
                 self.ACTIVE_ORDER_IDS.remove(order_id)
             side = 1 if data['side'] == 'buy' else 2
             #size = float(data['size'])
-            event = self.util.create_lob_event(
+            event = create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 order_id=order_id,
@@ -188,7 +186,7 @@ class NormaliseCoinbase():
             side = 1 if data['side'] == 'buy' else 2
             order_id = data['order_id']
 
-            event = self.util.create_lob_event(
+            event = create_lob_event(
                 quote_no=self.QUOTE_NO,
                 event_no=self.EVENT_NO,
                 order_id=order_id,
