@@ -1,4 +1,4 @@
-from table import TableUtil
+from helpers.util import create_lob_event, create_market_order
 from queue import Queue
 import json
 
@@ -10,16 +10,12 @@ class NormaliseKucoin():
     ORDER_ID = 0
 
     def __init__(self):
-        self.util = TableUtil()
         self.snapshot_received = None
         self.message_queue = Queue()
 
     def normalise(self, data) -> dict:
-        """Jay"""
         lob_events = []
         market_orders = []
-
-        #print(data)
 
         if "data" in data and "subject" not in data:
             order_data = data['data']
@@ -28,7 +24,7 @@ class NormaliseKucoin():
                 price = float(bid[0])
                 size = float(bid[1])
                 self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -39,12 +35,12 @@ class NormaliseKucoin():
                     receive_timestamp=data['receive_timestamp'],
                     order_type=0
                 ))
-                print("snapshot order created")
+                # print("Snapshot order created")
             for ask in order_data["asks"]:
                 price = float(ask[0])
                 size = float(ask[1])
                 self.ACTIVE_LEVELS.add(price)
-                lob_events.append(self.util.create_lob_event(
+                lob_events.append(create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -59,10 +55,11 @@ class NormaliseKucoin():
             while not self.message_queue.empty():
                 order = self.message_queue.get()
                 if self.snapshot_received and order[2] > self.snapshot_received:
-                    print("Order sequence is greater than snapshot sequence")
+                    # print("Order sequence is greater than snapshot sequence")
                     self._handle_lob_event(order, order[4], order[3])
                 else:
-                    print("Order discarded; order sequence\t{} is less than snapshot sequence\t{}".format(order[2], self.snapshot_received))
+                    pass
+                    # print("Order discarded; order sequence\t{} is less than snapshot sequence\t{}".format(order[2], self.snapshot_received))
         # If the message is not a trade or a book update, ignore it. This can be seen by if the JSON response contains an "type" key.
         elif data['type'] == 'ack' or data['type'] == 'welcome':
             print(f"Received message {json.dumps(data)}")
@@ -73,7 +70,7 @@ class NormaliseKucoin():
             order_data = data['data']['changes']
             for ask in order_data['asks']:
                 if self.snapshot_received is None:
-                    print("Snapshot not received yet")
+                    # print("Snapshot not received yet")
                     ask.append(2)
                     ask.append(data['receive_timestamp'])
                     self.message_queue.put(ask)
@@ -100,7 +97,7 @@ class NormaliseKucoin():
                     self.ACTIVE_LEVELS.add(price)
                 # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
 
-                order = self.util.create_lob_event(
+                order = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -140,7 +137,7 @@ class NormaliseKucoin():
                     lob_action = 2
                     self.ACTIVE_LEVELS.add(price)
 
-                order = self.util.create_lob_event(
+                order = create_lob_event(
                     quote_no=self.QUOTE_NO,
                     event_no=self.EVENT_NO,
                     order_id=self.ORDER_ID,
@@ -158,7 +155,7 @@ class NormaliseKucoin():
 
         elif data['subject'] == "trade.l3match":
             trade = data['data']
-            market_orders.append(self.util.create_market_order(
+            market_orders.append(create_market_order(
                 order_id=self.ORDER_ID,
                 trade_id=trade['tradeId'],
                 price=float(trade['price']),
@@ -205,7 +202,7 @@ class NormaliseKucoin():
             self.ACTIVE_LEVELS.add(price)
         # Once the nature of the lob event has been determined, it can be created and added to the list of lob events
 
-        order = self.util.create_lob_event(
+        order = create_lob_event(
             quote_no=self.QUOTE_NO,
             event_no=self.EVENT_NO,
             order_id=self.ORDER_ID,

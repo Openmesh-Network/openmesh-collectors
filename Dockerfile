@@ -9,7 +9,7 @@ COPY src/helpers ./helpers
 COPY src/sink_connector ./sink_connector
 COPY src/source_connector ./source_connector
 COPY src/orderbooks ./orderbooks
-COPY src/normalise/bybit_normalisation.py src/normalise/__init__.py ./normalise/
-COPY src/__init__.py src/bybit.py ./
-COPY ca-aiven-cert.pem jay.cert jay.key config.ini ./
-CMD ["python3", "bybit.py"]
+COPY src/normalise/kucoin_normalisation.py src/normalise/__init__.py ./normalise/
+COPY src/__init__.py src/kucoin.py ./
+COPY ca-aiven-cert.pem jay.cert jay.key config.ini .env ./
+CMD ["python3", "kucoin.py"]
