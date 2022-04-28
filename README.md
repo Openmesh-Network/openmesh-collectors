@@ -15,8 +15,19 @@ pip install -r requirements.txt
 
 The easiest way to get the data collection suite working on your local machine is to use [docker and docker-compose](https://docs.docker.com/desktop/windows/install/).
 ## Usage
-Clone the repository and modify the code to connect to your own running Kafka cluster. In Kafka, add topics `<exchange>-raw`, `<exchange>-normalised` and `<exchange>-trades` for each exchange supported in the repo. The collectors will start producing data to all three topics for all exchanges. A file for setting up the Kafka cluster locally and automatically adding the required topics is coming soon.
+Clone the repository and modify the code to connect to your own running Kafka cluster. In Kafka, add topics `<exchange>-raw`, `<exchange>-normalised` and `<exchange>-trades` for every exchange supported in the repo. The collectors will start producing data to all three topics for all exchanges. A file for setting up the Kafka cluster locally and automatically adding the required topics is coming soon.
 
-Put any required key and environment files into the `./keys` directory and they will automatically be mounted onto the containers. After that, navigate to the main directory (with `docker-compose.yml`) and run `docker-compose up -d` to start collecting. To stop collecting, run `docker-compose down`.
+Put any required key and environment files into the `./keys` directory and they will automatically be mounted onto the containers. After that, navigate to the main directory (with `docker-compose.yml`) and run 
+```
+docker-compose up -d
+``` 
+to start collecting. To stop collecting, run 
+```
+docker-compose down
+```
 
-If you don't have docker and docker-compose installed, run `python src/<exchange>.py` to start collecting data for each individual exchange.
+If you don't have docker and docker-compose installed, run 
+```
+python src/<exchange>.py
+``` 
+to start collecting data for each individual exchange.
