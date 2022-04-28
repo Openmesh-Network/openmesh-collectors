@@ -1,4 +1,5 @@
 from confluent_kafka import Producer, KafkaError, KafkaException
+from helpers.read_config import get_kafka_config
 import asyncio
 import sys
 import json
@@ -6,15 +7,9 @@ import json
 class KafkaProducer():
     def __init__(self, topic):
         self.topic = topic
-        self.conf = {
-            'bootstrap.servers': 'SSL://kafka-16054d72-gda-3ad8.aivencloud.com:18921',
-            'security.protocol' : 'SSL', 
-            'ssl.certificate.location': 'jay.cert',
-            'ssl.key.location': 'jay.key',
-            'ssl.ca.location': 'ca-aiven-cert.pem',
-            'client.id': f'{topic}-producer',
-            'queue.buffering.max.messages': 1000000,
-        }
+        self.conf = get_kafka_config()
+        self.conf['client.id'] = topic + '-producer'
+        self.conf['queue.buffering.max.messages'] = 1000000
         self.producer = Producer(self.conf)
 
     def _ack(self, err, msg):

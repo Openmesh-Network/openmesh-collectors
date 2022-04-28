@@ -18,6 +18,7 @@ from sink_connector.ws_to_kafka import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 setup_data_url = "https://api.kucoin.com/api/v1/bullet-public" 
+ENV_PATH = "./keys/.env"
 
 async def main():
     raw_producer = KafkaProducer("kucoin-raw")
@@ -57,7 +58,7 @@ async def handle_kucoin(ws, raw_producer, normalised_producer, trades_producer, 
 
 async def get_kucoin_snapshot(symbol):
     # TODO: CAN GET LEVEL 3 DATA FROM KUCOIN VIA REST API. EXPLORE FURTHER
-    api_info = dotenv_values(".env")
+    api_info = dotenv_values(ENV_PATH)
     timestamp = int(time.time() * 1000)
     str_to_sign = str(timestamp) + "GET" + "/api/v3/market/orderbook/level2?symbol=" + symbol
 

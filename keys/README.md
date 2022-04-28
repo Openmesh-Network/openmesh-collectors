@@ -1,0 +1,2 @@
+# Key Folder
+This folder will appear empty, but is important to keep as you must put any `.pem`, `.cert`, `.env` or any sort of secret authentication token you need into this folder. Everything put into `keys/` will be mounted into the data collection docker images so that any connections which require authorisation (e.g: Kafka cluster, exchange API keys) can work.   
