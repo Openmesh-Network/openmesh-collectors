@@ -2,6 +2,7 @@
 test_conf.config
 config.ini
 keys/*
+!keys/README.md
 
 # Log files
 *.ids 
