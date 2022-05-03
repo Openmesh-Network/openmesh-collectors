@@ -71,7 +71,6 @@ class NormaliseApolloX():
             "market_orders": market_orders
         }
 
-        #print("Normalisation complete")
         return normalised
     
     def _handle_lob_event(self, data, lob_events, order, side, lob_action, snapshot=False):

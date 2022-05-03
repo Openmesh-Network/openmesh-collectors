@@ -116,6 +116,7 @@ class NormaliseCoinbase():
             event = self._handle_lob_event(data)
             if event:
                 lob_events.append(event)
+            self.QUOTE_NO += 1
 
         elif data['type'] == 'received':
             return self.NO_EVENTS
