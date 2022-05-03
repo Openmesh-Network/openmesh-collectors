@@ -11,7 +11,7 @@ async def preprocess(msg, *args):
         msg_dict = json.loads(msg)
         if 'ping' in msg_dict:
             await args[0].send(json.dumps({'pong': msg_dict['ping']}))
-    return msg
+    return json.loads(msg)
 
 def create_lob_event(quote_no=-1,
                     event_no=-1,

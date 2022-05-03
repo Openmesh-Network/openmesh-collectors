@@ -17,13 +17,13 @@ class KafkaProducer():
             print("Failed to deliver message: %s: %s" % (msg.topic(), msg.partition(), msg.key(), msg.value()), file = sys.stderr)
 
     async def produce(self, key, msg):
-        if isinstance(msg, bytes):
-            msg = json.loads(msg)
+        if isinstance(msg, dict):
+            msg = json.dumps(msg).encode('utf-8')
         produced = False
         while not produced:
             try:
                 produced = True
-                self.producer.produce(self.topic, key=key, value=json.dumps(msg), on_delivery=self._ack)
+                self.producer.produce(self.topic, key=key, value=msg, on_delivery=self._ack)
                 self.producer.poll(0)
             except BufferError as e:
                 print(e)
