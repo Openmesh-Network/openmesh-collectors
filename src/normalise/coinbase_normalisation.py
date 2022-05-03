@@ -21,7 +21,6 @@ class NormaliseCoinbase():
         market_orders = []
 
         if 'asks' in data:
-            #print(json.dumps(data, indent=4))
             self.snapshot_received = float(data['sequence'])
             for ask in data['asks']:
                 order_id = ask[2]
@@ -136,9 +135,10 @@ class NormaliseCoinbase():
         return normalised
 
     def _handle_lob_event(self, data):
-        if not self.snapshot_received:
-            self.lob_event_queue.put(data)
-            return
+        # TODO: Implement order book snapshot at some point
+        # if not self.snapshot_received:
+        #    self.lob_event_queue.put(data)
+        #    return
 
         if 'type' not in data.keys():
             return 
