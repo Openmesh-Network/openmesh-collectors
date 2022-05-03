@@ -17,7 +17,7 @@ class KafkaProducer():
             print("Failed to deliver message: %s: %s" % (msg.topic(), msg.partition(), msg.key(), msg.value()), file = sys.stderr)
 
     async def produce(self, key, msg):
-        if isinstance(msg, dict):
+        if isinstance(msg, dict) or isinstance(msg, list):
             msg = json.dumps(msg).encode('utf-8')
         produced = False
         while not produced:

@@ -16,11 +16,12 @@ class NormaliseKraken():
 
         # Kraken specific feed data parsing
         if isinstance(data, dict):
-            print(f"Received message {json.dumps(data)}")
+            if not ("event" in data.keys() and data["event"] == "heartbeat"):
+                print(f"Received message {json.dumps(data)}")
             return self.NO_EVENTS
 
         recv_ts = data[-1]
-        feed = data[2] # data[-3] is the channel name
+        feed = data[-3] # data[-3] is the channel name
         if feed == "book-1000": 
             data = data[1] # Dictionary of orderbook snapshot/updates
             if "bs" in data.keys(): # Snapshot bids
@@ -40,6 +41,7 @@ class NormaliseKraken():
                 self._handle_market_order(market_orders, trade)
         else:
             print(f"Received message {json.dumps(data)}")
+            print(feed)
             return self.NO_EVENTS
         self.EVENT_NO += 1
 
