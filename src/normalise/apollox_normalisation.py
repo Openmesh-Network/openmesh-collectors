@@ -17,7 +17,6 @@ class NormaliseApolloX():
         self.last_u = None
 
     def normalise(self, data) -> dict:
-        """Rayman"""
         lob_events = []
         market_orders = []
 

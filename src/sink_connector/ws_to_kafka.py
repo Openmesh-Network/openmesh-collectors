@@ -15,9 +15,13 @@ async def produce_messages(ws, raw_producer, normalised_producer, trades_produce
         await raw_producer.produce(str(time.time()), msg)
 
         enriched = enrich_raw(json.loads(msg))
-        lob_events, market_orders = normalise(enriched)
+        normalised_data = normalise(enriched)
+        lob_events = normalised_data['lob_events']
+        market_orders = normalised_data['market_orders']
+
         enrich_lob_events(lob_events)
         enrich_market_orders(market_orders)
+        print(lob_events)
 
         for event in lob_events:
             await normalised_producer.produce(str(time.time()), event)
@@ -29,7 +33,10 @@ async def produce_message(message, raw_producer, normalised_producer, trades_pro
     await raw_producer.produce(str(time.time()), message)
 
     enriched = enrich_raw(json.loads(message))
-    lob_events, market_orders = normalise(enriched)
+    normalised_data = normalise(enriched)
+    lob_events = normalised_data['lob_events']
+    market_orders = normalised_data['market_orders']
+
     enrich_lob_events(lob_events)
     enrich_market_orders(market_orders)
 
