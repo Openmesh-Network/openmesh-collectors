@@ -81,42 +81,12 @@ class NormaliseCoinbase():
                     size = size,
                     msg_original_type = data["type"]
                 ))
-
             self.ORDER_ID += 1
-
-            event = create_lob_event(
-                    quote_no = self.QUOTE_NO,
-                    event_no = self.EVENT_NO,
-                    order_id = order_id,
-                    side = side,
-                    price = price,
-                    size = size,
-                    lob_action = 1, 
-                    event_timestamp = data['time'],
-                    receive_timestamp = data["receive_timestamp"],
-                    order_type = 2,
-                    order_executed = 1,
-                    execution_price = price,
-                    executed_size = size,
-                    aggressor_side = side,
-                    matching_order_id = data['taker_order_id'],
-                    old_order_id = data['taker_order_id'],
-                    trade_id = int(data['trade_id'])
-                )
-
-            if self.snapshot_received:
-                lob_events.append(event)
-            else:
-                event['sequence'] = data['sequence']
-                self.lob_event_queue.put(event)
-
-            self.QUOTE_NO += 1
 
         elif data['type'] in ['done', 'open', 'change']:
             event = self._handle_lob_event(data)
             if event:
                 lob_events.append(event)
-            self.QUOTE_NO += 1
 
         elif data['type'] == 'received':
             return self.NO_EVENTS
@@ -162,6 +132,7 @@ class NormaliseCoinbase():
                 event_timestamp=data['time'],
                 receive_timestamp=data['receive_timestamp']
             )
+            self.QUOTE_NO += 1
 
         elif data['type'] == 'done':
             order_id = data['order_id']
@@ -180,6 +151,7 @@ class NormaliseCoinbase():
                 event_timestamp=data['time'],
                 receive_timestamp=data['receive_timestamp']
             )          
+            self.QUOTE_NO += 1
 
         elif data['type'] == 'change':
             new_size = float(data['new_size'])
@@ -198,6 +170,7 @@ class NormaliseCoinbase():
                 event_timestamp=data['time'],
                 receive_timestamp=data['receive_timestamp']
             )
+            self.QUOTE_NO += 1
 
         if event:
             return event

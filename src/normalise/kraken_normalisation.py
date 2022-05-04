@@ -23,19 +23,21 @@ class NormaliseKraken():
         recv_ts = data[-1]
         feed = data[-3] # data[-3] is the channel name
         if feed == "book-1000": 
-            data = data[1] # Dictionary of orderbook snapshot/updates
-            if "bs" in data.keys(): # Snapshot bids
-                for bid in data["bs"]:
-                    self._handle_lob_update("bs", lob_events, bid, 1, recv_ts)
-            if "as" in data.keys(): # Snapshots asks
-                for ask in data["as"]:
-                    self._handle_lob_update("as", lob_events, ask, 2, recv_ts)
-            if "a" in data.keys(): 
-                for ask in data["a"]:
-                    self._handle_lob_update("a", lob_events, ask, 2, recv_ts)
-            if "b" in data.keys(): 
-                for bid in data["b"]:
-                    self._handle_lob_update("b", lob_events, bid, 1, recv_ts)
+            for i in range(1, min(3, len(data)-2)):
+                events = data[i] # Dictionary of orderbook snapshot/updates
+                if isinstance(events, dict):
+                    if "bs" in events.keys(): # Snapshot bids
+                        for bid in events["bs"]:
+                            self._handle_lob_update("bs", lob_events, bid, 1, recv_ts)
+                    if "as" in events.keys(): # Snapshots asks
+                        for ask in events["as"]:
+                            self._handle_lob_update("as", lob_events, ask, 2, recv_ts)
+                    if "a" in events.keys(): 
+                        for ask in events["a"]:
+                            self._handle_lob_update("a", lob_events, ask, 2, recv_ts)
+                    if "b" in events.keys(): 
+                        for bid in events["b"]:
+                            self._handle_lob_update("b", lob_events, bid, 1, recv_ts)
         elif feed == "trade":
             for trade in data[1]:
                 self._handle_market_order(market_orders, trade)
