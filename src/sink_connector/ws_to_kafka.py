@@ -25,7 +25,7 @@ async def produce_messages(ws, raw_producer, normalised_producer, trades_produce
         for event in lob_events:
             normalised_producer.produce(str(event['quote_no']), event)
         for trade in market_orders:
-            trades_producer.produce(str(event['order_id']), trade)
+            trades_producer.produce(str(trade['order_id']), trade)
         n_produced += 1
 
 async def produce_message(message, raw_producer, normalised_producer, trades_producer, normalise):
