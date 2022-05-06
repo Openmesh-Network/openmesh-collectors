@@ -23,7 +23,7 @@ class KafkaProducer():
         while not produced:
             try:
                 produced = True
-                self.producer.produce(self.topic, key=key, value=msg, on_delivery=self._ack)
+                self.producer.produce(self.topic, key=key, value=msg, on_delivery=self._ack, partition=0)
                 self.producer.poll(0)
             except BufferError as e:
                 print(e)

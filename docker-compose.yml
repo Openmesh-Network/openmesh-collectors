@@ -110,3 +110,11 @@ services:
       - type: bind
         source: ./keys
         target: /src/keys 
+
+  bybit_l1_collector:
+    image: gdafund/l1_quote_producers:latest
+    command: bybit.py
+    volumes:
+      - type: bind
+        source: ./keys
+        target: /src/keys 
