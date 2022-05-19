@@ -1,6 +1,7 @@
 import json
 
 from helpers.util import create_lob_event, create_market_order
+from queue import Queue
 
 class NormaliseApolloX():
     NO_EVENTS = {"lob_events": [], "market_orders": []}
@@ -13,12 +14,17 @@ class NormaliseApolloX():
 
     def __init__(self):
         self.last_update_id = -1
-        self.caught_up = True
+        self.caught_up = False
         self.last_u = None
+        self.snapshot_received = False
+        self.queue = Queue()
 
     def normalise(self, data) -> dict:
         lob_events = []
         market_orders = []
+
+        if not self.snapshot_received and "e" in data.keys() and data["e"] == "depthUpdate":
+            self.queue.put(data)
 
         if "lastUpdateId" in data.keys():
             self.last_update_id = data["lastUpdateId"]
@@ -28,6 +34,8 @@ class NormaliseApolloX():
             for ask in data["asks"]:
                 self._handle_lob_event(data, lob_events, ask, 2, 2, snapshot=True) # Insert
                 self.ACTIVE_LEVELS.add(ask[0])
+            self.snapshot_received = True
+            return self._process_queue()
         elif "e" in data.keys() and data["e"] == "depthUpdate":
             u = data["u"]
             U = data["U"]
@@ -71,6 +79,18 @@ class NormaliseApolloX():
             "market_orders": market_orders
         }
 
+        return normalised
+
+    def _process_queue(self):
+        lob_events = []
+        while self.queue.qsize() > 0:
+            data = self.queue.get()
+            result = self.normalise(data)
+            lob_events += result['lob_events']
+        normalised = {
+            "lob_events": lob_events,
+            "market_orders": []
+        }
         return normalised
     
     def _handle_lob_event(self, data, lob_events, order, side, lob_action, snapshot=False):
