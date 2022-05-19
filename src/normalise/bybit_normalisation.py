@@ -13,7 +13,7 @@ def normalise(data) -> dict:
     market_orders = []
 
     # If the message is not a trade or a book update, ignore it. This can be seen by if the JSON response contains an "type" key.
-    if "topic" not in data.keys() or data["topic"].startswith("indicators"):
+    if "topic" not in data.keys():
         print(f"Received message {json.dumps(data)}")
         return NO_EVENTS
     
@@ -26,9 +26,8 @@ def normalise(data) -> dict:
             ts = int(trade["trade_time_ms"])
             price = float(trade["price"])
             trade_id = trade["trade_id"]
-            order_id = int(price*10**4)
             market_orders.append(create_market_order(
-                order_id = order_id,
+                order_id = ORDER_ID,
                 trade_id = trade_id,
                 price = price,
                 timestamp = ts,
@@ -37,26 +36,6 @@ def normalise(data) -> dict:
                 msg_original_type = trade["cross_seq"]
             ))
             ORDER_ID += 1
-            lob_events.append(create_lob_event(
-                quote_no = QUOTE_NO,
-                event_no = EVENT_NO,
-                order_id = order_id,
-                side = side,
-                price = price,
-                size = size,
-                lob_action = 1, 
-                event_timestamp = ts,
-                receive_timestamp = data["receive_timestamp"],
-                order_type = 2,
-                order_executed = 1,
-                execution_price = price,    
-                executed_size = size,
-                aggressor_side = side,
-                matching_order_id = int(price*10**4),
-                old_order_id = int(price*10**4),
-                trade_id = trade_id
-            ))
-            QUOTE_NO += 1
     else: 
         if data["type"] == "snapshot":
             for order in data["data"]:

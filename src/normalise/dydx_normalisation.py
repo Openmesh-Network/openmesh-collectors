@@ -33,7 +33,6 @@ class NormaliseDydx():
         elif data['type'] == 'channel_data' and data['channel'] == 'v3_trades':
             for trade in data['contents']['trades']:
                 timestamp = time.mktime(dateutil.parser.isoparse(trade['createdAt']).timetuple())
-                print(timestamp)
                 market_orders.append(create_market_order(
                     order_id=self.ORDER_ID,
                     price=float(trade['price']),

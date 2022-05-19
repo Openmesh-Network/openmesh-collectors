@@ -13,7 +13,7 @@ class NormaliseApolloX():
 
     def __init__(self):
         self.last_update_id = -1
-        self.caught_up = False
+        self.caught_up = True
         self.last_u = None
 
     def normalise(self, data) -> dict:
