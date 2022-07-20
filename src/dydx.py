@@ -5,16 +5,16 @@ import json
 
 from normalise.dydx_normalisation import NormaliseDydx
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 url = 'wss://api.dydx.exchange/v3/ws'
 
 async def main():
-    raw_producer = KafkaProducer("dydx-raw")
-    normalised_producer = KafkaProducer("dydx-normalised")
-    trades_producer = KafkaProducer("dydx-trades")
+    raw_producer = RedisProducer("dydx-raw")
+    normalised_producer = RedisProducer("dydx-normalised")
+    trades_producer = RedisProducer("dydx-trades")
     symbols = get_symbols('dydx')
     await connect(url, handle_dydx, raw_producer, normalised_producer, trades_producer, symbols)
 

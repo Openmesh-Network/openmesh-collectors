@@ -5,16 +5,16 @@ import json
 
 from normalise.bitfinex_normalisation import NormaliseBitfinex
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 url = "wss://api-pub.bitfinex.com/ws/2"
 
 async def main():
-    raw_producer = KafkaProducer("bitfinex-raw")
-    normalised_producer = KafkaProducer("bitfinex-normalised")
-    trades_producer = KafkaProducer("bitfinex-trades")
+    raw_producer = RedisProducer("bitfinex-raw")
+    normalised_producer = RedisProducer("bitfinex-normalised")
+    trades_producer = RedisProducer("bitfinex-trades")
     symbols = get_symbols('bitfinex')
     await connect(url, handle_bitfinex, raw_producer, normalised_producer, trades_producer, symbols)
 

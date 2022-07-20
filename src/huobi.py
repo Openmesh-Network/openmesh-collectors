@@ -6,17 +6,17 @@ from gzip import decompress
 
 from normalise.huobi_normalisation import NormaliseHuobi
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 book_url = "wss://api-aws.huobi.pro/feed"
 trades_url = 'wss://api-aws.huobi.pro/ws'
 
 async def main():
-    raw_producer = KafkaProducer("huobi-raw")
-    normalised_producer = KafkaProducer("huobi-normalised")
-    trades_producer = KafkaProducer("huobi-trades")
+    raw_producer = RedisProducer("huobi-raw")
+    normalised_producer = RedisProducer("huobi-normalised")
+    trades_producer = RedisProducer("huobi-trades")
     symbols = get_symbols('huobi')
     await asyncio.gather(
         connect(book_url, handle_huobi, raw_producer, normalised_producer, trades_producer, symbols, True),

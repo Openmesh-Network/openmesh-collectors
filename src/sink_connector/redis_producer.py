@@ -28,8 +28,8 @@ class RedisProducer:
             return
         if isinstance(msg, dict) or isinstance(msg, list):
             msg = json.dumps(msg).encode('utf-8')
-        await self.pool.xadd(self.topic, fields={key: msg})
-        print(self.topic, "Produced message to redis:", key, msg)
+        await self.pool.xadd(self.topic, fields={key: msg}, maxlen=self.stream_max_len, approximate=True)
+        return 1
 
     async def pipeline_produce(self, key_field, events):
         num = 0
@@ -37,10 +37,9 @@ class RedisProducer:
             for event in events:
                 key = event[key_field]
                 event = json.dumps(event).encode('utf-8')
-                pipe.xadd(self.topic, fields={key: event})
+                pipe.xadd(self.topic, fields={key: event}, maxlen=self.stream_max_len, approximate=True)
                 num += 1
             await pipe.execute()
-            print(f"Produced {num} messages to redis")
             return num
 
     async def consume(self):

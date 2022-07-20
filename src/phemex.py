@@ -5,16 +5,16 @@ import json
 
 from normalise.phemex_normalisation import NormalisePhemex
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 url = 'wss://phemex.com/ws'
 
 async def main():
-    raw_producer = KafkaProducer("phemex-raw")
-    normalised_producer = KafkaProducer("phemex-normalised")
-    trades_producer = KafkaProducer("phemex-trades")
+    raw_producer = RedisProducer("phemex-raw")
+    normalised_producer = RedisProducer("phemex-normalised")
+    trades_producer = RedisProducer("phemex-trades")
     symbols = get_symbols('phemex')
     await connect(url, handle_phemex, raw_producer, normalised_producer, trades_producer, symbols)
 

@@ -5,8 +5,8 @@ import json
 
 from normalise.binance_normalisation import NormaliseBinance
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages, produce_message
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 from source_connector.restapi_calls import get_snapshot
 
@@ -14,9 +14,9 @@ book_url = "wss://stream.binance.com:9443/ws"
 snapshot_url = "https://api.binance.com/api/v3/depth"
 
 async def main():
-    raw_producer = KafkaProducer("binance-raw")
-    normalised_producer = KafkaProducer("binance-normalised")
-    trades_producer = KafkaProducer("binance-trades")
+    raw_producer = RedisProducer("binance-raw")
+    normalised_producer = RedisProducer("binance-normalised")
+    trades_producer = RedisProducer("binance-trades")
     symbols = get_symbols('binance')
     await connect(book_url, handle_binance, raw_producer, normalised_producer, trades_producer, symbols, True)
 

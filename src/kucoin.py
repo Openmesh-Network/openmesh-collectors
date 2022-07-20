@@ -13,17 +13,19 @@ import hmac
 from normalise.kucoin_normalisation import NormaliseKucoin
 from helpers.read_config import get_symbols
 from helpers.enrich_data import enrich_raw
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages, produce_message
+# from sink_connector.kafka_producer import KafkaProducer
+# from sink_connector.ws_to_kafka import produce_messages, produce_message
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 setup_data_url = "https://api.kucoin.com/api/v1/bullet-public" 
 ENV_PATH = "./keys/.env"
 
 async def main():
-    raw_producer = KafkaProducer("kucoin-raw")
-    normalised_producer = KafkaProducer("kucoin-normalised")
-    trades_producer = KafkaProducer("kucoin-trades")
+    raw_producer = RedisProducer("kucoin-raw")
+    normalised_producer = RedisProducer("kucoin-normalised")
+    trades_producer = RedisProducer("kucoin-trades")
     symbols = get_symbols('kucoin')
     normalise = NormaliseKucoin().normalise
     async with aiohttp.ClientSession() as session:
