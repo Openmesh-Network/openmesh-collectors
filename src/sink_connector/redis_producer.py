@@ -32,15 +32,12 @@ class RedisProducer:
         return 1
 
     async def pipeline_produce(self, key_field, events):
-        num = 0
         async with self.pool.pipeline() as pipe:
             for event in events:
                 key = event[key_field]
                 event = json.dumps(event).encode('utf-8')
                 pipe.xadd(self.topic, fields={key: event}, maxlen=self.stream_max_len, approximate=True)
-                num += 1
             await pipe.execute()
-            return num
 
     async def consume(self):
         if self.pool is None:
