@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = 'wss://phemex.com/ws'
 
 async def main():
-    raw_producer = RedisProducer("phemex-raw")
-    normalised_producer = RedisProducer("phemex-normalised")
-    trades_producer = RedisProducer("phemex-trades")
+    producer = RedisProducer("phemex")
     symbols = get_symbols('phemex')
-    await connect(url, handle_phemex, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_phemex, producer, symbols)
 
-async def handle_phemex(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_phemex(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
                 "id": 1234,  # random id
@@ -30,7 +28,7 @@ async def handle_phemex(ws, raw_producer, normalised_producer, trades_producer, 
         subscribe_message['method'] = "trade.subscribe"
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormalisePhemex().normalise)
+    await produce_messages(ws, producer, NormalisePhemex().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = 'wss://ftx.com/ws/'
 
 async def main():
-    raw_producer = RedisProducer("ftx-raw")
-    normalised_producer = RedisProducer("ftx-normalised")
-    trades_producer = RedisProducer("ftx-trades")
+    producer = RedisProducer("ftx")
     symbols = get_symbols('ftx')
-    await connect(url, handle_ftx, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_ftx, producer, symbols)
 
-async def handle_ftx(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_ftx(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
                 'op': 'subscribe', 
@@ -29,7 +27,7 @@ async def handle_ftx(ws, raw_producer, normalised_producer, trades_producer, sym
         subscribe_message['channel'] = 'trades'
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseFtx().normalise)
+    await produce_messages(ws, producer, NormaliseFtx().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

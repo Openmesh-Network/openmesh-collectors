@@ -15,14 +15,12 @@ url = "wss://fstream.apollox.finance/ws/"
 snapshot_url = "https://fapi.apollox.finance/fapi/v1/depth"
 
 async def main():
-    raw_producer = RedisProducer("apollox-raw")
-    normalised_producer = RedisProducer("apollox-normalised")
-    trades_producer = RedisProducer("apollox-trades")
+    producer = RedisProducer("apollox")
     symbols = get_symbols('apollox')
     normalise = NormaliseApolloX().normalise
-    await connect(url, handle_apollox, raw_producer, normalised_producer, trades_producer, normalise, symbols)
+    await connect(url, handle_apollox, producer, normalise, symbols)
 
-async def handle_apollox(ws, raw_producer, normalised_producer, trades_producer, normalise, symbols):
+async def handle_apollox(ws, producer, normalise, symbols):
     for symbol in symbols:
         subscribe_message = {
             "method": "SUBSCRIBE",
@@ -34,9 +32,9 @@ async def handle_apollox(ws, raw_producer, normalised_producer, trades_producer,
         }
         await ws.send(json.dumps(subscribe_message))
         snapshot = await get_snapshot(snapshot_url + "?symbol=" + symbol.upper())
-        await produce_message(snapshot, raw_producer, normalised_producer, trades_producer, normalise)
+        await produce_message(snapshot, producer, normalise)
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 
 if __name__ == "__main__":

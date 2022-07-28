@@ -23,9 +23,7 @@ setup_data_url = "https://api.kucoin.com/api/v1/bullet-public"
 ENV_PATH = "./keys/.env"
 
 async def main():
-    raw_producer = RedisProducer("kucoin-raw")
-    normalised_producer = RedisProducer("kucoin-normalised")
-    trades_producer = RedisProducer("kucoin-trades")
+    producer = RedisProducer("kucoin")
     symbols = get_symbols('kucoin')
     normalise = NormaliseKucoin().normalise
     async with aiohttp.ClientSession() as session:
@@ -34,9 +32,9 @@ async def main():
     token = setup_data['data']['token']
     endpoint = setup_data['data']["instanceServers"][0]["endpoint"]
     url = f"{endpoint}?token={token}&[connectId=1545910660739]"    
-    await connect(url, handle_kucoin, raw_producer, normalised_producer, trades_producer, normalise, symbols)
+    await connect(url, handle_kucoin, producer, normalise, symbols)
 
-async def handle_kucoin(ws, raw_producer, normalised_producer, trades_producer, normalise, symbols):
+async def handle_kucoin(ws, producer, normalise, symbols):
     for symbol in symbols:
         subscribe_message = {
             'type': 'subscribe', 
@@ -56,7 +54,7 @@ async def handle_kucoin(ws, raw_producer, normalised_producer, trades_producer, 
         # await produce_message(snapshot, raw_producer, normalised_producer, trades_producer, normalise)
         normalise(enrich_raw(json.loads(snapshot))) # Activate normaliser by passing in snapshot
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 async def get_kucoin_snapshot(symbol):
     # TODO: CAN GET LEVEL 3 DATA FROM KUCOIN VIA REST API. EXPLORE FURTHER

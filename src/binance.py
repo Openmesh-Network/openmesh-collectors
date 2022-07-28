@@ -14,13 +14,11 @@ book_url = "wss://stream.binance.com:9443/ws"
 snapshot_url = "https://api.binance.com/api/v3/depth"
 
 async def main():
-    raw_producer = RedisProducer("binance-raw")
-    normalised_producer = RedisProducer("binance-normalised")
-    trades_producer = RedisProducer("binance-trades")
+    producer = RedisProducer("binance")
     symbols = get_symbols('binance')
-    await connect(book_url, handle_binance, raw_producer, normalised_producer, trades_producer, symbols, True)
+    await connect(book_url, handle_binance, producer, symbols, True)
 
-async def handle_binance(ws, raw_producer, normalised_producer, trades_producer, symbols, is_book):
+async def handle_binance(ws, producer, symbols, is_book):
     normalise = NormaliseBinance().normalise
     for symbol in symbols:
         subscribe_message = {
@@ -33,9 +31,9 @@ async def handle_binance(ws, raw_producer, normalised_producer, trades_producer,
         }
         await ws.send(json.dumps(subscribe_message))
         snapshot = await get_snapshot(snapshot_url + "?symbol=" + symbol.upper() + "&limit=5000")
-        await produce_message(snapshot, raw_producer, normalised_producer, trades_producer, normalise)
+        await produce_message(snapshot, producer, normalise)
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

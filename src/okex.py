@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = "wss://ws.okex.com:8443/ws/v5/public"
 
 async def main():
-    raw_producer = RedisProducer("okex-raw")
-    normalised_producer = RedisProducer("okex-normalised")
-    trades_producer = RedisProducer("okex-trades")
+    producer = RedisProducer("okex")
     symbols = get_symbols('okex')
-    await connect(url, handle_okex, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_okex, producer, symbols)
 
-async def handle_okex(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_okex(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {}
         subscribe_message['op'] = 'subscribe'
@@ -27,7 +25,7 @@ async def handle_okex(ws, raw_producer, normalised_producer, trades_producer, sy
         subscribe_message['args'] = [{"channel": "trades", "instId": symbol}]
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseOkex().normalise)
+    await produce_messages(ws, producer, NormaliseOkex().normalise)
 
 
 if __name__ == "__main__":

@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = 'wss://api.dydx.exchange/v3/ws'
 
 async def main():
-    raw_producer = RedisProducer("dydx-raw")
-    normalised_producer = RedisProducer("dydx-normalised")
-    trades_producer = RedisProducer("dydx-trades")
+    producer = RedisProducer("dydx")
     symbols = get_symbols('dydx')
-    await connect(url, handle_dydx, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_dydx, producer, symbols)
 
-async def handle_dydx(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_dydx(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {'type': 'subscribe', 
                 'channel': 'v3_orderbook', 
@@ -30,7 +28,7 @@ async def handle_dydx(ws, raw_producer, normalised_producer, trades_producer, sy
         del subscribe_message['includeOffsets']
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseDydx().normalise)
+    await produce_messages(ws, producer, NormaliseDydx().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

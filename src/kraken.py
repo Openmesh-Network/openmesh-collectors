@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = 'wss://ws.kraken.com'
 
 async def main():
-    raw_producer = RedisProducer("kraken-raw")
-    normalised_producer = RedisProducer("kraken-normalised")
-    trades_producer = RedisProducer("kraken-trades")
+    producer = RedisProducer("kraken")
     symbols = get_symbols('kraken')
-    await connect(url, handle_kraken, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_kraken, producer, symbols)
 
-async def handle_kraken(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_kraken(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
                     "event": "subscribe",
@@ -34,7 +32,7 @@ async def handle_kraken(ws, raw_producer, normalised_producer, trades_producer, 
         subscribe_message["subscription"]["name"] = "trade"
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseKraken().normalise)
+    await produce_messages(ws, producer, NormaliseKraken().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -13,13 +13,11 @@ from source_connector.websocket_connector import connect
 url = 'wss://stream.bybit.com/realtime'
 
 async def main():
-    raw_producer = RedisProducer("bybit-raw")
-    normalised_producer = RedisProducer("bybit-normalised")
-    trades_producer = RedisProducer("bybit-trades")
+    producer = RedisProducer("bybit")
     symbols = get_symbols('bybit')
-    await connect(url, handle_bybit, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_bybit, producer, symbols)
 
-async def handle_bybit(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_bybit(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
                 "op": "subscribe",
@@ -27,7 +25,7 @@ async def handle_bybit(ws, raw_producer, normalised_producer, trades_producer, s
             }
         await ws.send(json.dumps(subscribe_message).encode('utf-8'))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

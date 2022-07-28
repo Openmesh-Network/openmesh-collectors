@@ -15,16 +15,11 @@ book_url = 'wss://ws-feed.exchange.coinbase.com'
 snapshot_url = 'https://api.exchange.coinbase.com/products/{}/book?level=3'
 
 async def main():
-#     raw_producer = KafkaProducer("coinbase-raw")
-#     normalised_producer = KafkaProducer("coinbase-normalised")
-#     trades_producer = KafkaProducer("coinbase-trades")
-    raw_producer = RedisProducer("coinbase-raw")
-    normalised_producer = RedisProducer("coinbase-normalised")
-    trades_producer = RedisProducer("coinbase-trades")
+    producer = RedisProducer("coinbase")
     symbols = get_symbols('coinbase')
-    await connect(book_url, handle_coinbase, raw_producer, normalised_producer, trades_producer, symbols, True)
+    await connect(book_url, handle_coinbase, producer, symbols, True)
 
-async def handle_coinbase(ws, raw_producer, normalised_producer, trades_producer, symbols, is_book):
+async def handle_coinbase(ws, producer, symbols, is_book):
     normalise = NormaliseCoinbase().normalise
     for symbol in symbols:
         subscribe_message = {
@@ -36,7 +31,7 @@ async def handle_coinbase(ws, raw_producer, normalised_producer, trades_producer
         # snapshot = await get_snapshot(snapshot_url.format(symbol))
         # await produce_message(snapshot, raw_producer, normalised_producer, trades_producer, normalise)
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

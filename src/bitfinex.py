@@ -12,13 +12,11 @@ from source_connector.websocket_connector import connect
 url = "wss://api-pub.bitfinex.com/ws/2"
 
 async def main():
-    raw_producer = RedisProducer("bitfinex-raw")
-    normalised_producer = RedisProducer("bitfinex-normalised")
-    trades_producer = RedisProducer("bitfinex-trades")
+    producer = RedisProducer("bitfinex")
     symbols = get_symbols('bitfinex')
-    await connect(url, handle_bitfinex, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_bitfinex, producer, symbols)
 
-async def handle_bitfinex(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_bitfinex(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
             "event": "subscribe",
@@ -33,7 +31,7 @@ async def handle_bitfinex(ws, raw_producer, normalised_producer, trades_producer
         subscribe_message["channel"] = "trades"
         await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseBitfinex().normalise)
+    await produce_messages(ws, producer, NormaliseBitfinex().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -14,16 +14,14 @@ book_url = "wss://api-aws.huobi.pro/feed"
 trades_url = 'wss://api-aws.huobi.pro/ws'
 
 async def main():
-    raw_producer = RedisProducer("huobi-raw")
-    normalised_producer = RedisProducer("huobi-normalised")
-    trades_producer = RedisProducer("huobi-trades")
+    producer = RedisProducer("huobi")
     symbols = get_symbols('huobi')
     await asyncio.gather(
-        connect(book_url, handle_huobi, raw_producer, normalised_producer, trades_producer, symbols, True),
-        connect(trades_url, handle_huobi, raw_producer, normalised_producer, trades_producer, symbols, False),
+        connect(book_url, handle_huobi, producer, symbols, True),
+        connect(trades_url, handle_huobi, producer, symbols, False),
     )
 
-async def handle_huobi(ws, raw_producer, normalised_producer, trades_producer, symbols, is_book):
+async def handle_huobi(ws, producer, symbols, is_book):
     for symbol in symbols:
         if is_book is True:
             subscribe_message = {'sub': f'market.{symbol}.mbp.400', 
@@ -38,7 +36,7 @@ async def handle_huobi(ws, raw_producer, normalised_producer, trades_producer, s
             }
             await ws.send(json.dumps(subscribe_message))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, NormaliseHuobi().normalise)
+    await produce_messages(ws, producer, NormaliseHuobi().normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())
