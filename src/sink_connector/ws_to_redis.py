@@ -9,12 +9,13 @@ n_raw_produced = 0
 n_normalised_produced = 0
 n_trades_produced = 0
 
-async def produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise):
+async def produce_messages(ws, producer, normalise):
     global n_raw_produced, n_normalised_produced, n_trades_produced, quote_no
     asyncio.create_task(monitor_productions())
+    pipe = producer.get_pipe()
     async for msg in ws:
         msg_dict = await preprocess(msg, ws) 
-        raw_producer.produce(str(time.time()), msg_dict)
+        producer.pipeline_produce_raw(pipe, str(time.time()), msg_dict)
         n_raw_produced += 1
 
         enriched = enrich_raw(msg_dict)
@@ -25,17 +26,23 @@ async def produce_messages(ws, raw_producer, normalised_producer, trades_produce
         enrich_lob_events(lob_events)
         enrich_market_orders(market_orders)
 
-        for event in lob_events:
-            normalised_producer.produce(str(event['quote_no']), event)
+        for lob_event in lob_events:
+            producer.pipeline_produce_normalised(pipe, str(time.time()), lob_event)
             n_normalised_produced += 1
-        for trade in market_orders:
-            trades_producer.produce(str(trade['order_id']), trade)
+        n_normalised_produced += len(lob_events) if lob_events else 0
+
+        for market_order in market_orders:
+            producer.pipeline_produce_trade(pipe, str(time.time()), market_order)
             n_trades_produced += 1
+        n_trades_produced += len(market_orders) if market_orders else 0
 
-async def produce_message(message, raw_producer, normalised_producer, trades_producer, normalise):
+        await pipe.execute()
+
+async def produce_message(message, producer, normalise):
     message = json.loads(message)
-    raw_producer.produce(str(time.time()), message)
-
+    pipe = producer.get_pipe()
+    #await raw_producer.produce(str(time.time()), message)
+    producer.pipeline_produce_raw(pipe, str(time.time()), message)
     enriched = enrich_raw(message)
     normalised_data = normalise(enriched)
     lob_events = normalised_data['lob_events']
@@ -45,7 +52,9 @@ async def produce_message(message, raw_producer, normalised_producer, trades_pro
     enrich_market_orders(market_orders)
 
     for event in lob_events:
-        normalised_producer.produce(str(time.time()), event)
+        producer.pipeline_produce_normalised(pipe, str(time.time()), event)
+
+    await pipe.execute()
 
 async def monitor_productions():
     while True:

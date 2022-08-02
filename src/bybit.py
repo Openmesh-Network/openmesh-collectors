@@ -5,21 +5,19 @@ import json
 
 from normalise.bybit_normalisation import normalise
 from helpers.read_config import get_symbols
-from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.ws_to_kafka import produce_messages
+from sink_connector.redis_producer import RedisProducer
+from sink_connector.ws_to_redis import produce_messages, produce_message
 from source_connector.websocket_connector import connect
 
 
 url = 'wss://stream.bybit.com/realtime'
 
 async def main():
-    raw_producer = KafkaProducer("bybit-raw")
-    normalised_producer = KafkaProducer("bybit-normalised")
-    trades_producer = KafkaProducer("bybit-trades")
+    producer = RedisProducer("bybit")
     symbols = get_symbols('bybit')
-    await connect(url, handle_bybit, raw_producer, normalised_producer, trades_producer, symbols)
+    await connect(url, handle_bybit, producer, symbols)
 
-async def handle_bybit(ws, raw_producer, normalised_producer, trades_producer, symbols):
+async def handle_bybit(ws, producer, symbols):
     for symbol in symbols:
         subscribe_message = {
                 "op": "subscribe",
@@ -27,7 +25,7 @@ async def handle_bybit(ws, raw_producer, normalised_producer, trades_producer, s
             }
         await ws.send(json.dumps(subscribe_message).encode('utf-8'))
     
-    await produce_messages(ws, raw_producer, normalised_producer, trades_producer, normalise)
+    await produce_messages(ws, producer, normalise)
 
 if __name__ == "__main__":
     asyncio.run(main())
