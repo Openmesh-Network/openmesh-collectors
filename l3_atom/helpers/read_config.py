@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import json
 from dotenv import dotenv_values
 
-config_path = "config.ini"
+config_path = "../config.ini"
 env_path = "keys/.env"
 
 def get_symbols(exchange: str):

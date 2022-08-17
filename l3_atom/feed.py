@@ -13,10 +13,10 @@ from websockets.exceptions import InvalidStatusCode
 
 from dataclasses import dataclass
 
-from l3_atom.exceptions import ConnectionNotOpen, TooManyRetries
+from exceptions import ConnectionNotOpen, TooManyRetries
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
     datefmt="%d/%b/%Y %H:%M:%S",
     stream=sys.stdout)
@@ -115,26 +115,29 @@ class AsyncConnectionManager:
     Manages an asynchronous connection to a feed -- handling errors, rate limits, e.t.c.
     """
 
-    def __init__(self, conn: AsyncFeed, subscribe: Awaitable, callback: Awaitable, auth: Awaitable, retries: int, interval=30, timemout=120, delay=0):
+    def __init__(self, conn: AsyncFeed, subscribe: Awaitable, callback: Awaitable, auth: Awaitable, channels, retries: int, interval=30, timeout=120, delay=0):
         self.conn = conn
         self.subscribe = subscribe
         self.callback = callback
         self.auth = auth
+        self.channels = channels
         self.retries = retries
         self.interval = interval
-        self.timeout = timemout
+        self.timeout = timeout
+        self.delay = delay
+        self.running = True
 
     def start_connection(self, async_loop):
         async_loop.create_task(self._setup_connection())
 
     async def _monitor(self):
         while self.conn.is_open and self.running:
-            if self.conn.last_message:
-                if time.time() - self.conn.last_message > self.timeout:
+            if self.conn.last_received_time:
+                if time.time() - self.conn.last_received_time > self.timeout:
                     logging.warning("%s: timeout window received 0 messages, restarting", self.conn.id)
                     await self.conn.close()
                     break
-            await asyncio.sleep(self.timeout_interval)
+            await asyncio.sleep(self.interval)
 
     async def _setup_connection(self):
         await asyncio.sleep(self.delay)
@@ -144,14 +147,15 @@ class AsyncConnectionManager:
         while (retries <= self.retries or self.retries == -1) and self.running:
             try:
                 async with self.conn.connect() as connection:
-                    await self.auth(connection)
-                    await self.subscribe(connection)
+                    if self.auth:
+                        await self.auth(connection)
+                    await self.subscribe(connection, self.channels)
                     retries = 0
                     limited = 0
                     delay = 1
                     if self.timeout != -1:
                         loop = asyncio.get_running_loop()
-                        loop.create_task(self._watcher())
+                        loop.create_task(self._monitor())
                     await self._callback(connection, self.callback)
             except (ConnectionClosed, ConnectionAbortedError, ConnectionResetError) as e:
                 logging.warning("%s: connection issue - %s. reconnecting in %.1f seconds...", self.conn.id, str(e), delay, exc_info=True)
@@ -182,28 +186,27 @@ class AsyncConnectionManager:
             raise TooManyRetries()
 
     async def _callback(self, connection, callback):
-        async for data in connection:
+        async for data in connection.read_data():
             if not self.running:
                 logging.info('%s: terminating the connection callback as manager is not running', self.conn.id)
                 await connection.close()
                 return
             await callback(data, connection, self.conn.last_received_time)
 
-@dataclass
-class WebsocketEndpoint:
-    address: str
-    sandbox: str = None
-    instrument_filter: str = None
-    channel_filter: str = None
-    limit: int = None
-    options: dict = None
-    authentication: bool = None
+class WSEndpoint:
 
-    def __post_init__(self):
-        defaults = {'ping_interval': 10, 'ping_timeout': None, 'max_size': 2**23, 'max_queue': None}
-        if self.options:
-            defaults.update(self.options)
-        self.options = defaults
+    def __init__(self, main_url: str, sandbox_url:str=None, authentication:bool=None, options:dict=None, limit: int=None):
+        self.main_url = main_url
+        self.sandbox_url = sandbox_url
+        self.authentication = authentication
+        self.limit = limit
+        default = {'max_size': 2**23, 'max_queue': None, 'ping_interval': 10, 'ping_timeout': None}
+        if options:
+            self.options = options
+            self.options.update(default)
+        else:
+            self.options = default
 
-    def get_address(self, sandbox=False):
-        return self.sandbox if sandbox and self.sandbox else self.address
+    # Can be overloaded if the URL needs to be calculated in a different way (e.g. dynamically with a token)
+    def get_url(self):
+        return self.main_url
