@@ -1,9 +1,14 @@
 from abc import abstractmethod
-from helpers.read_config import get_symbols
+from l3_atom.helpers.read_config import get_symbols
 from datetime import datetime as dt
 import asyncio
+import json
 
-from feed import AsyncConnectionManager, AsyncFeed, WSConnection
+from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
+
+from l3_atom.sink_connector.redis_multiprocessed import RedisStreamsConnector
+
+import logging
 
 
 class OrderBookExchange:
@@ -66,13 +71,15 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.interval = interval
         self.timeout = timeout
         self.delay = delay
+        self.redis_connector = RedisStreamsConnector(self.name)
 
     # Each exchange has its own way of subscribing to channels and handling incoming messages
     async def subscribe(self, conn: AsyncFeed, channels: list):
         pass
 
-    async def process_message(self, conn: AsyncFeed, message: str, ts: float):
-        pass
+    async def process_message(self, message: str, conn: AsyncFeed, ts: float):
+        # print(json.dumps(json.loads(message), indent=4))
+        await self.redis_connector(message)
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """
@@ -91,5 +98,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
         for connection, subscribe, handler, auth, channels in connections:
             self.connection_handlers.append(AsyncConnectionManager(connection, subscribe, handler, auth, channels, self.retries, self.interval, self.timeout, self.delay))
             self.connection_handlers[-1].start_connection(loop)
+
+        logging.info('%s: Starting Redis Connector', self.name)
+        self.redis_connector.start(loop)
 
         

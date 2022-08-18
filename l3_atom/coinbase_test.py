@@ -1,6 +1,6 @@
-from orderbook_exchange import OrderBookExchangeFeed
-from tokens import Symbol
-from feed import WSConnection, WSEndpoint, AsyncFeed
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 import json
 import asyncio
 
@@ -39,18 +39,8 @@ class Coinbase(OrderBookExchangeFeed):
             await conn.send_data(msg)
             print(msg)
 
-    async def process_message(self, message: str, conn: AsyncFeed, ts: float):
-        print(json.dumps(json.loads(message), indent=4))
-
     def auth(self, conn: WSConnection):
         pass
-
-def main():
-    loop = asyncio.get_event_loop()
-    coinbase_feed = Coinbase()
-    coinbase_feed.start(loop)
-
-    loop.run_forever()
 
     
 if __name__ == "__main__":

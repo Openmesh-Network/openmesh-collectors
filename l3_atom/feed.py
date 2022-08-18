@@ -13,7 +13,7 @@ from websockets.exceptions import InvalidStatusCode
 
 from dataclasses import dataclass
 
-from exceptions import ConnectionNotOpen, TooManyRetries
+from l3_atom.exceptions import ConnectionNotOpen, TooManyRetries
 
 logging.basicConfig(
     level=logging.INFO,
