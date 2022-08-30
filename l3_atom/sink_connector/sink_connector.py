@@ -33,7 +33,7 @@ class SinkMessageHandler:
     async def producer(self):
         pass
 
-    async def write_to_pipe(self, data):
+    async def write(self, data):
         self.pipe[1].send(data)
 
     @asynccontextmanager
@@ -47,4 +47,4 @@ class SinkMessageHandler:
         
 class SinkConnector:
     async def __call__(self, data):
-        await self.write_to_pipe(data)
+        await self.write(data)

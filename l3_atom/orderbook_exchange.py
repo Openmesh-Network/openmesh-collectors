@@ -7,6 +7,7 @@ import json
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
 
 from l3_atom.sink_connector.redis_multiprocessed import RedisStreamsConnector
+from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
 
 import logging
 
@@ -71,15 +72,14 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.interval = interval
         self.timeout = timeout
         self.delay = delay
-        self.redis_connector = RedisStreamsConnector(self.name)
+        self.kafka_connector = KafkaConnector(self.name)
 
     # Each exchange has its own way of subscribing to channels and handling incoming messages
     async def subscribe(self, conn: AsyncFeed, channels: list):
         pass
 
     async def process_message(self, message: str, conn: AsyncFeed, ts: float):
-        # print(json.dumps(json.loads(message), indent=4))
-        await self.redis_connector(message)
+        await self.kafka_connector(message)
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """
@@ -99,7 +99,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
             self.connection_handlers.append(AsyncConnectionManager(connection, subscribe, handler, auth, channels, self.retries, self.interval, self.timeout, self.delay))
             self.connection_handlers[-1].start_connection(loop)
 
-        logging.info('%s: Starting Redis Connector', self.name)
-        self.redis_connector.start(loop)
+        logging.info('%s: Starting Kafka Connector', self.name)
+        self.kafka_connector.start(loop)
 
         

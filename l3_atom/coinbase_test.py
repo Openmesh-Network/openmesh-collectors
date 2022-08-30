@@ -7,12 +7,11 @@ import asyncio
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
     ws_endpoints = {
-        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book", "trades"]
+        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book"]
     }
 
     ws_channels = {
         "l3_book": "full",
-        "trades": "matches"
     }
 
     def normalize_symbols(self, symbols: list) -> dict:
@@ -22,12 +21,6 @@ class Coinbase(OrderBookExchangeFeed):
             normalised_symbol = Symbol(base, quote)
             ret[normalised_symbol] = symbol
         return ret
-
-    def __init__(self):
-        super().__init__()
-
-    async def _trade(self, msg, timestamp):
-        pair = self.get_normalised_symbol(msg["product_id"])
     
     async def subscribe(self, conn: AsyncFeed, channels: list):
         for channel in channels:
@@ -41,7 +34,3 @@ class Coinbase(OrderBookExchangeFeed):
 
     def auth(self, conn: WSConnection):
         pass
-
-    
-if __name__ == "__main__":
-    main()
