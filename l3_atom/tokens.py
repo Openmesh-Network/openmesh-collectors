@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Union
 class Symbol:
 
     seperator = '-'
-    token_seperator = '/'
+    token_seperator = '.'
 
     def __init__(self, base: str, quote: str, symbol_type='spot', strike_price=None, option_type=None, expiry_date=None):
 
@@ -22,6 +22,12 @@ class Symbol:
 
     def __str__(self) -> str:
         return self.normalized
+
+    def __eq__(self, other) -> bool:
+        return self.normalized == other.normalized
+
+    def __hash__(self) -> int:
+        return hash(self.normalized)
 
     @staticmethod
     def month_code(month: str) -> str:

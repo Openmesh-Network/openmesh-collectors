@@ -1,7 +1,9 @@
 import asyncio
-from l3_atom.coinbase_test import Coinbase
+from l3_atom.off_chain_sources import Coinbase
+import logging
 
 def main():
+    
     loop = asyncio.get_event_loop()
     coinbase_feed = Coinbase()
     coinbase_feed.start(loop)

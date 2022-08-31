@@ -5,7 +5,7 @@ from dotenv import dotenv_values
 config_path = "config.ini"
 env_path = "keys/.env"
 
-def get_symbols(exchange: str):
+def get_conf_symbols(exchange: str):
     config = ConfigParser()
     config.read(config_path)
     return json.loads(config['SYMBOLS'][exchange])

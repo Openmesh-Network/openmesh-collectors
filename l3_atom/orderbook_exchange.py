@@ -1,10 +1,15 @@
 from abc import abstractmethod
-from l3_atom.helpers.read_config import get_symbols
+from l3_atom.helpers.read_config import get_conf_symbols
 from datetime import datetime as dt
+from datetime import timedelta, timezone
 import asyncio
 import json
+import time
+from decimal import *
+import requests
 
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
+from l3_atom.tokens import Symbol
 
 from l3_atom.sink_connector.redis_multiprocessed import RedisStreamsConnector
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
@@ -23,11 +28,22 @@ class OrderBookExchange:
     """
     ws_endpoints: dict = NotImplemented
     rest_endpoints: dict = NotImplemented
+    symbols_endpoint = NotImplemented
     ws_channels = NotImplemented
     candle_interval = NotImplemented
 
     def __init__(self):
-        self.symbols = self.normalize_symbols(get_symbols(self.name))
+        self.symbols = self.filter_symbols(self.normalize_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
+
+    def get_symbols(self, exchange: str) -> list:
+        return requests.get(self.symbols_endpoint).json()
+
+    def filter_symbols(self, sym_list, filters):
+        ret = {}
+        for norm in filters:
+            norm_sym = Symbol(*norm.split('.'))
+            ret[norm_sym] = sym_list[norm_sym]
+        return ret
 
     @abstractmethod
     def normalize_symbols(self, symbols: list):
@@ -73,12 +89,30 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.timeout = timeout
         self.delay = delay
         self.kafka_connector = KafkaConnector(self.name)
+        self.num_messages = 0
+        self.tot_latency = 0
 
     # Each exchange has its own way of subscribing to channels and handling incoming messages
     async def subscribe(self, conn: AsyncFeed, channels: list):
         pass
 
     async def process_message(self, message: str, conn: AsyncFeed, ts: float):
+        # msg = json.loads(message)
+        # if 'time' in msg:
+        #     # print(dt.now(), dt.strptime(msg['time'], '%Y-%m-%dT%H:%M:%S.%fZ'))
+        #     latency = Decimal(time.time() - dt.fromisoformat(msg['time'][:-1]).timestamp() - 3.6e4 + 0.2)
+        #     #print(f'{self.name}: Latency: {latency}')
+        #     self.tot_latency += latency
+        #     self.num_messages += 1
+        #     if self.num_messages > 10000:
+        #         logging.info('%s: Average latency: %s', self.name, self.tot_latency / Decimal(self.num_messages))
+        #         self.num_messages = 0
+        #         self.tot_latency = 0
+        # print(json.dumps(msg, indent=4))
+        # msg = json.loads(message)
+        # if msg['type'] == 'error':
+        #     logging.error('%s: Error: %s', self.name, msg)
+        #     return
         await self.kafka_connector(message)
 
     def start(self, loop: asyncio.AbstractEventLoop):
@@ -86,14 +120,24 @@ class OrderBookExchangeFeed(OrderBookExchange):
         Generic WS connection method -- sets up connection handlers for all desired channels and starts the data collection process
         """
         connections = []
+        symbols = []
+        max_syms = 10
         for (endpoint, channels) in self.ws_endpoints.items():
-            if not channels:
-                continue
-            url = endpoint.get_url()
-            if not url:
-                continue
+            for symbol in self.symbols.values():
+                if not channels:
+                    continue
+                url = endpoint.get_url()
+                if not url:
+                    continue
+                symbols.append(symbol)
+                if len(symbols) == max_syms:
+                    connections.append((WSConnection(
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+                    symbols = []
+        if symbols:
             connections.append((WSConnection(
-                self.name, url, authentication=None, **endpoint.options), self.subscribe, self.process_message, None, channels))
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+            symbols = []
 
         for connection, subscribe, handler, auth, channels in connections:
             self.connection_handlers.append(AsyncConnectionManager(connection, subscribe, handler, auth, channels, self.retries, self.interval, self.timeout, self.delay))

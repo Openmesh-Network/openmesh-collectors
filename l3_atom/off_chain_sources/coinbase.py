@@ -1,37 +1,42 @@
-import websockets
-import asyncio
-import time
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 import json
+import asyncio
+import requests
 
-from normalise.coinbase_normalisation import NormaliseCoinbase
-from helpers.read_config import get_symbols
-#from sink_connector.kafka_producer import KafkaProducer
-from sink_connector.redis_producer import RedisProducer
-from sink_connector.ws_to_redis import produce_messages, produce_message
-from source_connector.websocket_connector import connect
-from source_connector.restapi_calls import get_snapshot
+class Coinbase(OrderBookExchangeFeed):
+    name = "coinbase"
+    ws_endpoints = {
+        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book"]
+    }
 
-book_url = 'wss://ws-feed.exchange.coinbase.com'
-snapshot_url = 'https://api.exchange.coinbase.com/products/{}/book?level=3'
+    ws_channels = {
+        "l3_book": "full",
+    }
 
-async def main():
-    producer = RedisProducer("coinbase")
-    symbols = get_symbols('coinbase')
-    await connect(book_url, handle_coinbase, producer, symbols, True)
-
-async def handle_coinbase(ws, producer, symbols, is_book):
-    normalise = NormaliseCoinbase().normalise
-    for symbol in symbols:
-        subscribe_message = {
-            "type": "subscribe",
-            "channels": [{"name": "full", "product_ids": [symbol]}]
-        }
-        await ws.send(json.dumps(subscribe_message))
-        # Snapshot is too large to produce as raw
-        # snapshot = await get_snapshot(snapshot_url.format(symbol))
-        # await produce_message(snapshot, raw_producer, normalised_producer, trades_producer, normalise)
+    symbols_endpoint = "https://api.pro.coinbase.com/products"
+        
+    def normalize_symbols(self, sym_list: list) -> dict:
+        ret = {}
+        symbols = [s['id'] for s in sym_list]
+        for symbol in symbols:
+            base, quote = symbol.split("-")
+            normalised_symbol = Symbol(base, quote)
+            ret[normalised_symbol] = symbol
+        return ret
     
-    await produce_messages(ws, producer, normalise)
+    async def subscribe(self, conn: AsyncFeed, channels: list, symbols):
+        print(self.symbols)
+        for channel in channels:
+            msg = json.dumps({
+                "type": "subscribe",
+                "product_ids": symbols,
+                #"product_ids": syms,
+                "channels": [self.get_feed_from_channel(channel)]
+            })
+            await conn.send_data(msg)
+            print(msg)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    def auth(self, conn: WSConnection):
+        pass

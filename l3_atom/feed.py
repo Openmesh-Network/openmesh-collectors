@@ -8,6 +8,8 @@ import logging
 import sys
 import random
 
+import os, psutil
+
 from websockets import ConnectionClosed
 from websockets.exceptions import InvalidStatusCode
 
@@ -36,15 +38,17 @@ class AsyncFeed(Feed):
     Extension of Feed that uses asyncio and coroutines for most functionality
     """
 
-    def __init__(self, id, authentication=None):
+    def __init__(self, id, authentication=None, symbols:list=None):
         """
         id: unique identifier for this feed
         authentication: authentication function to be called before attempting to connect
+        symbols: list of symbols to subscribe to
         """
         self.id = id
         self.received_messages: int = 0
         self.sent_messages: int = 0
         self.start_time = None
+        self.symbols = symbols
         self.conn: Union[websockets.WebSocketClientProtocol, aiohttp.ClientSession] = None
         self.authentication = authentication
         self.last_received_time = None
@@ -76,8 +80,8 @@ class WSConnection(AsyncFeed):
     """
     Websocket connection to a feed.
     """
-    def __init__(self, id, url, authentication=None, **kwargs):
-        super().__init__(f'ws:{id}', authentication=authentication)
+    def __init__(self, id, url, authentication=None, symbols=None, **kwargs):
+        super().__init__(f'ws:{id}', authentication=authentication, symbols=symbols)
         self.url = url
         self.auth_kwargs = kwargs
 
@@ -86,7 +90,7 @@ class WSConnection(AsyncFeed):
             return
         if self.authentication:
             self.address, self.ws_kwargs = await self.authentication(self.address, self.ws_kwargs)
-        self.conn = await websockets.connect(self.url)
+        self.conn = await websockets.connect(self.url, ping_timeout=None, max_size=2**23, max_queue=None, ping_interval=None)
         logging.info('%s: opened connection %r', self.id, self.conn.__class__.__name__)
         self.start_time = time.time()
         self.sent_messages = 0
@@ -108,6 +112,7 @@ class WSConnection(AsyncFeed):
         async for data in self.conn:
             self.received_messages += 1
             self.last_received_time = time.time()
+            print(len(self.conn.messages))
             yield data
 
 class AsyncConnectionManager:
@@ -149,7 +154,7 @@ class AsyncConnectionManager:
                 async with self.conn.connect() as connection:
                     if self.auth:
                         await self.auth(connection)
-                    await self.subscribe(connection, self.channels)
+                    await self.subscribe(connection, self.channels, self.conn.symbols)
                     retries = 0
                     limited = 0
                     delay = 1
