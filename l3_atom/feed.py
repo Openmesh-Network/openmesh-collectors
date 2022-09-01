@@ -112,7 +112,6 @@ class WSConnection(AsyncFeed):
         async for data in self.conn:
             self.received_messages += 1
             self.last_received_time = time.time()
-            print(len(self.conn.messages))
             yield data
 
 class AsyncConnectionManager:

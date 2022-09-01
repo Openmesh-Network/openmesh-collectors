@@ -113,6 +113,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
         # if msg['type'] == 'error':
         #     logging.error('%s: Error: %s', self.name, msg)
         #     return
+        if json.loads(message)['type'] == 'match':
+            print(message)
         await self.kafka_connector(message)
 
     def start(self, loop: asyncio.AbstractEventLoop):

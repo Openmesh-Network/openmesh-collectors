@@ -118,3 +118,13 @@ services:
       - type: bind
         source: ./keys
         target: /src/keys 
+
+  coinbase_new:
+    image: gdafund/l3datacollection:latest
+    command: main.py
+    volumes:
+      - type: bind
+        source: ./keys
+        target: /src/keys
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
