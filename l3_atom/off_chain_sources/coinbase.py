@@ -7,6 +7,7 @@ import requests
 
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
+    key_field = 'product_id'
     ws_endpoints = {
         WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book"]
     }

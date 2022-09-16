@@ -3,7 +3,7 @@ from l3_atom.helpers.read_config import get_conf_symbols
 from datetime import datetime as dt
 from datetime import timedelta, timezone
 import asyncio
-import json
+from yapic import json
 import time
 from decimal import *
 import requests
@@ -88,7 +88,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.interval = interval
         self.timeout = timeout
         self.delay = delay
-        self.kafka_connector = KafkaConnector(self.name)
+        self.kafka_connector = KafkaConnector(self.name, self.key_field)
         self.num_messages = 0
         self.tot_latency = 0
 
@@ -97,24 +97,6 @@ class OrderBookExchangeFeed(OrderBookExchange):
         pass
 
     async def process_message(self, message: str, conn: AsyncFeed, ts: float):
-        # msg = json.loads(message)
-        # if 'time' in msg:
-        #     # print(dt.now(), dt.strptime(msg['time'], '%Y-%m-%dT%H:%M:%S.%fZ'))
-        #     latency = Decimal(time.time() - dt.fromisoformat(msg['time'][:-1]).timestamp() - 3.6e4 + 0.2)
-        #     #print(f'{self.name}: Latency: {latency}')
-        #     self.tot_latency += latency
-        #     self.num_messages += 1
-        #     if self.num_messages > 10000:
-        #         logging.info('%s: Average latency: %s', self.name, self.tot_latency / Decimal(self.num_messages))
-        #         self.num_messages = 0
-        #         self.tot_latency = 0
-        # print(json.dumps(msg, indent=4))
-        # msg = json.loads(message)
-        # if msg['type'] == 'error':
-        #     logging.error('%s: Error: %s', self.name, msg)
-        #     return
-        if json.loads(message)['type'] == 'match':
-            print(message)
         await self.kafka_connector(message)
 
     def start(self, loop: asyncio.AbstractEventLoop):
