@@ -11,6 +11,9 @@ from source_connector.websocket_connector import connect
 
 url = 'wss://www.deribit.com/ws/api/v2'
 
+class Deribit:
+    ws_endpoint = 'wss://www.deribit.com/ws/api/v2'
+
 async def main():
     producer = RedisProducer("deribit")
     symbols = get_symbols('deribit')

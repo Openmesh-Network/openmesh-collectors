@@ -118,3 +118,21 @@ services:
       - type: bind
         source: ./keys
         target: /src/keys 
+
+  coinbase_new:
+    image: gdafund/l3_atom:0.1.0
+    command: python3 main.py
+    volumes:
+      - type: bind
+        source: ./keys
+        target: /src/keys
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  stream_processor:
+    image: gdafund/l3_atom:0.1.0
+    command: faust -A l3_atom.stream_processing.faust_standardiser worker -l info
+    volumes:
+      - type: bind
+        source: ./keys
+        target: /src/keys

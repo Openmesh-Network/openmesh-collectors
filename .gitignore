@@ -3,6 +3,7 @@ test_conf.config
 config.ini
 keys/*
 !keys/README.md
+schema-standardiser-data/*
 
 # Log files
 *.ids 
