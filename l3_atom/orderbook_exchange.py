@@ -34,6 +34,7 @@ class OrderBookExchange:
 
     def __init__(self):
         self.symbols = self.filter_symbols(self.normalize_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
+        self.inv_symbols = {v: k for k, v in self.symbols.items()}
 
     def get_symbols(self, exchange: str) -> list:
         return requests.get(self.symbols_endpoint).json()
@@ -74,10 +75,7 @@ class OrderBookExchange:
     
     # Gets the normalised symbol from an exchange symbol
     def get_normalised_symbol(self, symbol: str) -> str:
-        for sym, exch in self.symbols.items():
-            if exch == symbol:
-                return sym
-        return None
+        return self.inv_symbols[symbol]
 
 
 class OrderBookExchangeFeed(OrderBookExchange):
