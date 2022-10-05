@@ -17,14 +17,15 @@ client = SchemaRegistryClient(url=config['SCHEMA_REGISTRY_URL'], auth=Auth(usern
 
 l3_trades_schema = client.get_schema("L3_Trade")
 l3_lob_schema = client.get_schema("L3_LOB")
-print(l3_trades_schema)
-print(l3_lob_schema)
+ticker_schema = client.get_schema("Ticker")
 
 l3_trades_serializer = FaustSerializer(client, 'coinbase_trades_l3', l3_trades_schema.schema)
 l3_lob_serializer = FaustSerializer(client, 'coinbase_lob_l3', l3_lob_schema.schema)
+ticker_serializer = FaustSerializer(client, 'coinbase_ticker', ticker_schema.schema)
 
 codecs.register('l3_trades', l3_trades_serializer)
 codecs.register('l3_lob', l3_lob_serializer)
+codecs.register('ticker', ticker_serializer)
 
 if 'KAFKA_SASL_KEY' in config:
     app = faust.App("schema-standardiser", broker=f"aiokafka://{config['KAFKA_BOOTSTRAP_SERVERS']}", broker_credentials=faust.SASLCredentials(username=config['KAFKA_SASL_KEY'], password=config['KAFKA_SASL_SECRET'], ssl_context=ssl_ctx, mechanism="PLAIN"))
@@ -39,7 +40,8 @@ coinbase_raw_topic = app.topic("coinbase-raw")
 
 normalised_topics = {
     'coinbase_lob_l3': app.topic("coinbase_lob_l3"),
-    'coinbase_trades_l3': app.topic("coinbase_trades_l3")
+    'coinbase_trades_l3': app.topic("coinbase_trades_l3"),
+    'coinbase_ticker': app.topic("coinbase_ticker")
 }
 
 class L3Trade(faust.Record, serializer='l3_trades'):
@@ -51,7 +53,7 @@ class L3Trade(faust.Record, serializer='l3_trades'):
     trade_id: str
     maker_order_id: str
     taker_order_id: str
-    event_timestamp: float
+    event_timestamp: int
     atom_timestamp: int
 
 class L3Lob(faust.Record, serializer='l3_lob'):
@@ -61,15 +63,21 @@ class L3Lob(faust.Record, serializer='l3_lob'):
     size: Decimal
     side: str
     order_id: str
-    event_timestamp: float
+    event_timestamp: int
+    atom_timestamp: int
+
+class Ticker(faust.Record, serializer='ticker'):
+    exchange: str
+    symbol: str
+    ask_price: Decimal
+    ask_size: Decimal
+    bid_price: Decimal
+    bid_size: Decimal
+    event_timestamp: int
     atom_timestamp: int
 
 def _normalize_symbol(symbol):
-    return symbol.replace('-', '.')
-
-#BTC/USD
-#BTC-USD
-#BTC.USD
+    return symbol.replace('-', '.') if '-' in symbol else symbol
 
 async def _trade(message):
     symbol = _normalize_symbol(message['product_id'])
@@ -79,7 +87,7 @@ async def _trade(message):
     trade_id = str(message['trade_id'])
     maker_order_id = message['maker_order_id']
     taker_order_id = message['taker_order_id']
-    event_timestamp = parser.isoparse(message['time']).timestamp()
+    event_timestamp = int(parser.isoparse(message['time']).timestamp() * 1000)
     atom_timestamp = message['atom_timestamp']
     await normalised_topics["coinbase_trades_l3"].send(value=L3Trade(
         exchange='coinbase',
@@ -100,7 +108,7 @@ async def _open(message):
     size = Decimal(message['remaining_size'])
     side = 'ask' if message['side'] == 'sell' else 'bid'
     order_id = message['order_id']
-    event_timestamp = parser.isoparse(message['time']).timestamp()
+    event_timestamp = int(parser.isoparse(message['time']).timestamp() * 1000)
     atom_timestamp = message['atom_timestamp']
     await normalised_topics["coinbase_lob_l3"].send(value=L3Lob(
         exchange='coinbase',
@@ -117,11 +125,60 @@ async def _done(message):
     if 'price' not in message or not message['price']:
         return
     symbol = _normalize_symbol(message['product_id'])
-    price = message['price']
-    size = message['remaining_size']
+    price = Decimal(message['price'])
+    size = Decimal(message['remaining_size'])
     side = message['side']
     order_id = message['order_id']
-    timestamp = message['time']
+    event_timestamp = int(parser.isoparse(message['time']).timestamp() * 1000)
+    atom_timestamp = message['atom_timestamp']
+    await normalised_topics["coinbase_lob_l3"].send(value=L3Lob(
+        exchange='coinbase',
+        symbol=symbol,
+        price=price,
+        size=size,
+        side=side,
+        order_id=order_id,
+        event_timestamp=event_timestamp,
+        atom_timestamp=atom_timestamp
+    ), key=symbol)
+
+async def _change(message):
+    if 'price' not in message or not message['price']:
+        return
+    symbol = _normalize_symbol(message['product_id'])
+    price = Decimal(message['price'])
+    size = Decimal(message['remaining_size'])
+    side = message['side']
+    order_id = message['order_id']
+    event_timestamp = int(parser.isoparse(message['time']).timestamp() * 1000)
+    atom_timestamp = message['atom_timestamp']
+    await normalised_topics["coinbase_lob_l3"].send(value=L3Lob(
+        exchange='coinbase',
+        symbol=symbol,
+        price=price,
+        size=size,
+        side=side,
+        order_id=order_id,
+        event_timestamp=event_timestamp,
+        atom_timestamp=atom_timestamp
+    ), key=symbol)
+
+async def _ticker(message):
+    symbol = _normalize_symbol(message['product_id'])
+    ask_price = Decimal(message['best_ask'])
+    bid_price = Decimal(message['best_bid'])
+    event_timestamp = int(parser.isoparse(message['time']).timestamp() * 1000)
+    atom_timestamp = message['atom_timestamp']
+    await normalised_topics["coinbase_ticker"].send(value=Ticker(
+        exchange='coinbase',
+        symbol=symbol,
+        ask_price=ask_price,
+        ask_size=-1,
+        bid_price=bid_price,
+        bid_size=-1,
+        event_timestamp=event_timestamp,
+        atom_timestamp=atom_timestamp
+    ), key=symbol)
 
 async def handle_coinbase_message(msg):
     if 'type' in msg:
@@ -130,9 +187,11 @@ async def handle_coinbase_message(msg):
         elif msg['type'] == 'open':
             await _open(msg)
         elif msg['type'] == 'done':
-            pass
+            await _done(msg)
         elif msg['type'] == 'change':
-            pass
+            await _change(msg)
+        elif msg['type'] == 'batch_ticker' or msg['type'] == 'ticker':
+            await _ticker(msg)
         elif msg['type'] == 'received':
             pass
         elif msg['type'] == 'activate':

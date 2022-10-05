@@ -29,37 +29,6 @@ class Symbol:
     def __hash__(self) -> int:
         return hash(self.normalized)
 
-    @staticmethod
-    def month_code(month: str) -> str:
-        ret = ['F', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'U', 'V', 'X', 'Z']
-        return ret[int(month) - 1]
-
-    @staticmethod
-    def date_format(date):
-        if isinstance(date, (int, float)):
-            date = dt.fromtimestamp(date, tz=timezone.utc)
-        if isinstance(date, dt):
-            year = str(date.year)[2:]
-            month = Symbol.month_code(date.month)
-            day = date.day
-            return f"{year}{month}{day}"
-
-        if len(date) == 4:
-            year = str(dt.utcnow().year)[2:]
-            date = year + date
-        if len(date) == 6:
-            year = date[:2]
-            month = Symbol.month_code(date[2:4])
-            day = date[4:]
-            return f"{year}{month}{day}"
-        if len(date) == 9 or len(date) == 7:
-            year, month, day = date[-2:], date[2:5], date[:2]
-            months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-            month = Symbol.month_code(months.index(month) + 1)
-            return f"{year}{month}{day}"
-
-        raise ValueError(f"Unable to parse expiration date: {date}")
-
     @property
     def normalized(self) -> str:
         if self.base == self.quote:

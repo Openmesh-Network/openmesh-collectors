@@ -1,5 +1,5 @@
 import asyncio
-from l3_atom.off_chain_sources import Coinbase
+from l3_atom.off_chain import Coinbase
 import logging
 
 def main():

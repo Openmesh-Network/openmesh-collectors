@@ -2,18 +2,17 @@ from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 import json
-import asyncio
-import requests
 
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
     key_field = 'product_id'
     ws_endpoints = {
-        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book"]
+        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book", "ticker"]
     }
 
     ws_channels = {
         "l3_book": "full",
+        "ticker": "ticker_batch"
     }
 
     symbols_endpoint = "https://api.pro.coinbase.com/products"
