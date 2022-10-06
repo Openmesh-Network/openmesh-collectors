@@ -18,19 +18,19 @@ class Symbol:
             self.expiry_date = self.date_format(expiry_date)
 
     def __repr__(self) -> str:
-        return self.normalized
+        return self.normalised
 
     def __str__(self) -> str:
-        return self.normalized
+        return self.normalised
 
     def __eq__(self, other) -> bool:
-        return self.normalized == other.normalized
+        return self.normalised == other.normalised
 
     def __hash__(self) -> int:
-        return hash(self.normalized)
+        return hash(self.normalised)
 
     @property
-    def normalized(self) -> str:
+    def normalised(self) -> str:
         if self.base == self.quote:
             base = self.base
         else:

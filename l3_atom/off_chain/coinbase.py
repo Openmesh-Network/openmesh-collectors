@@ -1,7 +1,7 @@
 from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
-import json
+from yapic import json
 
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
@@ -12,12 +12,12 @@ class Coinbase(OrderBookExchangeFeed):
 
     ws_channels = {
         "l3_book": "full",
-        "ticker": "ticker_batch"
+        "ticker": "ticker"
     }
 
     symbols_endpoint = "https://api.pro.coinbase.com/products"
         
-    def normalize_symbols(self, sym_list: list) -> dict:
+    def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         symbols = [s['id'] for s in sym_list]
         for symbol in symbols:

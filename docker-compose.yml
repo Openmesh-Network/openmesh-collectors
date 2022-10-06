@@ -119,9 +119,9 @@ services:
         source: ./keys
         target: /src/keys 
 
-  coinbase_new:
+  coinbase_v3:
     image: gdafund/l3_atom:0.1.0
-    command: python3 main.py
+    command: python3 connector_runner.py coinbase
     volumes:
       - type: bind
         source: ./keys
@@ -131,7 +131,7 @@ services:
 
   stream_processor:
     image: gdafund/l3_atom:0.1.0
-    command: faust -A l3_atom.stream_processing.faust_standardiser worker -l info
+    command: python3 stream_runner.py worker -l info
     volumes:
       - type: bind
         source: ./keys
