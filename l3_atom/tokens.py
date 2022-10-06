@@ -13,9 +13,7 @@ class Symbol:
         self.type = symbol_type
         self.option_type = option_type
         self.strike_price = strike_price
-
-        if expiry_date:
-            self.expiry_date = self.date_format(expiry_date)
+        self.expiry_date = expiry_date
 
     def __repr__(self) -> str:
         return self.normalised
@@ -24,7 +22,10 @@ class Symbol:
         return self.normalised
 
     def __eq__(self, other) -> bool:
-        return self.normalised == other.normalised
+        if isinstance(other, Symbol):
+            return self.normalised == other.normalised
+        elif isinstance(other, str):
+            return self.normalised == other
 
     def __hash__(self) -> int:
         return hash(self.normalised)

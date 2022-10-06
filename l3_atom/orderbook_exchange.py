@@ -28,22 +28,22 @@ class OrderBookExchange:
     """
     ws_endpoints: dict = NotImplemented
     rest_endpoints: dict = NotImplemented
-    symbols_endpoint = NotImplemented
-    ws_channels = NotImplemented
-    candle_interval = NotImplemented
+    symbols_endpoint: str = NotImplemented
+    ws_channels: dict = NotImplemented
+    rest_channels: dict = NotImplemented
 
     def __init__(self):
-        self.symbols = self.filter_symbols(self.normalise_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
+        self.symbols = self.normalise_symbols(self.get_symbols())
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
+        self.symbols = self.filter_symbols(self.symbols, get_conf_symbols(self.name))
 
-    def get_symbols(self, exchange: str) -> list:
+    def get_symbols(self) -> list:
         return requests.get(self.symbols_endpoint).json()
 
     def filter_symbols(self, sym_list, filters):
         ret = {}
         for norm in filters:
-            norm_sym = Symbol(*norm.split('.'))
-            ret[norm_sym] = sym_list[norm_sym]
+            ret[self.get_normalised_symbol(sym_list[norm])] = sym_list[norm]
         return ret
 
     @abstractmethod
@@ -60,7 +60,7 @@ class OrderBookExchange:
     # Does the inverse operation as well
     @classmethod
     def get_feed_from_channel(cls, channel) -> str:
-        return cls.ws_channels[channel]
+        return cls.ws_channels[channel] if channel in cls.ws_channels else cls.rest_channels[channel]
 
     @classmethod
     def get_channel_from_feed(cls, channel: str) -> str:
@@ -95,15 +95,20 @@ class OrderBookExchangeFeed(OrderBookExchange):
         pass
 
     async def process_message(self, message: str, conn: AsyncFeed, ts: float):
+        print(message)
         await self.kafka_connector(message)
+
+    # Connect to any rest endpoints and begin polling
+    def _init_rest(self):
+        return []
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """
         Generic WS connection method -- sets up connection handlers for all desired channels and starts the data collection process
         """
-        connections = []
         symbols = []
         max_syms = 10
+        connections = self._init_rest()
         for (endpoint, channels) in self.ws_endpoints.items():
             for symbol in self.symbols.values():
                 if not channels:

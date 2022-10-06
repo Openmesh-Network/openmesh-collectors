@@ -1,13 +1,10 @@
 import asyncio
-from l3_atom.off_chain import Coinbase, Binance
+from l3_atom.off_chain import mapping
 import sys
-
-mapping = {
-    'coinbase': Coinbase,
-    'binance': Binance
-}
+import logging
 
 def main():
+
     exchange_feed = mapping[sys.argv[1]]()
     loop = asyncio.get_event_loop()
     exchange_feed.start(loop)

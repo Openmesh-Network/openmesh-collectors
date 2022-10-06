@@ -67,7 +67,7 @@ class AsyncFeed(Feed):
 
     @property
     def is_open(self) -> bool:
-        raise NotImplementedError
+        return self.conn and not self.conn.closed
 
     async def close(self):
         if self.is_open:
@@ -75,6 +75,53 @@ class AsyncFeed(Feed):
             self.conn = None
             await conn.close()
             logging.info('%s: closed connection %r after %d messages sent, %d messages, received (%ds)', self.id, conn.__class__.__name__, self.sent_messages, self.received_messages, time.time() - self.start_time)
+
+class HTTPConnection(AsyncFeed):
+    """
+    Async connection to a REST endpoint, polls periodically
+    """
+    def __init__(self, id, addr, poll_frequency=60, retry=5, rate_limit_retry=60, authentication=None, symbols=None):
+        super().__init__(f'http:{id}', authentication=authentication, symbols=symbols)
+        self.addr = addr
+        self.poll_frequency = poll_frequency
+        self.retry = retry
+        self.rate_limit_retry = rate_limit_retry
+
+    async def _open(self):
+        if self.is_open:
+            return
+        self.conn = aiohttp.ClientSession()
+        logging.info('%s: opened connection %r', self.id, self.conn.__class__.__name__)
+        self.sent_messages = 0
+        self.received_messages = 0
+        self.start_time = time.time()
+
+    async def _get_data(self, url):
+        if not self.is_open:
+            await self._open()
+        while True:
+            try:
+                async with self.conn.get(url) as resp:
+                    self.sent_messages += 1
+                    self.received_messages += 1
+                    self.last_received_time = time.time()
+                    if resp.status != 200:
+                        logging.error('%s: received status code %d', self.id, resp.status)
+                        if resp.status == 429:
+                            logging.error('%s: rate limit exceeded, retrying in %d seconds', self.id, self.rate_limit_retry)
+                            await asyncio.sleep(self.rate_limit_retry)
+                    else:
+                        return await resp.text()
+            except (ConnectionClosed) as e:
+                logging.error('%s: %s', self.id, e)
+                await self.close()
+                await asyncio.sleep(self.retry)
+                await self._open()
+
+    async def read_data(self):
+        while True:
+            yield await self._get_data(self.addr)
+            await asyncio.sleep(self.poll_frequency)
 
 class WSConnection(AsyncFeed):
     """
@@ -96,19 +143,15 @@ class WSConnection(AsyncFeed):
         self.sent_messages = 0
         self.received_messages = 0
 
-    @property
-    def is_open(self) -> bool:
-        return self.conn is not None and not self.conn.closed
-
     async def send_data(self, data):
         if not self.is_open:
-            raise ConnectionNotOpen
+            await self._open()
         self.sent_messages += 1
         await self.conn.send(data)
 
     async def read_data(self):
         if not self.is_open:
-            raise ConnectionNotOpen
+            await self._open()
         async for data in self.conn:
             self.received_messages += 1
             self.last_received_time = time.time()
@@ -153,7 +196,8 @@ class AsyncConnectionManager:
                 async with self.conn.connect() as connection:
                     if self.auth:
                         await self.auth(connection)
-                    await self.subscribe(connection, self.channels, self.conn.symbols)
+                    if self.subscribe:
+                        await self.subscribe(connection, self.channels, self.conn.symbols)
                     retries = 0
                     limited = 0
                     delay = 1
