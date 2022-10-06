@@ -18,7 +18,7 @@ class Kafka(SinkMessageHandler):
         self.sasl_username = conf['KAFKA_SASL_KEY'] if 'KAFKA_SASL_KEY' in conf else None
         self.sasl_password = conf['KAFKA_SASL_SECRET'] if 'KAFKA_SASL_SECRET' in conf else None
         self.kafka_producer = None
-        self.topic = f"{exchange}-raw"
+        self.topic = f"{exchange}_raw"
         self.key_field = key_field
 
 class KafkaConnector(Kafka, SinkConnector):

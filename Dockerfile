@@ -3,7 +3,8 @@
 FROM python:3.10.4-slim
 WORKDIR /src
 COPY l3_atom/ ./l3_atom
-COPY main.py ./
+COPY connector_runner.py ./
+COPY stream_runner.py ./
 RUN apt-get update
 RUN apt-get install -y --no-install-recommends gcc musl-dev librdkafka-dev build-essential
 COPY requirements.txt requirements.txt

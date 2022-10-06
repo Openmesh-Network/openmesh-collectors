@@ -33,7 +33,7 @@ class OrderBookExchange:
     candle_interval = NotImplemented
 
     def __init__(self):
-        self.symbols = self.filter_symbols(self.normalize_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
+        self.symbols = self.filter_symbols(self.normalise_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
 
     def get_symbols(self, exchange: str) -> list:
@@ -47,11 +47,11 @@ class OrderBookExchange:
         return ret
 
     @abstractmethod
-    def normalize_symbols(self, symbols: list):
+    def normalise_symbols(self, symbols: list):
         pass
 
     @abstractmethod
-    def normalize_timestamp(self, ts: dt) -> float:
+    def normalise_timestamp(self, ts: dt) -> float:
         pass
 
     # Helpers that get channel information (e.g.
@@ -75,7 +75,7 @@ class OrderBookExchange:
     
     # Gets the normalised symbol from an exchange symbol
     def get_normalised_symbol(self, symbol: str) -> str:
-        return self.inv_symbols[symbol]
+        return self.inv_symbols[symbol].normalised
 
 
 class OrderBookExchangeFeed(OrderBookExchange):

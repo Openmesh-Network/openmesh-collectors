@@ -17,7 +17,7 @@ class Coinbase(OrderBookExchangeFeed):
 
     symbols_endpoint = "https://api.pro.coinbase.com/products"
         
-    def normalize_symbols(self, sym_list: list) -> dict:
+    def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         symbols = [s['id'] for s in sym_list]
         for symbol in symbols:

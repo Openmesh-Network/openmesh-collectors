@@ -19,7 +19,7 @@ class Binance(OrderBookExchangeFeed):
 
     symbols_endpoint = "https://api.binance.com/api/v3/exchangeInfo"
         
-    def normalize_symbols(self, sym_list: list) -> dict:
+    def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         for m in sym_list['symbols']:
             base, quote = m['baseAsset'], m['quoteAsset']
