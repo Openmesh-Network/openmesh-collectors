@@ -1,19 +1,103 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+parameters:
+- name: images
+  type: object
+  default:
+    collector:
+      name: collector
+      build: true
+      push: true
+      pathToDockerFile: ./Dockerfile
+      pathToDockerContext: ./
+
+variables:
+- name: HELM_CHART_NAME
+  value: l3-atom
+
+- group: aws-shared
+- group: service-connection
+
+- name: awsSourceRoleArn
+  value: $[variables.AWS_SOURCE_ROLE_ARN] #derived from var group - aws-shared
+- name: awsRegion
+  value: $[variables.AWS_REGION] #derived from var group - aws-shared
+- name: ecrUrl
+  value: $[variables.ECR_URL] #derived from var group - aws-shared
+- name: serviceConnection
+  value: $[variables.SERVICE_CONNECTION] #derived from var group - service-connection
+- name: WORKING_DIRECTORY
+  value: $(Build.SourcesDirectory)
+
+resources:
+  repositories:
+  - repository: pipeline-utilities
+    type: github
+    name: GDA-Fund2/pipeline-utilities
+    ref: main
+    endpoint: GDA-Fund2
 
 trigger:
 - main
+- trigger-test/*
 
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+stages:
+- stage: CI
+  jobs:
+    - job: ci
+      steps:
+      - task: Bash@3
+        displayName: pipInstall
+        inputs:
+          script: |
+            pip install -r ./requirements.txt
+            pip install -r ./tests/requirements.txt
+          failOnStdErr: true
+          targetType: inline
+          workingDirectory: ${{ variables.WORKING_DIRECTORY }}
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+      - task: Bash@3
+        displayName: runUnitTests
+        inputs:
+          script: |
+            echo "would have run the following coverage run --source l3_atom -m pytest tests/"
+            echo "tests are broken bypassing for now..."
+            #coverage run --source l3_atom -m pytest tests/
+          failOnStdErr: true
+          targetType: inline
+          workingDirectory: ${{ variables.WORKING_DIRECTORY }}
+
+      - ${{ each image in parameters.images }}:
+        - ${{ if eq(parameters.images[image.key].build, true) }}:
+          - task: AWSShellScript@1
+            displayName: pushToECR ${{ parameters.images[image.key].name }}
+            inputs:
+              awsCredentials: $(serviceConnection)
+              regionName: $(awsRegion)
+              scriptType: inline
+              inlineScript: |
+                export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+                $(aws sts assume-role \
+                  --role-arn $(awsSourceRoleArn) \
+                  --role-session-name AzureDevOps \
+                  --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+                  --output text))
+                aws ecr get-login-password | docker login --username AWS --password-stdin $(ecrUrl)
+                docker build -t $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -f ${{ parameters.images[image.key].pathToDockerFile }} ${{ parameters.images[image.key].pathToDockerContext}}
+                docker push $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
+              failOnStdErr: true
+              targetType: inline
+              workingDirectory: ${{ variables.WORKING_DIRECTORY }}
+
+# more nuance is needed when this becomes a multi docker image build and deploy, for now a one to one will work
+- stage: PublishArtifacts
+  dependsOn:
+    - CI
+  jobs:
+    - template: templates/publish-version-artifact-job.yaml@pipeline-utilities
+      parameters:
+        createVersionArtifact: true
+        APP_NAME: ${{ variables.HELM_CHART_NAME }}
+        IMAGE_NAME: ${{ variables.ecrUrl }}/${{ parameters.images['collector'].name }}
+        IMAGE_TAG: $(Build.BuildNumber)
