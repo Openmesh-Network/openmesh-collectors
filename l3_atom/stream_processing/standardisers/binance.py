@@ -1,8 +1,6 @@
 from l3_atom.stream_processing.standardiser import Standardiser
 from l3_atom.off_chain import Binance
 from decimal import Decimal
-from dateutil import parser
-
 
 class BinanceStandardiser(Standardiser):
     feeds = ['lob', 'trades_l3', 'ticker', 'candle']

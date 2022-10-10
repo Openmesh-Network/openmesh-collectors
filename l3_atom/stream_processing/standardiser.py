@@ -5,14 +5,6 @@ class Standardiser:
     raw_topic:str = NotImplemented
     feeds:list = NotImplemented
     exchange:OrderBookExchange = NotImplemented
-    feed_to_record = {
-        'lob_l3': LobL3,
-        'trades_l3': TradeL3,
-        'ticker': Ticker,
-        'lob': Lob,
-        'trades': Trade,
-        'candle': Candle
-    }
 
     def __init__(self) -> None:
         self.id = self.exchange.name

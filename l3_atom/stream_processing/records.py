@@ -50,3 +50,21 @@ class Ticker(BaseRecord, serializer='ticker'):
     ask_size: Decimal
     bid_price: Decimal
     bid_size: Decimal
+
+class FundingRate(BaseRecord, serializer='funding_rate'):
+    mark_price: Decimal
+    funding_rate: Decimal`
+    next_funding_time: int
+    predicted_rate: Decimal
+
+class OpenInterest(BaseRecord, serializer='open_interest'):
+    open_interest: Decimal
+
+feed_to_record = {
+        'lob_l3': LobL3,
+        'trades_l3': TradeL3,
+        'ticker': Ticker,
+        'lob': Lob,
+        'trades': Trade,
+        'candle': Candle
+    }
