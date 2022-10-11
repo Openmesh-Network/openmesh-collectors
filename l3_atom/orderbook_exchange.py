@@ -11,7 +11,6 @@ import requests
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
 from l3_atom.tokens import Symbol
 
-from l3_atom.sink_connector.redis_multiprocessed import RedisStreamsConnector
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
 
 import logging
@@ -94,8 +93,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
     async def subscribe(self, conn: AsyncFeed, channels: list):
         pass
 
-    async def process_message(self, message: str, conn: AsyncFeed, ts: float):
-        print(message)
+    async def process_message(self, message: str, conn: AsyncFeed, channel: str):
         await self.kafka_connector(message)
 
     # Connect to any rest endpoints and begin polling
@@ -132,5 +130,12 @@ class OrderBookExchangeFeed(OrderBookExchange):
 
         logging.info('%s: Starting Kafka Connector', self.name)
         self.kafka_connector.start(loop)
+
+    async def stop(self):
+        logging.info('%s: Shutting down', self.name)
+        await self.kafka_connector.stop()
+        for handler in self.connection_handlers:
+            await handler.conn.close()
+            handler.running = False
 
         

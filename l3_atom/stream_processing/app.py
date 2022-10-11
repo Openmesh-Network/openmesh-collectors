@@ -18,4 +18,4 @@ def run():
     codecs.initialise()
     handler.initialise_agents(app)
 
-    app.main()
+    return app

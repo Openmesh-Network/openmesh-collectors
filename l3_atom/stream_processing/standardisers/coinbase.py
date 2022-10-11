@@ -28,7 +28,7 @@ class CoinbaseStandardiser(Standardiser):
             symbol = self.normalise_symbol(message['product_id']),
             price = Decimal(message['price']),
             size = Decimal(message['remaining_size']),
-            side = 'ask' if message['side'] == 'sell' else 'bid',
+            side = message['side'],
             order_id = message['order_id'],
             event_timestamp = int(parser.isoparse(
                 message['time']).timestamp() * 1000),
@@ -43,7 +43,7 @@ class CoinbaseStandardiser(Standardiser):
             symbol = self.normalise_symbol(message['product_id']),
             price = Decimal(message['price']),
             size = Decimal(message['remaining_size']),
-            side = 'ask' if message['side'] == 'sell' else 'bid',
+            side = message['side'],
             order_id = message['order_id'],
             event_timestamp = int(parser.isoparse(
                 message['time']).timestamp() * 1000),
@@ -57,8 +57,8 @@ class CoinbaseStandardiser(Standardiser):
         msg = dict(
             symbol = self.normalise_symbol(message['product_id']),
             price = Decimal(message['price']),
-            size = Decimal(message['size']),
-            side = 'ask' if message['side'] == 'sell' else 'bid',
+            size = Decimal(message['new_size']),
+            side = message['side'],
             order_id = message['order_id'],
             event_timestamp = int(parser.isoparse(
                 message['time']).timestamp() * 1000),

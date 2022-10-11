@@ -1,3 +1,4 @@
+import logging
 from l3_atom.stream_processing.standardiser import Standardiser
 from l3_atom.off_chain import Binance
 from decimal import Decimal
@@ -12,7 +13,7 @@ class BinanceStandardiser(Standardiser):
             price = Decimal(message['p']),
             size = Decimal(message['q']),
             taker_side = 'sell' if message['m'] else 'buy',
-            trade_id = str(message['a']),
+            trade_id = str(message['t']),
             maker_order_id = str(message['b']) if message['m'] else str(message['a']),
             taker_order_id = str(message['a']) if message['m'] else str(message['b']),
             event_timestamp = message['E'],
@@ -74,7 +75,9 @@ class BinanceStandardiser(Standardiser):
                 await self._book(msg)
             elif msg['e'] == 'kline':
                 await self._candle(msg)
+            elif msg['e'] == 'bookTicker':
+                await self._ticker(msg)
         elif 'A' in msg:
             await self._ticker(msg)
         else:
-            pass
+            logging.warning(f"{self.id}: Unhandled message: {msg}")

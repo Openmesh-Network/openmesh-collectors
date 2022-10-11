@@ -1,4 +1,4 @@
-from .Binance import BinanceStandardiser
+from .binance import BinanceStandardiser
 from l3_atom.off_chain import BinanceFutures
 from decimal import Decimal
 import logging
@@ -28,9 +28,9 @@ class BinanceFuturesStandardiser(BinanceStandardiser):
         )
         await self.send_to_topic("open_interest", **msg)
 
-    async def handle_message(self, message):
-        if 'openInterest' in message:
-            await self._open_interest(message)
+    async def handle_message(self, msg):
+        if 'openInterest' in msg:
+            await self._open_interest(msg)
         elif 'e' in msg:
             if msg['e'] == 'trade':
                 await self._trade(msg)

@@ -14,9 +14,4 @@ def enrich_raw(msg):
     else:
         raise TypeError(f"enriching raw data of type {type(msg)} not supported")
     return msg
-
-def enrich_lob_events(lob_events):
-    pass
-
-def enrich_market_orders(market_orders):
-    pass
+    

@@ -4,6 +4,7 @@ config.ini
 keys/*
 !keys/README.md
 schema-standardiser-data/*
+temp.txt
 
 # Log files
 *.ids 

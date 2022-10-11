@@ -1,10 +1,13 @@
 from l3_atom.orderbook_exchange import OrderBookExchange
 from l3_atom.stream_processing.records import *
 
+from l3_atom.stream_processing.records import feed_to_record
+
 class Standardiser:
     raw_topic:str = NotImplemented
     feeds:list = NotImplemented
     exchange:OrderBookExchange = NotImplemented
+    feed_to_record:dict = feed_to_record
 
     def __init__(self) -> None:
         self.id = self.exchange.name
@@ -31,3 +34,4 @@ class Standardiser:
     async def process(self, stream):
         async for message in stream:
             await self.handle_message(message)
+            yield message

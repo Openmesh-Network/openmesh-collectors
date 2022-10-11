@@ -206,11 +206,13 @@ class AsyncConnectionManager:
                         loop.create_task(self._monitor())
                     await self._callback(connection, self.callback)
             except (ConnectionClosed, ConnectionAbortedError, ConnectionResetError) as e:
+                print('connection closed')
                 logging.warning("%s: connection issue - %s. reconnecting in %.1f seconds...", self.conn.id, str(e), delay, exc_info=True)
                 await asyncio.sleep(delay)
                 retries += 1
                 delay *= 2
             except InvalidStatusCode as e:
+                print('invalid status code')
                 if e.status_code == 429:
                     rand = random.uniform(1.0, 3.0)
                     logging.warning("%s: Rate Limited - waiting %d seconds to reconnect", self.conn.id, (limited * 60 * rand))
@@ -222,6 +224,7 @@ class AsyncConnectionManager:
                     retries += 1
                     delay *= 2
             except Exception as e:
+                print('exception')
                 logging.error("%s: encountered an exception, reconnecting in %.1f seconds", self.conn.id, delay, exc_info=True)
                 await asyncio.sleep(delay)
                 retries += 1

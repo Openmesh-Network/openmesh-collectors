@@ -53,7 +53,7 @@ class Ticker(BaseRecord, serializer='ticker'):
 
 class FundingRate(BaseRecord, serializer='funding_rate'):
     mark_price: Decimal
-    funding_rate: Decimal`
+    funding_rate: Decimal
     next_funding_time: int
     predicted_rate: Decimal
 
@@ -66,5 +66,7 @@ feed_to_record = {
         'ticker': Ticker,
         'lob': Lob,
         'trades': Trade,
-        'candle': Candle
+        'candle': Candle,
+        'funding_rate': FundingRate,
+        'open_interest': OpenInterest
     }
