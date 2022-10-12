@@ -85,7 +85,6 @@ class KafkaConnector(Kafka):
         if self.schema_username and self.schema_password:
             self.schema_client = SchemaRegistryClient({
                 "url": self.schema_url,
-                "basic.auth.credentials.source": "USER_INFO",
                 "basic.auth.user.info": f"{self.schema_username}:{self.schema_password}",
             })
         else:
@@ -106,6 +105,7 @@ class KafkaConnector(Kafka):
             self._schema_init()
         topic_metadata = self.admin_client.list_topics(timeout=5)
         topics = []
+        schemas = self.schema_client.get_subjects()
         for feed in feeds:
             topic = f'{self.exchange}_{feed}'
             if topic not in topic_metadata.topics:
@@ -115,13 +115,16 @@ class KafkaConnector(Kafka):
             else:
                 logging.info(f"{self.exchange}: Topic {topic} already exists")
 
-            if self.schema_client.lookup_schema(f'{topic}-value', "latest"):
+            if f'{topic}-value' in schemas:
                 logging.info(
                     f"{self.exchange}: Schema for {topic} already exists")
+            elif feed == 'raw':
+                logging.info(
+                    f"{self.exchange}: Schema for {topic} is not required")
             else:
                 logging.info(f"{self.exchange}: Creating schema for {topic}")
                 feed_schema = self.schema_client.get_latest_version(
-                    feed).schema.schema_str
+                    feed).schema
                 self.schema_client.register_schema(
                     f'{topic}-value', feed_schema)
 

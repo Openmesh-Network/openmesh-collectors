@@ -8,12 +8,12 @@ class Binance(OrderBookExchangeFeed):
     name = "binance"
     key_field = 's'
     ws_endpoints = {
-        WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades"]
+        WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades_l3"]
     }
 
     ws_channels = {
         "lob": "depth@100ms",
-        "trades": 'trade',
+        "trades_l3": 'trade',
         "ticker": "bookTicker",
         "candle": "kline_1s"
     }

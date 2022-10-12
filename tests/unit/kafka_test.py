@@ -34,6 +34,10 @@ def mock_kafka():
     kafka.admin_client.list_topics = Mock()
     kafka.admin_client.list_topics.return_value = MockTopics(
         ['test_raw', 'test_lob'])
+    kafka._schema_init()
+    kafka.schema_client = Mock()
+    kafka.schema_client.get_subjects = Mock()
+    kafka.schema_client.get_subjects.return_value = ['test_lob-value']
     kafka.kafka_producer = AsyncMock()
     return kafka
 

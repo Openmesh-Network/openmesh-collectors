@@ -2,6 +2,7 @@ from l3_atom.stream_processing.standardiser import Standardiser
 from l3_atom.off_chain import Coinbase
 from decimal import Decimal
 from dateutil import parser
+import logging
 
 
 class CoinbaseStandardiser(Standardiser):
@@ -97,3 +98,7 @@ class CoinbaseStandardiser(Standardiser):
                 pass
             elif msg['type'] == 'subscriptions':
                 pass
+            else:
+                logging.warning(f"{self.id}: Unhandled message: {msg}")
+        else:
+            logging.warning(f"{self.id}: Unhandled message: {msg}")
