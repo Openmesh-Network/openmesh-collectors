@@ -1,7 +1,25 @@
-from datetime import datetime as dt, timezone
-from typing import Dict, Tuple, Union
-
 class Symbol:
+
+    """
+    Class to handle symbols.
+
+    :param seperator: Seperator to use when joining tokens to other information
+    :type seperator: str
+    :param token_seperator: Seperator to use when joining tokens
+    :type token_seperator: str
+    :param base: Base token
+    :type base: str
+    :param quote: Quote token
+    :type quote: str
+    :param symbol_type: Type of symbol (spot, future, option), defaults to 'spot'
+    :type symbol_type: str, optional
+    :param strike_price: Strike price of the option, defaults to None
+    :type strike_price: float, optional
+    :param option_type: Type of option (call, put), defaults to None
+    :type option_type: str, optional
+    :param expiry_date: Expiry date of the option, defaults to None
+    :type expiry_date: datetime, optional
+    """
 
     seperator = '-'
     token_seperator = '.'
@@ -16,22 +34,27 @@ class Symbol:
         self.expiry_date = expiry_date
 
     def __repr__(self) -> str:
+        """Returns a string representation of the symbol"""
         return self.normalised
 
     def __str__(self) -> str:
+        """Returns a string representation of the symbol"""
         return self.normalised
 
     def __eq__(self, other) -> bool:
+        """Returns True if the symbols are equal"""
         if isinstance(other, Symbol):
             return self.normalised == other.normalised
         elif isinstance(other, str):
             return self.normalised == other
 
     def __hash__(self) -> int:
+        """Computes a hash value for the string of the symbol"""
         return hash(self.normalised)
 
     @property
     def normalised(self) -> str:
+        """Returns the normalised symbol"""
         if self.base == self.quote:
             base = self.base
         else:

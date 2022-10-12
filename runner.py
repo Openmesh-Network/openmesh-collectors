@@ -1,10 +1,10 @@
 import asyncio
 import sys
-import logging
+
 
 def main():
 
-    if sys.argv[1] == 'connector':
+    if len(sys.argv) > 1 and sys.argv[1] == 'connector':
 
         from l3_atom.off_chain import mapping
 
@@ -13,15 +13,21 @@ def main():
         exchange_feed.start(loop)
 
         loop.run_forever()
-    elif sys.argv[1] == 'processor':
+    elif len(sys.argv) > 1 and sys.argv[1] == 'processor':
 
         from l3_atom.stream_processing import app
 
         del sys.argv[1]
-        
+
         sys.argv.extend(['worker', '-l', 'info'])
-        f_app = app.run()
+        f_app = app.init()
         f_app.main()
+
+    else:
+        print('''USAGE:
+    python3 runner.py connector <exchange>
+    python3 runner.py processor''')
+
 
 if __name__ == "__main__":
     main()

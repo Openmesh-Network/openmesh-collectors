@@ -1,7 +1,7 @@
 from l3_atom.off_chain import Binance
 from l3_atom.tokens import Symbol
-from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed, HTTPConnection
-from yapic import json
+from l3_atom.feed import WSConnection, WSEndpoint, HTTPConnection
+
 
 class BinanceFutures(Binance):
     name = "binance-futures"
@@ -26,7 +26,7 @@ class BinanceFutures(Binance):
     }
 
     symbols_endpoint = "https://fapi.binance.com/fapi/v1/exchangeInfo"
-        
+
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         for m in sym_list['symbols']:
@@ -38,10 +38,11 @@ class BinanceFutures(Binance):
             elif m.get('contractType') == 'CURRENT_QUARTER' or m.get('contractType') == 'NEXT_QUARTER':
                 market = 'futures'
                 expiration_date = m['symbol'].split("_")[1]
-            normalised_symbol = Symbol(base, quote, symbol_type=market, expiry_date=expiration_date)
+            normalised_symbol = Symbol(
+                base, quote, symbol_type=market, expiry_date=expiration_date)
             ret[normalised_symbol] = m['symbol']
         return ret
-    
+
     def _init_rest(self):
         return [(HTTPConnection(self.name, self.rest_channels['open_interest'].format(self.get_exchange_symbol(symbol)), poll_frequency=60, authentication=None), None, self.process_message, None, ['open_interest']) for symbol in self.symbols]
 

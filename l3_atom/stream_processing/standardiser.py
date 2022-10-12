@@ -1,13 +1,12 @@
 from l3_atom.orderbook_exchange import OrderBookExchange
-from l3_atom.stream_processing.records import *
+from l3_atom.stream_processing.records import record_mapping
 
-from l3_atom.stream_processing.records import feed_to_record
 
 class Standardiser:
-    raw_topic:str = NotImplemented
-    feeds:list = NotImplemented
-    exchange:OrderBookExchange = NotImplemented
-    feed_to_record:dict = feed_to_record
+    raw_topic: str = NotImplemented
+    feeds: list = NotImplemented
+    exchange: OrderBookExchange = NotImplemented
+    feed_to_record: dict = record_mapping
 
     def __init__(self) -> None:
         self.id = self.exchange.name
@@ -17,7 +16,7 @@ class Standardiser:
         self.raw_topic = f'{self.id}_raw'
         self.exchange = self.exchange()
 
-    def normalise_symbol(self, exch_symbol:str) -> str:
+    def normalise_symbol(self, exch_symbol: str) -> str:
         return self.exchange.get_normalised_symbol(exch_symbol)
 
     async def send_to_topic(self, feed, **kwargs):
@@ -28,7 +27,7 @@ class Standardiser:
             key=kwargs['symbol']
         )
 
-    async def handle_message(self, msg:dict):
+    async def handle_message(self, msg: dict):
         raise NotImplementedError
 
     async def process(self, stream):

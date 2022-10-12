@@ -3,28 +3,30 @@ from l3_atom.off_chain import BinanceFutures
 from decimal import Decimal
 import logging
 
+
 class BinanceFuturesStandardiser(BinanceStandardiser):
     exchange = BinanceFutures
-    feeds = ['lob', 'trades_l3', 'ticker', 'candle', 'funding_rate', 'open_interest']
+    feeds = ['lob', 'trades_l3', 'ticker',
+             'candle', 'funding_rate', 'open_interest']
 
     async def _funding_rate(self, message):
         msg = dict(
-            symbol = self.normalise_symbol(message['s']),
-            mark_price = Decimal(message['p']),
-            funding_rate = Decimal(message['r']),
-            next_funding_time = message['T'],
-            predicted_rate = Decimal(message['P']),
-            event_timestamp = message['E'],
-            atom_timestamp = message['atom_timestamp']
+            symbol=self.normalise_symbol(message['s']),
+            mark_price=Decimal(message['p']),
+            funding_rate=Decimal(message['r']),
+            next_funding_time=message['T'],
+            predicted_rate=Decimal(message['P']),
+            event_timestamp=message['E'],
+            atom_timestamp=message['atom_timestamp']
         )
         await self.send_to_topic("funding_rate", **msg)
 
     async def _open_interest(self, message):
         msg = dict(
-            symbol = self.normalise_symbol(message['symbol']),
-            open_interest = Decimal(message['openInterest']),
-            event_timestamp = message['time'],
-            atom_timestamp = message['atom_timestamp']
+            symbol=self.normalise_symbol(message['symbol']),
+            open_interest=Decimal(message['openInterest']),
+            event_timestamp=message['time'],
+            atom_timestamp=message['atom_timestamp']
         )
         await self.send_to_topic("open_interest", **msg)
 

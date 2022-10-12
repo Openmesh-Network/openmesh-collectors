@@ -1,21 +1,36 @@
 import pytest
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 import json
 
-from l3_atom.stream_processing import app
-from l3_atom.stream_processing.records import *
+from l3_atom.stream_processing import app, codecs
+from decimal import Decimal
+
+
+def new_config():
+    return {
+        'KAFKA_BOOTSTRAP_SERVERS': None,
+        'SCHEMA_REGISTRY_URL': None
+    }
+
+
+@pytest.fixture()
+def mock_kafka():
+    app.get_kafka_config = new_config
+    codecs.initialise = Mock()
+
 
 @pytest.fixture()
 def test_app(event_loop):
-    f_app = app.run()
+    f_app = app.init()
     f_app.finalize()
     f_app.conf.store = 'memory://'
     f_app.flow_control.resume()
     return f_app
 
+
 @pytest.mark.asyncio()
-async def test_coinbase_agent(test_app):
-    async with test_app.agents[f'coinbase_agent'].test_context() as agent:
+async def test_coinbase_agent(mock_kafka, test_app):
+    async with test_app.agents['coinbase_agent'].test_context() as agent:
         topics = agent.fun.__self__.normalised_topics
         for topic in topics.values():
             topic.send = AsyncMock()
@@ -63,9 +78,10 @@ async def test_coinbase_agent(test_app):
                 assert record['size'] == Decimal('5.23512')
                 assert record['order_id'] == 'ac928c66-ca53-498f-9c13-a110027a60e8'
 
+
 @pytest.mark.asyncio()
-async def test_binance_agent(test_app):
-    async with test_app.agents[f'binance_agent'].test_context() as agent:
+async def test_binance_agent(mock_kafka, test_app):
+    async with test_app.agents['binance_agent'].test_context() as agent:
         topics = agent.fun.__self__.normalised_topics
         for topic in topics.values():
             topic.send = AsyncMock()
@@ -107,12 +123,13 @@ async def test_binance_agent(test_app):
                 assert record['o'] == Decimal('19453.47000000')
                 assert record['h'] == Decimal('19453.47000000')
                 assert record['l'] == Decimal('19453.03000000')
-                assert record['closed'] == True
+                assert record['closed'] is True
                 assert record['trades'] == 7
 
+
 @pytest.mark.asyncio()
-async def test_binance_futures_agent(test_app):
-    async with test_app.agents[f'binance-futures_agent'].test_context() as agent:
+async def test_binance_futures_agent(mock_kafka, test_app):
+    async with test_app.agents['binance-futures_agent'].test_context() as agent:
         topics = agent.fun.__self__.normalised_topics
         for topic in topics.values():
             topic.send = AsyncMock()

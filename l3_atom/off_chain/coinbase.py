@@ -3,20 +3,23 @@ from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
+
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
     key_field = 'product_id'
     ws_endpoints = {
-        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["l3_book", "ticker"]
+        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["lob_l3", "ticker"]
     }
 
     ws_channels = {
-        "l3_book": "full",
+        "lob_l3": "full",
+        # Trade messages are sent in the full channel, but for consistency we keep it separate
+        "trades_l3": "full",
         "ticker": "ticker"
     }
 
     symbols_endpoint = "https://api.pro.coinbase.com/products"
-        
+
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         symbols = [s['id'] for s in sym_list]
@@ -25,18 +28,17 @@ class Coinbase(OrderBookExchangeFeed):
             normalised_symbol = Symbol(base, quote)
             ret[normalised_symbol] = symbol
         return ret
-    
-    async def subscribe(self, conn: AsyncFeed, channels: list, symbols):
-        print(self.symbols)
-        for channel in channels:
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        for feed in feeds:
+            if feed == "trades_l3":
+                continue
             msg = json.dumps({
                 "type": "subscribe",
                 "product_ids": symbols,
-                #"product_ids": syms,
-                "channels": [self.get_feed_from_channel(channel)]
+                "channels": [self.get_channel_from_feed(feed)]
             })
             await conn.send_data(msg)
-            print(msg)
 
     def auth(self, conn: WSConnection):
         pass
