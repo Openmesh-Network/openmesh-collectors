@@ -1,10 +1,10 @@
 import pytest
+from util import teardown_async
 import json
 import asyncio
-from contextlib import suppress
 from unittest.mock import Mock
 
-from l3_atom.off_chain import Coinbase, Binance, BinanceFutures
+from l3_atom.off_chain import Coinbase, Binance, BinanceFutures, Dydx
 
 
 def mock_process_message(ret, **kwargs):
@@ -13,9 +13,8 @@ def mock_process_message(ret, **kwargs):
         ret.append(msg)
     return process_message
 
-
 @pytest.mark.asyncio()
-async def test_coinbase_connector():
+async def test_coinbase_connector(teardown_async):
     types = ['open', 'done', 'ticker', 'match',
              'change', 'subscriptions', 'received']
     ret = []
@@ -28,17 +27,10 @@ async def test_coinbase_connector():
     for msg in ret:
         assert msg.get('type', None) in types
     await connector.stop()
-    pending = asyncio.all_tasks()
-    t = []
-    for task in pending:
-        task.cancel()
-        t.append(task)
-    with suppress(asyncio.CancelledError):
-        await asyncio.gather(*t)
 
 
 @pytest.mark.asyncio()
-async def test_binance_connector():
+async def test_binance_connector(teardown_async):
     types = ['bookTicker', 'trade', 'depthUpdate', 'kline']
     ret = []
     Binance.process_message = mock_process_message(ret)
@@ -50,17 +42,10 @@ async def test_binance_connector():
     for msg in ret:
         assert msg.get('e', None) in types or 'result' in msg or 'A' in msg
     await connector.stop()
-    pending = asyncio.all_tasks()
-    t = []
-    for task in pending:
-        task.cancel()
-        t.append(task)
-    with suppress(asyncio.CancelledError):
-        await asyncio.gather(*t)
 
 
 @pytest.mark.asyncio()
-async def test_binance_futures_connector():
+async def test_binance_futures_connector(teardown_async):
     types = ['bookTicker', 'trade', 'depthUpdate', 'kline', 'markPriceUpdate']
     ret = []
     BinanceFutures.process_message = mock_process_message(ret)
@@ -73,10 +58,18 @@ async def test_binance_futures_connector():
         assert msg.get(
             'e', None) in types or 'openInterest' in msg or 'result' in msg
     await connector.stop()
-    pending = asyncio.all_tasks()
-    t = []
-    for task in pending:
-        task.cancel()
-        t.append(task)
-    with suppress(asyncio.CancelledError):
-        await asyncio.gather(*t)
+
+@pytest.mark.asyncio()
+async def test_Dydx_connector():
+    types = ['v3_trades', 'v3_orderbook']
+    ret = []
+    Dydx.process_message = mock_process_message(ret)
+    Dydx._init_kafka = Mock()
+    connector = Dydx()
+    loop = asyncio.get_event_loop()
+    connector.start(loop)
+    await asyncio.sleep(1)
+    for msg in ret:
+        assert msg.get(
+            'channel', None) in types or msg.get('type', None) == 'connected'
+    await connector.stop()

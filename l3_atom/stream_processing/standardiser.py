@@ -36,7 +36,7 @@ class Standardiser:
     async def send_to_topic(self, feed: str, **kwargs):
         """
         Given a feed and arguments, send to the correct topic
-        
+
         :param feed: The feed to send to
         :type feed: str
         :param kwargs: The arguments to use in the relevant Record

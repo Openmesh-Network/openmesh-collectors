@@ -5,8 +5,8 @@ from decimal import Decimal
 
 class BaseRecord(faust.Record):
     """
-    Base record for all records.
-    
+    Base record for all other records.
+
     :param exchange: The exchange the message is sourced from
     :type exchange: str
     :param symbol: The symbol the message is for

@@ -3,6 +3,7 @@ import json
 import asyncio
 from unittest.mock import Mock, AsyncMock
 from multiprocessing import Pipe
+from util import teardown_async
 
 import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
@@ -61,7 +62,7 @@ async def test_producer(mock_kafka):
     mock_kafka.started = True
     for msg in ['[1]', '[2]', '[3]', '[4]', 'END']:
         await mock_kafka.write(msg)
-    ret = asyncio.create_task(mock_kafka.producer())
+    ret = mock_kafka.producer()
     await ret
     args = mock_kafka.kafka_producer.send.call_args
     assert args[0][0] == 'test_raw'

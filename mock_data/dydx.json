@@ -1,0 +1,39 @@
+[
+    {
+        "type": "channel_data",
+        "connection_id": "68c93b0a-65e4-4c81-bf5f-dc9fc259902d",
+        "message_id": 32,
+        "id": "ETH-USD",
+        "channel": "v3_orderbook",
+        "contents": {
+            "offset": "6209315148",
+            "bids": [
+                [
+                    "1288.5",
+                    "55.192"
+                ]
+            ],
+            "asks": []
+        },
+        "atom_timestamp": 503485904358
+    },
+    {
+        "type": "channel_data",
+        "connection_id": "e37e01f6-eb8c-4d94-81f0-4db365d8a56e",
+        "message_id": 540,
+        "id": "BTC-USD",
+        "channel": "v3_trades",
+        "contents": {
+            "trades": [
+                {
+                    "size": "0.0224",
+                    "side": "SELL",
+                    "price": "19088",
+                    "createdAt": "2022-10-13T06:04:25.258Z",
+                    "liquidation": false
+                }
+            ]
+        },
+        "atom_timestamp": 503485904358
+    }
+]
