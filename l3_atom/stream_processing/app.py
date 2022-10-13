@@ -5,6 +5,7 @@ import ssl
 
 
 def init():
+    """Initialises the Faust Stream Processing app"""
     config = get_kafka_config()
 
     ssl_ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)

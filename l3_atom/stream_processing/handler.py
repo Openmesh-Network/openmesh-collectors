@@ -3,6 +3,7 @@ import logging
 
 
 def initialise_agents(app):
+    """Initialises the Faust agents for each exchange raw topic"""
     for standardiser in standardisers:
         agent = standardiser()
         standardiser.raw_topic = app.topic(agent.raw_topic)

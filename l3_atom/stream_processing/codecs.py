@@ -6,6 +6,7 @@ from l3_atom.stream_processing.records import record_mapping
 
 
 def initialise():
+    """Initialises the serialisation codecs for Faust"""
     config = get_kafka_config()
 
     client = SchemaRegistryClient(url=config['SCHEMA_REGISTRY_URL'], auth=Auth(
