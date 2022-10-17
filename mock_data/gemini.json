@@ -1,0 +1,39 @@
+[
+    {
+        "type": "l2_updates",
+        "symbol": "ETHUSD",
+        "changes": [
+            [
+                "buy",
+                "1320.77",
+                "22.035459"
+            ]
+        ],
+        "atom_timestamp": 1610000000000
+    },
+    {
+        "type": "trade",
+        "symbol": "ETHUSD",
+        "event_id": 147298363555,
+        "timestamp": 1666011907834,
+        "price": "1321.56",
+        "quantity": "0.011293",
+        "side": "buy",
+        "atom_timestamp": 1610000000000
+    },
+    {
+        "type": "candles_1m_updates",
+        "symbol": "ETHUSD",
+        "changes": [
+            [
+                1666011840000,
+                1320.65,
+                1321.67,
+                1320.48,
+                1321.67,
+                4.004986
+            ]
+        ],
+        "atom_timestamp": 1610000000000
+    }
+]

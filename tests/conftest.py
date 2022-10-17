@@ -28,7 +28,7 @@ async def setup_async():
 @pytest_asyncio.fixture()
 async def teardown_async():
     yield
-    pending = asyncio.all_tasks()
+    pending = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
     t = []
     for task in pending:
         task.cancel()

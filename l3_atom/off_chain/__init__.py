@@ -4,6 +4,7 @@ from .binance_futures import BinanceFutures
 from .apollox import ApolloX
 from .dydx import Dydx
 from .bitfinex import Bitfinex
+from .gemini import Gemini
 
 mapping = {
     'coinbase': Coinbase,
@@ -11,5 +12,6 @@ mapping = {
     'binance-futures': BinanceFutures,
     'bitfinex': Bitfinex,
     'dydx': Dydx,
-    'apollox': ApolloX
+    'apollox': ApolloX,
+    'gemini': Gemini
 }

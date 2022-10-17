@@ -8,12 +8,11 @@ class BitfinexStandardiser(Standardiser):
     exchange = Bitfinex
 
     async def _trade(self, message):
-        if message[1] in ('tu', 'hb'):
+        if message[1] in ('tu', 'hb') or isinstance(message[1], list):
             return
 
         symbol = self.normalise_symbol(message[-2])
         atom_timestamp = message[-1]
-
         if isinstance(message[2][0], int):
             message[2] = [message[2]]
         for t in message[2]:

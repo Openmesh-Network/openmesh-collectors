@@ -3,11 +3,14 @@ from l3_atom.helpers.read_config import get_conf_symbols
 from datetime import datetime as dt
 import asyncio
 import requests
+import uvloop
 
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
 
 import logging
+
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
 class OrderBookExchange:
@@ -45,10 +48,10 @@ class OrderBookExchange:
     rest_channels: dict = {}
 
     def __init__(self):
-        self.symbols = self.normalise_symbols(self.get_symbols())
+        sym_list = self.get_symbols()
+        self.symbols = self.normalise_symbols(sym_list)
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
-        self.filter_symbols(
-            self.symbols, get_conf_symbols(self.name))
+        self.filter_symbols(self.symbols, get_conf_symbols(self.name))
 
     def get_symbols(self) -> list:
         """
@@ -257,8 +260,10 @@ class OrderBookExchangeFeed(OrderBookExchange):
         Stops the connection to the exchange
         """
         logging.info('%s: Shutting down', self.name)
+        tasks = []
         if self.kafka_connector:
-            await self.kafka_connector.stop()
+            tasks.append(self.kafka_connector.stop())
         for handler in self.connection_handlers:
-            await handler.conn.close()
+            tasks.append(handler.conn.close())
             handler.running = False
+        await asyncio.gather(*tasks)
