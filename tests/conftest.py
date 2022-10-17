@@ -4,6 +4,7 @@ from l3_atom.stream_processing import app, codecs
 import pytest_asyncio
 import asyncio
 from contextlib import suppress
+import logging
 
 
 def new_config():
@@ -17,6 +18,11 @@ def new_config():
 def mock_kafka():
     app.get_kafka_config = new_config
     codecs.initialise = Mock()
+
+
+@pytest.fixture()
+async def setup_async():
+    logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 
 
 @pytest_asyncio.fixture()
@@ -34,7 +40,4 @@ async def teardown_async():
 @pytest.fixture()
 def test_app(event_loop):
     f_app = app.init()
-    f_app.finalize()
-    f_app.conf.store = 'memory://'
-    f_app.flow_control.resume()
     return f_app

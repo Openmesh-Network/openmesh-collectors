@@ -50,9 +50,15 @@ class KafkaConnector(Kafka):
                 for message in messages:
                     msg = enrich_raw(json.loads(message))
                     if self.key_field and isinstance(self.key_field, str):
-                        key = msg.get(self.key_field, None).encode()
+                        key = msg.get(self.key_field, None)
                     else:
-                        key = msg[self.key_field]
+                        try:
+                            key = msg[self.key_field]
+                        except IndexError:
+                            logging.warning(f"Key field {self.key_field} not found in message")
+                            key = None
+                    if isinstance(key, str):
+                        key = key.encode()
                     await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key if key else None)
         await self.kafka_producer.stop()
 

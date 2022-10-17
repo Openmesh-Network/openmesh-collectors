@@ -15,7 +15,7 @@ class BinanceFutures(Binance):
 
     ws_channels = {
         "lob": "depth@100ms",
-        "trades": "trade",
+        "trades_l3": "trade",
         "ticker": "bookTicker",
         "candle": "kline_1s",
         "funding_rate": "markPrice@1s"
