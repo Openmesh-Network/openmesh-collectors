@@ -6,7 +6,6 @@ from dateutil import parser
 
 
 class DydxStandardiser(Standardiser):
-    feeds = ['lob', 'trades']
     exchange = Dydx
 
     def __init__(self):

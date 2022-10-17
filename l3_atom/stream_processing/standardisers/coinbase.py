@@ -6,7 +6,6 @@ import logging
 
 
 class CoinbaseStandardiser(Standardiser):
-    feeds = ['lob_l3', 'trades_l3', 'ticker']
     exchange = Coinbase
 
     async def _trade(self, message):

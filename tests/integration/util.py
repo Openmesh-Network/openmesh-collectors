@@ -1,14 +1,8 @@
-import pytest_asyncio
-import asyncio
-from contextlib import suppress
+import json
 
-@pytest_asyncio.fixture()
-async def teardown_async():
-    yield
-    pending = asyncio.all_tasks()
-    t = []
-    for task in pending:
-        task.cancel()
-        t.append(task)
-    with suppress(asyncio.CancelledError):
-        await asyncio.gather(*t)
+
+def mock_process_message(ret, **kwargs):
+    async def process_message(cls, msg, conn, channel):
+        msg = json.loads(msg)
+        ret.append(msg)
+    return process_message

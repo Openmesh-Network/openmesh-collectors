@@ -5,7 +5,6 @@ from decimal import Decimal
 
 
 class BinanceStandardiser(Standardiser):
-    feeds = ['lob', 'trades_l3', 'ticker', 'candle']
     exchange = Binance
 
     async def _trade(self, message):

@@ -47,7 +47,7 @@ class OrderBookExchange:
     def __init__(self):
         self.symbols = self.normalise_symbols(self.get_symbols())
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
-        self.symbols = self.filter_symbols(
+        self.filter_symbols(
             self.symbols, get_conf_symbols(self.name))
 
     def get_symbols(self) -> list:
@@ -57,7 +57,13 @@ class OrderBookExchange:
         :return: List of symbols
         :rtype: list
         """
-        return requests.get(self.symbols_endpoint).json()
+        if isinstance(self.symbols_endpoint, str):
+            return requests.get(self.symbols_endpoint).json()
+        elif isinstance(self.symbols_endpoint, list):
+            res = []
+            for endpoint in self.symbols_endpoint:
+                res.extend(requests.get(endpoint).json())
+            return res
 
     def filter_symbols(self, sym_list: dict, filters: dict) -> dict:
         """
@@ -73,7 +79,8 @@ class OrderBookExchange:
         ret = {}
         for norm in filters:
             ret[self.get_normalised_symbol(sym_list[norm])] = sym_list[norm]
-        return ret
+        self.symbols = ret
+        self.inv_symbols = {v: k for k, v in self.symbols.items()}
 
     @abstractmethod
     def normalise_symbols(self, symbols: list):
@@ -138,7 +145,7 @@ class OrderBookExchange:
         :return: Normalised symbol
         :rtype: str
         """
-        return self.inv_symbols[symbol].normalised
+        return self.inv_symbols[symbol]
 
 
 class OrderBookExchangeFeed(OrderBookExchange):

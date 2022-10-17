@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 import faust
 from decimal import Decimal
 
@@ -86,7 +86,7 @@ class Candle(BaseRecord, serializer='candle'):
     end: int
     interval: str
     trades: int
-    closed: bool
+    closed: Optional[bool]
     o: Decimal
     h: Decimal
     l: Decimal
@@ -96,7 +96,7 @@ class Candle(BaseRecord, serializer='candle'):
 
 class TradeL3(Trade, serializer='trades_l3'):
     """
-    Record for a trade with IDs.
+    Record for a trade with Order IDs.
 
     :param maker_order_id: The ID of the market maker order
     :type maker_order_id: str
@@ -149,10 +149,10 @@ class FundingRate(BaseRecord, serializer='funding_rate'):
     :param predicted_rate: The predicted funding rate
     :type predicted_rate: Decimal
     """
-    mark_price: Decimal
     funding_rate: Decimal
-    next_funding_time: int
-    predicted_rate: Decimal
+    mark_price: Decimal = Decimal(-1)
+    next_funding_time: int = -1
+    predicted_rate: Decimal = Decimal(-1)
 
 
 class OpenInterest(BaseRecord, serializer='open_interest'):

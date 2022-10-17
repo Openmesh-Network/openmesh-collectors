@@ -1,9 +1,7 @@
 import pytest
 import json
-import asyncio
 from unittest.mock import Mock, AsyncMock
 from multiprocessing import Pipe
-from util import teardown_async
 
 import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
@@ -27,7 +25,7 @@ def mock_kafka():
     kafka_multiprocessed.AdminClient = Mock()
     kafka_multiprocessed.SchemaRegistryClient = Mock()
     kafka_multiprocessed.NewTopic = Mock()
-    kafka = KafkaConnector('test', 'test')
+    kafka = KafkaConnector('test', 0)
     kafka.pipe = Pipe(duplex=False)
 
     kafka._admin_init()

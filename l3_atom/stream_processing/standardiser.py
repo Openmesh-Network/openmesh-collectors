@@ -17,21 +17,21 @@ class Standardiser:
     :type feed_to_record: dict
     """
     raw_topic: str = NotImplemented
-    feeds: list = NotImplemented
     exchange: OrderBookExchange = NotImplemented
     feed_to_record: dict = record_mapping
 
     def __init__(self) -> None:
         self.id = self.exchange.name
+        self.raw_topic = f'{self.id}_raw'
+        self.exchange = self.exchange()
+        self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
         self.normalised_topics = {
             f"{feed}": f"{self.id}_{feed}" for feed in self.feeds
         }
-        self.raw_topic = f'{self.id}_raw'
-        self.exchange = self.exchange()
 
     def normalise_symbol(self, exch_symbol: str) -> str:
         """Get the normalised symbol from the exchange symbol"""
-        return self.exchange.get_normalised_symbol(exch_symbol)
+        return self.exchange.get_normalised_symbol(exch_symbol).normalised
 
     async def send_to_topic(self, feed: str, **kwargs):
         """

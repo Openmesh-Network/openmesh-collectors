@@ -49,8 +49,11 @@ class KafkaConnector(Kafka):
             async with self.read_from_pipe() as messages:
                 for message in messages:
                     msg = enrich_raw(json.loads(message))
-                    key = msg[self.key_field] if self.key_field in msg else None
-                    await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key.encode() if key else None)
+                    if self.key_field and isinstance(self.key_field, str):
+                        key = msg.get(self.key_field, None).encode()
+                    else:
+                        key = msg[self.key_field]
+                    await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key if key else None)
         await self.kafka_producer.stop()
 
     async def _producer_init(self):

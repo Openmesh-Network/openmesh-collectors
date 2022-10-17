@@ -6,8 +6,6 @@ import logging
 
 class BinanceFuturesStandardiser(BinanceStandardiser):
     exchange = BinanceFutures
-    feeds = ['lob', 'trades_l3', 'ticker',
-             'candle', 'funding_rate', 'open_interest']
 
     async def _funding_rate(self, message):
         msg = dict(
