@@ -1,44 +1,50 @@
 from l3_atom.off_chain import Binance
 from l3_atom.tokens import Symbol
-from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
-from yapic import json
+from l3_atom.feed import WSConnection, WSEndpoint, HTTPConnection
 
-class Binance(Binance):
+
+class BinanceFutures(Binance):
     name = "binance-futures"
     ws_endpoints = {
-        WSEndpoint("wss://fstream.binance.com"): [*Binance.ws_channels.keys(), "funding_rate"]
+        WSEndpoint("wss://fstream.binance.com/ws"): [*Binance.ws_channels.keys(), "funding_rate"]
+    }
+
+    rest_endpoints = {
+        'https://fapi.binance.com': ['open_interest']
     }
 
     ws_channels = {
         "lob": "depth@100ms",
-        "trades": "trade",
+        "trades_l3": "trade",
         "ticker": "bookTicker",
         "candle": "kline_1s",
         "funding_rate": "markPrice@1s"
     }
 
+    rest_channels = {
+        'open_interest': 'https://fapi.binance.com/fapi/v1/openInterest?symbol={}'
+    }
+
     symbols_endpoint = "https://fapi.binance.com/fapi/v1/exchangeInfo"
-        
+
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         for m in sym_list['symbols']:
             base, quote = m['baseAsset'], m['quoteAsset']
-            normalised_symbol = Symbol(base, quote)
+            market = 'spot'
+            expiration_date = None
+            if m.get('contractType') == 'PERPETUAL':
+                market = 'perpetual'
+            elif m.get('contractType') == 'CURRENT_QUARTER' or m.get('contractType') == 'NEXT_QUARTER':
+                market = 'futures'
+                expiration_date = m['symbol'].split("_")[1]
+            normalised_symbol = Symbol(
+                base, quote, symbol_type=market, expiry_date=expiration_date)
             ret[normalised_symbol] = m['symbol']
         return ret
-    
-    async def subscribe(self, conn: AsyncFeed, channels: list, symbols):
-        for channel in channels:
-            msg = json.dumps({
-                "method": "SUBSCRIBE",
-                "params": [
-                    f"{symbol.lower()}@{self.get_feed_from_channel(channel)}"
-                    for symbol in symbols
-                ],
-                "id": 1
-            })
-            await conn.send_data(msg)
-            print(msg)
+
+    def _init_rest(self):
+        return [HTTPConnection(self.name, self.rest_channels['open_interest'].format(self.get_exchange_symbol(symbol)), poll_frequency=60, authentication=None) for symbol in self.symbols]
 
     def auth(self, conn: WSConnection):
         pass

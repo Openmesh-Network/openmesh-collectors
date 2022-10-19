@@ -1,24 +1,42 @@
 from abc import abstractmethod
+from typing import Union
 from l3_atom.helpers.read_config import get_conf_symbols
+from l3_atom.helpers.enrich_data import enrich_raw
 from datetime import datetime as dt
-from datetime import timedelta, timezone
 import asyncio
-from yapic import json
-import time
-from decimal import *
 import requests
+import uvloop
+from yapic import json
 
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
-from l3_atom.tokens import Symbol
-
-from l3_atom.sink_connector.redis_multiprocessed import RedisStreamsConnector
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
 
 import logging
 
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
 
 class OrderBookExchange:
+    """
+    Class to manage methods dealing with an individual exchange. Stores metadata relating to symbols, endpoints, channels, e.t.c.
+
+    :param name: Name of the exchange
+    :type name: str
+    :param key_field: The field in the message that will be used as the key for the Kafka message
+    :type key_field: str
+    :param ws_endpoints: Dictionary of websocket endpoints and the feeds they support
+    :type ws_endpoints: dict
+    :param ws_channels: Dictionary of standardised websocket feeds to the exchange formats
+    :type ws_channels: dict
+    :param symbols_endpoint: Endpoint to get a list of symbols from
+    :type symbols_endpoint: str
+    :param rest_endpoints: Dictionary of REST endpoints and the feeds they support
+    :type rest_endpoints: dict
+    :param rest_channels: Dictionary of standardised REST feeds to the exchange formats
+    :type rest_channels: dict
+    """
     name = NotImplemented
+    key_field = NotImplemented
     """
     {
         <WSEndpoint>: [channels to subscribe to],
@@ -28,57 +46,128 @@ class OrderBookExchange:
     """
     ws_endpoints: dict = NotImplemented
     rest_endpoints: dict = NotImplemented
-    symbols_endpoint = NotImplemented
-    ws_channels = NotImplemented
-    candle_interval = NotImplemented
+    symbols_endpoint: Union[str, list] = NotImplemented
+    ws_channels: dict = {}
+    rest_channels: dict = {}
 
     def __init__(self):
-        self.symbols = self.filter_symbols(self.normalise_symbols(self.get_symbols(self.name)), get_conf_symbols(self.name))
+        sym_list = self.get_symbols()
+        self.symbols = self.normalise_symbols(sym_list)
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
+        self.filter_symbols(self.symbols, get_conf_symbols(self.name))
 
-    def get_symbols(self, exchange: str) -> list:
-        return requests.get(self.symbols_endpoint).json()
+    def get_symbols(self) -> list:
+        """
+        Gets a list of symbols from the exchange via the provided symbols endpoint
 
-    def filter_symbols(self, sym_list, filters):
+        :return: List of symbols
+        :rtype: list
+        """
+        if isinstance(self.symbols_endpoint, str):
+            return requests.get(self.symbols_endpoint).json()
+        elif isinstance(self.symbols_endpoint, list):
+            res = []
+            for endpoint in self.symbols_endpoint:
+                res.append(requests.get(endpoint).json())
+            return res
+
+    def filter_symbols(self, sym_list: dict, filters: dict) -> dict:
+        """
+        Filters a list of symbols based on the provided filters
+
+        :param sym_list: Dictionary of symbols to filter
+        :type sym_list: dict
+        :param filters: Dictionary of filters to apply
+        :type filters: dict
+        :return: Filtered dictionary of symbols
+        :rtype: dict
+        """
         ret = {}
         for norm in filters:
-            norm_sym = Symbol(*norm.split('.'))
-            ret[norm_sym] = sym_list[norm_sym]
-        return ret
+            ret[self.get_normalised_symbol(sym_list[norm])] = sym_list[norm]
+        self.symbols = ret
+        self.inv_symbols = {v: k for k, v in self.symbols.items()}
 
     @abstractmethod
     def normalise_symbols(self, symbols: list):
+        """
+        Method to normalise symbols. Will be different for each exchange
+
+        :param symbols: List of symbols to normalise
+        """
         pass
 
     @abstractmethod
     def normalise_timestamp(self, ts: dt) -> float:
+        """
+        Method to normalise timestamps. Will be different for each exchange
+
+        :param ts: Timestamp to normalise
+        :type ts: datetime
+        """
         pass
 
-    # Helpers that get channel information (e.g.
-    # the channel to subscribe to for order book updates,
-    # the channel to subscribe to for trade updates, e.t.c.)
-    # Does the inverse operation as well
     @classmethod
-    def get_feed_from_channel(cls, channel) -> str:
-        return cls.ws_channels[channel]
+    def get_channel_from_feed(cls, feed) -> str:
+        """
+        Returns the exchange channel from a standardised feed
+
+        :param feed: Standardised feed
+        :type feed: str
+        :return: Exchange channel
+        :rtype: str
+        """
+        return cls.ws_channels[feed] if feed in cls.ws_channels else cls.rest_channels[feed]
 
     @classmethod
-    def get_channel_from_feed(cls, channel: str) -> str:
-        for chan, exch in cls.websocket_channels.items():
-            if exch == channel:
-                return chan
-        return None
+    def get_feeds_from_channel(cls, channel: str) -> str:
+        """
+        Returns the standardised feed from an exchange channel
 
-    # Gets the exchange symbol from a normalised symbol
+        :param channel: Exchange channel
+        :type channel: str
+        :return: Standardised feed
+        :rtype: str
+        """
+        return [k for k, v in cls.ws_channels.items() if v == channel]
+
     def get_exchange_symbol(self, symbol: str) -> str:
+        """
+        Returns the exchange symbol from a normalised symbol
+
+        :param symbol: Normalised symbol
+        :type symbol: str
+        :return: Exchange symbol
+        :rtype: str
+        """
         return self.symbols[symbol]
-    
-    # Gets the normalised symbol from an exchange symbol
+
     def get_normalised_symbol(self, symbol: str) -> str:
-        return self.inv_symbols[symbol].normalised
+        """
+        Returns the normalised symbol from an exchange symbol
+
+        :param symbol: Exchange symbol
+        :type symbol: str
+        :return: Normalised symbol
+        :rtype: str
+        """
+        return self.inv_symbols[symbol]
 
 
 class OrderBookExchangeFeed(OrderBookExchange):
+    """
+    Class to handle the connection to the exchange.
+
+    :param retries: Number of times to retry connecting to the exchange
+    :type retries: int, optional
+    :param interval: Interval between connection attempts
+    :type interval: int, optional
+    :param timeout: Timeout for the connection
+    :type timeout: int, optional
+    :param delay: Delay before starting the connection
+    :type delay: int, optional
+    """
+
     def __init__(self, retries=3, interval=30, timeout=120, delay=0):
         super().__init__()
         self.connection_handlers = []
@@ -86,24 +175,96 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.interval = interval
         self.timeout = timeout
         self.delay = delay
-        self.kafka_connector = KafkaConnector(self.name, self.key_field)
+        self.kafka_connector = None
         self.num_messages = 0
         self.tot_latency = 0
 
-    # Each exchange has its own way of subscribing to channels and handling incoming messages
-    async def subscribe(self, conn: AsyncFeed, channels: list):
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols: list):
+        """
+        Subscribes to the provided feeds on the provided connection
+
+        :param conn: Connection to subscribe to
+        :type conn: AsyncFeed
+        :param feeds: Feeds to subscribe to
+        :type feeds: list
+        :param symbols: Symbols to subscribe to
+        :type symbols: list
+        """
         pass
 
-    async def process_message(self, message: str, conn: AsyncFeed, ts: float):
-        await self.kafka_connector(message)
+    async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
+        """
+        First method called when a message is received from the exchange. Currently forwards the message to Kafka to be produced.
+
+        :param message: Message received from the exchange
+        :type message: str
+        :param conn: Connection the message was received from
+        :type conn: AsyncFeed
+        :param channel: Channel the message was received on
+        :type channel: str
+        """
+        msg = json.loads(message)
+        msg = enrich_raw(msg, timestamp)
+        print(json.dumps(msg))
+        await self.kafka_connector.write(json.dumps(msg))
+
+    def _init_rest(self) -> list:
+        """
+        Initialises the REST connections
+
+        :return: List of REST connections with details for the connection handler
+        :rtype: list
+        """
+        return []
+
+    @classmethod
+    def get_key(cls, message: dict) -> str:
+        """
+        Returns the key for the provided message
+
+        :param message: Message to get the key for
+        :type message: dict
+        :return: Key for the message
+        :rtype: str
+        """
+        if cls.key_field and isinstance(cls.key_field, str):
+            key = message.get(cls.key_field, None)
+        else:
+            try:
+                key = message[cls.key_field]
+            except IndexError:
+                logging.warning(f"Key field {cls.key_field} not found in message")
+                key = None
+        if isinstance(key, str):
+            key = key.encode()
+        return key
+
+    def _init_kafka(self, loop: asyncio.AbstractEventLoop):
+        """
+        Initialises the Kafka connections
+
+        :param loop: Event loop to run the Kafka connection on
+        :type loop: asyncio.AbstractEventLoop
+        """
+        logging.info('%s: Starting Kafka Connector', self.name)
+        self.kafka_connector = KafkaConnector(self.__class__)
+        self.kafka_connector.create_exchange_topics(
+            [*self.ws_channels.keys(), *self.rest_channels.keys(), 'raw'])
+        self.kafka_connector.start(loop)
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """
         Generic WS connection method -- sets up connection handlers for all desired channels and starts the data collection process
+
+        :param loop: Event loop to run the connection on
+        :type loop: asyncio.AbstractEventLoop
         """
-        connections = []
         symbols = []
         max_syms = 10
+        self._init_kafka(loop)
+        rest_connections = self._init_rest()
+        for connection in rest_connections:
+            self.connection_handlers.append(AsyncConnectionManager(connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
         for (endpoint, channels) in self.ws_endpoints.items():
             for symbol in self.symbols.values():
                 if not channels:
@@ -113,19 +274,28 @@ class OrderBookExchangeFeed(OrderBookExchange):
                     continue
                 symbols.append(symbol)
                 if len(symbols) == max_syms:
-                    connections.append((WSConnection(
-                        self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+                    connection = WSConnection(
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+                    self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
                     symbols = []
         if symbols:
-            connections.append((WSConnection(
-                        self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+            connection = WSConnection(
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+            self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
             symbols = []
 
-        for connection, subscribe, handler, auth, channels in connections:
-            self.connection_handlers.append(AsyncConnectionManager(connection, subscribe, handler, auth, channels, self.retries, self.interval, self.timeout, self.delay))
-            self.connection_handlers[-1].start_connection(loop)
+        for handler in self.connection_handlers:
+            handler.start_connection(loop)
 
-        logging.info('%s: Starting Kafka Connector', self.name)
-        self.kafka_connector.start(loop)
-
-        
+    async def stop(self):
+        """
+        Stops the connection to the exchange
+        """
+        logging.info('%s: Shutting down', self.name)
+        tasks = []
+        if self.kafka_connector:
+            tasks.append(self.kafka_connector.stop())
+        for handler in self.connection_handlers:
+            tasks.append(handler.conn.close())
+            handler.running = False
+        await asyncio.gather(*tasks)

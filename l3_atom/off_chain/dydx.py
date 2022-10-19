@@ -1,34 +1,46 @@
-import websockets
-import asyncio
-import time
-import json
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
+from yapic import json
 
-from normalise.dydx_normalisation import NormaliseDydx
-from helpers.read_config import get_symbols
-from sink_connector.redis_producer import RedisProducer
-from sink_connector.ws_to_redis import produce_messages, produce_message
-from source_connector.websocket_connector import connect
 
-url = 'wss://api.dydx.exchange/v3/ws'
+class Dydx(OrderBookExchangeFeed):
+    name = "dydx"
+    key_field = 'id'
 
-async def main():
-    producer = RedisProducer("dydx")
-    symbols = get_symbols('dydx')
-    await connect(url, handle_dydx, producer, symbols)
+    ws_endpoints = {
+        WSEndpoint("wss://api.dydx.exchange/v3/ws"): ["lob", "trades"]
+    }
 
-async def handle_dydx(ws, producer, symbols):
-    for symbol in symbols:
-        subscribe_message = {'type': 'subscribe', 
-                'channel': 'v3_orderbook', 
-                'id': symbol,
-                'includeOffsets': True
-            }
-        await ws.send(json.dumps(subscribe_message))
-        subscribe_message['channel'] = 'v3_trades'
-        del subscribe_message['includeOffsets']
-        await ws.send(json.dumps(subscribe_message))
-    
-    await produce_messages(ws, producer, NormaliseDydx().normalise)
+    ws_channels = {
+        "lob": "v3_orderbook",
+        "trades": "v3_trades"
+    }
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    symbols_endpoint = "https://api.dydx.exchange/v3/markets"
+
+    def normalise_symbols(self, sym_list: list) -> dict:
+        ret = {}
+        for s, e in sym_list['markets'].items():
+            if e['status'] != 'ONLINE':
+                continue
+            base, quote = e['baseAsset'], e['quoteAsset']
+            t = e['type'].lower()
+            sym = Symbol(base, quote, t)
+            ret[sym] = s
+        return ret
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        for feed in feeds:
+            for symbol in symbols:
+                msg = {
+                    "type": "subscribe",
+                    "id": symbol,
+                    "channel": self.get_channel_from_feed(feed)
+                }
+                if feed == "lob":
+                    msg['includeOffsets'] = True
+                await conn.send_data(json.dumps(msg))
+
+    def auth(self, conn: WSConnection):
+        pass

@@ -1,31 +1,46 @@
-import websockets
-import asyncio
-import time
-import json
-
-from normalise.bybit_normalisation import normalise
-from helpers.read_config import get_symbols
-from sink_connector.redis_producer import RedisProducer
-from sink_connector.ws_to_redis import produce_messages, produce_message
-from source_connector.websocket_connector import connect
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
+from yapic import json
 
 
-url = 'wss://stream.bybit.com/realtime'
+class Bybit(OrderBookExchangeFeed):
+    name = "bybit"
+    ws_endpoints = {
+        WSEndpoint("wss://stream.bybit.com/spot/public/v3"): ["lob", "ticker", "candle", "trades"]
+    }
 
-async def main():
-    producer = RedisProducer("bybit")
-    symbols = get_symbols('bybit')
-    await connect(url, handle_bybit, producer, symbols)
+    ws_channels = {
+        "lob": "orderbook.40.",
+        "trades": 'trade.',
+        "ticker": "bookticker.",
+        "candle": "kline.1m."
+    }
 
-async def handle_bybit(ws, producer, symbols):
-    for symbol in symbols:
-        subscribe_message = {
-                "op": "subscribe",
-                "args": ["orderBook_200.100ms." + symbol, "trade." + symbol]
-            }
-        await ws.send(json.dumps(subscribe_message).encode('utf-8'))
-    
-    await produce_messages(ws, producer, normalise)
+    symbols_endpoint = "https://api.bybit.com/spot/v3/public/symbols"
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    def normalise_symbols(self, sym_list: list) -> dict:
+        ret = {}
+        for m in sym_list['result']['list']:
+            base, quote = m['baseCoin'], m['quoteCoin']
+            normalised_symbol = Symbol(base, quote)
+            ret[normalised_symbol] = m['name']
+        return ret
+
+    @classmethod
+    def get_key(cls, msg: dict):
+        if 'topic' in msg:
+            return msg['topic'].split('.')[-1].encode()
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        args = []
+        for feed in feeds:
+            args.extend([f"{self.get_channel_from_feed(feed)}{symbol}" for symbol in symbols])
+        msg = {
+            "op": "subscribe",
+            "args": args
+        }
+        await conn.send_data(json.dumps(msg))
+
+    def auth(self, conn: WSConnection):
+        pass

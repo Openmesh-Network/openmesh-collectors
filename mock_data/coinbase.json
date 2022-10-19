@@ -1,0 +1,69 @@
+[
+    {
+        "price": "19466.79",
+        "order_id": "77f6699d-5f0a-4128-b216-2b8500aae0ba",
+        "remaining_size": "0.04943531",
+        "type": "open",
+        "side": "buy",
+        "product_id": "BTC-USD",
+        "time": "2022-10-10T05:29:31.396407Z",
+        "sequence": 47923517652,
+        "atom_timestamp": 1581580000
+    },
+    {
+        "order_id": "98ebcae1-65c8-4c08-826e-37705e347611",
+        "reason": "canceled",
+        "price": "19466.52",
+        "remaining_size": "0.0394737",
+        "type": "done",
+        "side": "buy",
+        "product_id": "BTC-USD",
+        "time": "2022-10-10T05:29:31.403156Z",
+        "sequence": 47923517654,
+        "atom_timestamp": 1581580000
+    },
+    {
+        "type": "ticker",
+        "sequence": 47923517483,
+        "product_id": "BTC-USD",
+        "price": "19468.92",
+        "open_24h": "19411.48",
+        "volume_24h": "13329.88766203",
+        "low_24h": "19354.01",
+        "high_24h": "19563.28",
+        "volume_30d": "802942.12914720",
+        "best_bid": "19467.66",
+        "best_ask": "19468.92",
+        "side": "buy",
+        "time": "2022-10-10T05:29:30.646452Z",
+        "trade_id": 428936097,
+        "last_size": "0.0065",
+        "atom_timestamp": 1581580000
+    },
+    {
+        "trade_id": 428981156,
+        "maker_order_id": "548d0bfa-ae4e-4a6b-9448-4203a686805f",
+        "taker_order_id": "6769b38a-9a3e-4fef-ae63-91f0df1c6e0e",
+        "size": "0.00149926",
+        "price": "19413.12",
+        "type": "match",
+        "side": "buy",
+        "product_id": "BTC-USD",
+        "time": "2022-10-10T07:55:35.113093Z",
+        "sequence": 47927453638,
+        "atom_timestamp": 1581580000
+    },
+    {
+        "type": "change",
+        "reason":"STP",
+        "time": "2014-11-07T08:19:27.028459Z",
+        "sequence": 80,
+        "order_id": "ac928c66-ca53-498f-9c13-a110027a60e8",
+        "side": "sell",
+        "product_id": "BTC-USD",
+        "old_size": "12.234412",
+        "new_size": "5.23512",
+        "price": "400.23",
+        "atom_timestamp": 1581580000
+      }
+]

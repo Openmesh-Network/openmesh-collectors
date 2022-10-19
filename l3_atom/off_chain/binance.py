@@ -3,22 +3,23 @@ from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
+
 class Binance(OrderBookExchangeFeed):
     name = "binance"
     key_field = 's'
     ws_endpoints = {
-        WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades"]
+        WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades_l3"]
     }
 
     ws_channels = {
         "lob": "depth@100ms",
-        "trades": 'trade',
+        "trades_l3": 'trade',
         "ticker": "bookTicker",
         "candle": "kline_1s"
     }
 
     symbols_endpoint = "https://api.binance.com/api/v3/exchangeInfo"
-        
+
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         for m in sym_list['symbols']:
@@ -26,19 +27,18 @@ class Binance(OrderBookExchangeFeed):
             normalised_symbol = Symbol(base, quote)
             ret[normalised_symbol] = m['symbol']
         return ret
-    
-    async def subscribe(self, conn: AsyncFeed, channels: list, symbols):
-        for channel in channels:
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        for feed in feeds:
             msg = json.dumps({
                 "method": "SUBSCRIBE",
                 "params": [
-                    f"{symbol.lower()}@{self.get_feed_from_channel(channel)}"
+                    f"{symbol.lower()}@{self.get_channel_from_feed(feed)}"
                     for symbol in symbols
                 ],
                 "id": 1
             })
             await conn.send_data(msg)
-            print(msg)
 
     def auth(self, conn: WSConnection):
         pass

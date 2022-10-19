@@ -1,36 +1,77 @@
-import websockets
-import asyncio
-import time
-import json
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
+from yapic import json
 
-from normalise.deribit_normalisation import NormaliseDeribit
-from helpers.read_config import get_symbols
-from sink_connector.redis_producer import RedisProducer
-from sink_connector.ws_to_redis import produce_messages, produce_message
-from source_connector.websocket_connector import connect
 
-url = 'wss://www.deribit.com/ws/api/v2'
+class Deribit(OrderBookExchangeFeed):
+    name = "deribit"
+    ws_endpoints = {
+        WSEndpoint("wss://www.deribit.com/ws/api/v2"): ["lob", "ticker", "trades", "candle"]
+    }
 
-class Deribit:
-    ws_endpoint = 'wss://www.deribit.com/ws/api/v2'
+    ws_channels = {
+        "lob": "book",
+        "trades": 'trades',
+        "ticker": "ticker",
+        "funding_rate": "ticker",
+        "open_interest": "ticker",
+        "candle": "chart.trades"
+    }
 
-async def main():
-    producer = RedisProducer("deribit")
-    symbols = get_symbols('deribit')
-    await connect(url, handle_deribit, producer, symbols)
+    symbols_endpoint = [f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'SOL', 'USDC']]
 
-async def handle_deribit(ws, producer, symbols):
-    for symbol in symbols:
-        subscribe_message = {
+    @classmethod
+    def get_key(cls, msg):
+        if 'params' in msg:
+            channel = msg['params']['channel']
+            if channel.startswith('chart'):
+                return channel.split('.')[2].encode()
+            elif channel.startswith('trade'):
+                return msg['params']['data'][0]['instrument_name'].encode()
+            else:
+                return msg['params']['data']['instrument_name'].encode()
+
+    def normalise_symbols(self, sym_list: list) -> dict:
+        ret = {}
+        for currency in sym_list:
+            for t in currency['result']:
+                base, quote = t['base_currency'], t['quote_currency']
+                symbol_type = 'perpetual' if t['settlement_period'] == 'perpetual' else t['kind']
+                if symbol_type in ('future_combo', 'option_combo'):
+                    continue
+                if symbol_type == 'future':
+                    symbol_type = 'futures'
+                option_type = t.get('option_type', None)
+                strike_price = None
+                if 'strike' in t:
+                    strike_price = int(t['strike'])
+                expiry = t['expiration_timestamp']
+                normalised_symbol = Symbol(base, quote, symbol_type=symbol_type, option_type=option_type, strike_price=strike_price, expiry_date=expiry // 1000)
+                ret[normalised_symbol] = t['instrument_name']
+        return ret
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        msg = {
             "jsonrpc": "2.0",
+            "id": 1,
             "method": "public/subscribe",
-            "id": 42,
             "params": {
-                "channels": [f"book.{symbol}.100ms", f"trades.{symbol}.100ms"]}
+                "channels": []
+            }
         }
-        await ws.send(json.dumps(subscribe_message))
-    
-    await produce_messages(ws, producer, NormaliseDeribit().normalise)
 
-if __name__ == "__main__":
-    asyncio.run(main())
+        for symbol in symbols:
+            chans = []
+            for feed in feeds:
+                channel = self.get_channel_from_feed(feed)
+                if feed == 'candle':
+                    chans.append(f"{channel}.{symbol}.1")
+                else:
+                    # TODO: Set up authentication to allow for raw feeds
+                    chans.append(f"{channel}.{symbol}.100ms")
+            msg['params']['channels'] = chans
+            await conn.send_data(json.dumps(msg))
+
+    def auth(self, conn: WSConnection):
+        pass

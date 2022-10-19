@@ -1,33 +1,46 @@
-import websockets
-import asyncio
-import time
-import json
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.tokens import Symbol
+from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
+from yapic import json
 
-from normalise.ftx_normalisation import NormaliseFtx
-from helpers.read_config import get_symbols
-from sink_connector.redis_producer import RedisProducer
-from sink_connector.ws_to_redis import produce_messages, produce_message
-from source_connector.websocket_connector import connect
 
-url = 'wss://ftx.com/ws/'
+class FTX(OrderBookExchangeFeed):
+    name = "ftx"
+    key_field = 'market'
+    ws_endpoints = {
+        WSEndpoint("wss://ftx.com/ws/"): ["lob", "ticker", "trades"]
+    }
 
-async def main():
-    producer = RedisProducer("ftx")
-    symbols = get_symbols('ftx')
-    await connect(url, handle_ftx, producer, symbols)
+    ws_channels = {
+        "lob": "orderbook",
+        "trades": 'trades',
+        "ticker": "ticker",
+    }
 
-async def handle_ftx(ws, producer, symbols):
-    for symbol in symbols:
-        subscribe_message = {
-                'op': 'subscribe', 
-                'channel': 'orderbook', 
-                'market': symbol
-            }
-        await ws.send(json.dumps(subscribe_message))
-        subscribe_message['channel'] = 'trades'
-        await ws.send(json.dumps(subscribe_message))
-    
-    await produce_messages(ws, producer, NormaliseFtx().normalise)
+    symbols_endpoint = "https://ftx.com/api/markets"
 
-if __name__ == "__main__":
-    asyncio.run(main())
+    def normalise_symbols(self, sym_list: list) -> dict:
+        ret = {}
+        for m in sym_list['result']:
+            # TODO: Futures
+            if m['type'] != 'spot':
+                continue
+
+            base, quote = m['baseCurrency'], m['quoteCurrency']
+            normalised_symbol = Symbol(base, quote)
+            ret[normalised_symbol] = m['name']
+        return ret
+
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
+        for feed in feeds:
+            for symbol in symbols:
+                msg = {
+                    "op": "subscribe",
+                    "channel": self.get_channel_from_feed(feed),
+                    "market": symbol
+                }
+                print(msg)
+                await conn.send_data(json.dumps(msg))
+
+    def auth(self, conn: WSConnection):
+        pass
