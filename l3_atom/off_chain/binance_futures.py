@@ -44,7 +44,7 @@ class BinanceFutures(Binance):
         return ret
 
     def _init_rest(self):
-        return [(HTTPConnection(self.name, self.rest_channels['open_interest'].format(self.get_exchange_symbol(symbol)), poll_frequency=60, authentication=None), None, self.process_message, None, ['open_interest']) for symbol in self.symbols]
+        return [HTTPConnection(self.name, self.rest_channels['open_interest'].format(self.get_exchange_symbol(symbol)), poll_frequency=60, authentication=None) for symbol in self.symbols]
 
     def auth(self, conn: WSConnection):
         pass

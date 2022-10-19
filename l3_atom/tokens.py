@@ -1,3 +1,6 @@
+from datetime import datetime as dt
+from l3_atom.helpers.enrich_data import month_code
+
 class Symbol:
 
     """
@@ -18,7 +21,7 @@ class Symbol:
     :param option_type: Type of option (call, put), defaults to None
     :type option_type: str, optional
     :param expiry_date: Expiry date of the option, defaults to None
-    :type expiry_date: datetime, optional
+    :type expiry_date: int, optional
     """
 
     seperator = '-'
@@ -31,7 +34,9 @@ class Symbol:
         self.type = symbol_type
         self.option_type = option_type
         self.strike_price = strike_price
-        self.expiry_date = expiry_date
+        
+        if expiry_date:
+            self.expiry_date = self.normalise_date(expiry_date)
 
     def __repr__(self) -> str:
         """Returns a string representation of the symbol"""
@@ -51,6 +56,24 @@ class Symbol:
     def __hash__(self) -> int:
         """Computes a hash value for the string of the symbol"""
         return hash(self.normalised)
+
+    def normalise_date(self, date):
+        """Given a date (most likely an expiry date), normalise"""
+        if isinstance(date, (float, int)):
+            date = dt.fromtimestamp(date)
+        if isinstance(date, str):
+            if len(date) == 6:
+                year = int(date[:2])
+                month = int(date[2:4])
+                day = int(date[4:])
+                date = dt(year, month, day)
+            else:
+                date = dt.fromisoformat(date)
+        if isinstance(date, dt):
+            year = str(date.year)[2:]
+            month = month_code(date.month)
+            day = date.day
+            return f"{day}{month}{year}"
 
     @property
     def normalised(self) -> str:

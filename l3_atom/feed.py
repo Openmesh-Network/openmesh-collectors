@@ -6,7 +6,6 @@ import aiohttp
 from contextlib import asynccontextmanager
 import logging
 import sys
-import random
 
 from websockets import ConnectionClosed
 from websockets.exceptions import InvalidStatusCode
@@ -62,6 +61,9 @@ class AsyncFeed(Feed):
         self.authentication = authentication
         self.last_received_time = None
 
+    def get_time_us(self):
+        return time.time_ns() // 1000
+
     @asynccontextmanager
     async def connect(self):
         """
@@ -96,8 +98,9 @@ class AsyncFeed(Feed):
             conn = self.conn
             self.conn = None
             await conn.close()
-            logging.info('%s: closed connection %r after %d messages sent, %d messages, received (%ds)', self.id,
-                         conn.__class__.__name__, self.sent_messages, self.received_messages, time.time() - self.start_time)
+            logging.info('%s: closed connection %r after %d messages sent, %d messages, received (%.2fs)', self.id,
+                         conn.__class__.__name__, self.sent_messages, self.received_messages, (self.get_time_us() - self.start_time
+                         ) / 1e6)
 
 
 class HTTPConnection(AsyncFeed):
@@ -139,7 +142,7 @@ class HTTPConnection(AsyncFeed):
                      self.conn.__class__.__name__)
         self.sent_messages = 0
         self.received_messages = 0
-        self.start_time = time.time()
+        self.start_time = self.get_time_us()
 
     async def _get_data(self, url):
         """
@@ -156,7 +159,7 @@ class HTTPConnection(AsyncFeed):
                 async with self.conn.get(url) as resp:
                     self.sent_messages += 1
                     self.received_messages += 1
-                    self.last_received_time = time.time()
+                    self.last_received_time = self.get_time_us()
                     if resp.status != 200:
                         logging.error('%s: received status code %d',
                                       self.id, resp.status)
@@ -214,7 +217,7 @@ class WSConnection(AsyncFeed):
         self.conn = await websockets.connect(self.url, ping_timeout=None, max_size=2**23, max_queue=None, ping_interval=None)
         logging.info('%s: opened connection %r', self.id,
                      self.conn.__class__.__name__)
-        self.start_time = time.time()
+        self.start_time = self.get_time_us()
         self.sent_messages = 0
         self.received_messages = 0
 
@@ -239,7 +242,7 @@ class WSConnection(AsyncFeed):
             await self._open()
         async for data in self.conn:
             self.received_messages += 1
-            self.last_received_time = time.time()
+            self.last_received_time = self.get_time_us()
             yield data
 
 
@@ -275,7 +278,7 @@ class AsyncConnectionManager:
         self.channels = channels
         self.retries = retries
         self.interval = interval
-        self.timeout = timeout
+        self.timeout = timeout * 1e6
         self.delay = delay
         self.running = True
 
@@ -292,9 +295,9 @@ class AsyncConnectionManager:
         """
         Periodically checks the connection to the feed to determine if it is still alive.
         """
-        while self.conn.is_open and self.running:
+        while self.conn.is_open:
             if self.conn.last_received_time:
-                if time.time() - self.conn.last_received_time > self.timeout:
+                if self.conn.get_time_us() - self.conn.last_received_time > self.timeout:
                     logging.warning(
                         "%s: timeout window received 0 messages, restarting", self.conn.id)
                     await self.conn.close()
@@ -331,31 +334,30 @@ class AsyncConnectionManager:
                 delay *= 2
             except InvalidStatusCode as e:
                 if e.status_code == 429:
-                    rand = random.uniform(1.0, 3.0)
                     logging.warning(
-                        "%s: Rate Limited - waiting %d seconds to reconnect", self.conn.id, (limited * 60 * rand))
-                    await asyncio.sleep(limited * 60 * rand)
+                        "%s: Connection was rate limited. Retrying in %d seconds...", self.conn.id, (limited * 60))
+                    await asyncio.sleep(limited * 60)
                     limited += 1
                 else:
-                    logging.warning("%s: encountered connection issue %s. reconnecting in %.1f seconds...", self.conn.id, str(
+                    logging.warning("%s: Invalid status code %d: %s. reconnecting in %.1f seconds...", self.conn.id, e.status_code, str(
                         e), delay, exc_info=True)
                     await asyncio.sleep(delay)
                     retries += 1
                     delay *= 2
-            except Exception:
-                logging.error("%s: encountered an exception, reconnecting in %.1f seconds",
-                              self.conn.id, delay, exc_info=True)
+            except Exception as e:
+                logging.error("%s: Encountered exception: %s. reconnecting in %.1f seconds",
+                              self.conn.id, str(e), delay, exc_info=True)
                 await asyncio.sleep(delay)
                 retries += 1
                 delay *= 2
 
-        if not self.running:
-            logging.info(
-                '%s: terminate the connection callback because not running', self.conn.id)
-        else:
+        if self.running:
             logging.error(
-                '%s: failed to reconnect after %d retries - exiting', self.conn.id, retries)
+                '%s: After %d retries, connection failed. Exiting...', self.conn.id, retries)
             raise TooManyRetries()
+        else:
+            logging.info(
+                '%s: Connection is no longer running', self.conn.id)
 
     async def _callback(self, connection: AsyncFeed, callback: Awaitable):
         """
@@ -369,7 +371,7 @@ class AsyncConnectionManager:
         async for data in connection.read_data():
             if not self.running:
                 logging.info(
-                    '%s: terminating the connection callback as manager is not running', self.conn.id)
+                    '%s: Terminating the connection callback as manager is not running', self.conn.id)
                 await connection.close()
                 return
             await callback(data, connection, self.conn.last_received_time)

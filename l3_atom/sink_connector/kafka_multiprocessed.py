@@ -48,7 +48,7 @@ class KafkaConnector(Kafka):
         while self.started:
             async with self.read_from_pipe() as messages:
                 for message in messages:
-                    msg = enrich_raw(json.loads(message))
+                    msg = json.loads(message)
                     if self.key_field and isinstance(self.key_field, str):
                         key = msg.get(self.key_field, None)
                     else:

@@ -1,9 +1,12 @@
 from abc import abstractmethod
+from typing import Union
 from l3_atom.helpers.read_config import get_conf_symbols
+from l3_atom.helpers.enrich_data import enrich_raw
 from datetime import datetime as dt
 import asyncio
 import requests
 import uvloop
+from yapic import json
 
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
@@ -43,7 +46,7 @@ class OrderBookExchange:
     """
     ws_endpoints: dict = NotImplemented
     rest_endpoints: dict = NotImplemented
-    symbols_endpoint: str = NotImplemented
+    symbols_endpoint: Union[str, list] = NotImplemented
     ws_channels: dict = {}
     rest_channels: dict = {}
 
@@ -65,7 +68,7 @@ class OrderBookExchange:
         elif isinstance(self.symbols_endpoint, list):
             res = []
             for endpoint in self.symbols_endpoint:
-                res.extend(requests.get(endpoint).json())
+                res.append(requests.get(endpoint).json())
             return res
 
     def filter_symbols(self, sym_list: dict, filters: dict) -> dict:
@@ -187,7 +190,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         """
         pass
 
-    async def process_message(self, message: str, conn: AsyncFeed, channel: str):
+    async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         """
         First method called when a message is received from the exchange. Currently forwards the message to Kafka to be produced.
 
@@ -198,7 +201,9 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :param channel: Channel the message was received on
         :type channel: str
         """
-        await self.kafka_connector.write(message)
+        msg = json.loads(message)
+        msg = enrich_raw(msg, timestamp)
+        await self.kafka_connector.write(json.dumps(msg))
 
     def _init_rest(self) -> list:
         """
@@ -232,7 +237,9 @@ class OrderBookExchangeFeed(OrderBookExchange):
         symbols = []
         max_syms = 10
         self._init_kafka(loop)
-        connections = self._init_rest()
+        rest_connections = self._init_rest()
+        for connection in rest_connections:
+            self.connection_handlers.append(AsyncConnectionManager(connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
         for (endpoint, channels) in self.ws_endpoints.items():
             for symbol in self.symbols.values():
                 if not channels:
@@ -242,18 +249,18 @@ class OrderBookExchangeFeed(OrderBookExchange):
                     continue
                 symbols.append(symbol)
                 if len(symbols) == max_syms:
-                    connections.append((WSConnection(
-                        self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+                    connection = WSConnection(
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+                    self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
                     symbols = []
         if symbols:
-            connections.append((WSConnection(
-                self.name, url, authentication=None, symbols=symbols, **endpoint.options), self.subscribe, self.process_message, None, channels))
+            connection = WSConnection(
+                        self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+            self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
             symbols = []
 
-        for connection, subscribe, handler, auth, channels in connections:
-            self.connection_handlers.append(AsyncConnectionManager(
-                connection, subscribe, handler, auth, channels, self.retries, self.interval, self.timeout, self.delay))
-            self.connection_handlers[-1].start_connection(loop)
+        for handler in self.connection_handlers:
+            handler.start_connection(loop)
 
     async def stop(self):
         """

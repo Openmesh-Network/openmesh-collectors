@@ -15,7 +15,8 @@ async def test_binance_futures_connector(teardown_async):
     connector = BinanceFutures()
     loop = asyncio.get_event_loop()
     connector.start(loop)
-    await asyncio.sleep(1)
+    while len(ret) < 10:
+        await asyncio.sleep(0.1)
     for msg in ret:
         assert msg.get(
             'e', None) in types or 'openInterest' in msg or 'result' in msg

@@ -5,13 +5,4 @@ from .apollox import ApolloX
 from .dydx import Dydx
 from .bitfinex import Bitfinex
 from .gemini import Gemini
-
-mapping = {
-    'coinbase': Coinbase,
-    'binance': Binance,
-    'binance-futures': BinanceFutures,
-    'bitfinex': Bitfinex,
-    'dydx': Dydx,
-    'apollox': ApolloX,
-    'gemini': Gemini
-}
+from .deribit import Deribit

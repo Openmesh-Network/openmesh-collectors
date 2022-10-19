@@ -37,9 +37,9 @@ class Bitfinex(OrderBookExchangeFeed):
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
 
-        currency_pairs = sym_list[0]
-        currencies = sym_list[1]
-        perpetual_futures = sym_list[2]
+        currency_pairs = sym_list[0][0]
+        currencies = sym_list[1][0]
+        perpetual_futures = sym_list[2][0]
 
         for p in currency_pairs:
             p_norm = p.replace('UST', 'USDT')

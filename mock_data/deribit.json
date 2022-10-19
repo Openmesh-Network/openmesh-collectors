@@ -1,0 +1,99 @@
+[
+    {
+        "jsonrpc": "2.0",
+        "method": "subscription",
+        "params": {
+            "channel": "ticker.BTC_USDC-PERPETUAL.100ms",
+            "data": {
+                "timestamp": 1666151739584,
+                "stats": {
+                    "volume_usd": 2254721.41,
+                    "volume": 116.278,
+                    "price_change": -1.3144,
+                    "low": 19099,
+                    "high": 19702
+                },
+                "state": "open",
+                "settlement_price": 19669.4652,
+                "open_interest": 348.718,
+                "min_price": 19009.5204,
+                "max_price": 19588.4905,
+                "mark_price": 19298.9677,
+                "last_price": 19296,
+                "interest_value": -347.38487530098985,
+                "instrument_name": "BTC_USDC-PERPETUAL",
+                "index_price": 19297.7493,
+                "funding_8h": 0,
+                "estimated_delivery_price": 19297.7493,
+                "current_funding": 0,
+                "best_bid_price": 19299,
+                "best_bid_amount": 0.157,
+                "best_ask_price": 19301,
+                "best_ask_amount": 1.116
+            }
+        },
+        "atom_timestamp": 1666151737001853
+    },
+    {
+        "jsonrpc": "2.0",
+        "method": "subscription",
+        "params": {
+            "channel": "chart.trades.ETH_USDC-PERPETUAL.1",
+            "data": {
+                "volume": 0,
+                "tick": 1666151700000,
+                "open": 1306.3,
+                "low": 1306.3,
+                "high": 1306.3,
+                "cost": 0,
+                "close": 1306.3
+            }
+        },
+        "atom_timestamp": 1666151707004567
+    },
+    {
+        "jsonrpc": "2.0",
+        "method": "subscription",
+        "params": {
+            "channel": "book.BTC_USDC-PERPETUAL.100ms",
+            "data": {
+                "type": "change",
+                "timestamp": 1666151741475,
+                "prev_change_id": 3085259797,
+                "instrument_name": "BTC_USDC-PERPETUAL",
+                "change_id": 3085259809,
+                "bids": [],
+                "asks": [
+                    [
+                        "change",
+                        19341,
+                        0.285
+                    ]
+                ]
+            }
+        },
+        "atom_timestamp": 1666151738653709
+    },
+    {
+        "jsonrpc": "2.0",
+        "method": "subscription",
+        "params": {
+            "channel": "trades.BTC_USDC-PERPETUAL.100ms",
+            "data": [
+                {
+                    "trade_seq": 1219360,
+                    "trade_id": "USDC-5560136",
+                    "timestamp": 1666151946608,
+                    "tick_direction": 2,
+                    "price": 19293,
+                    "mark_price": 19291.2979,
+                    "instrument_name": "BTC_USDC-PERPETUAL",
+                    "index_price": 19289.0816,
+                    "direction": "sell",
+                    "amount": 0.002
+                }
+            ]
+        },
+        "atom_timestamp": 1666151943962886
+    }
+]

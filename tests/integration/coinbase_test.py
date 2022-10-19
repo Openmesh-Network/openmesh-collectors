@@ -16,7 +16,8 @@ async def test_coinbase_connector(teardown_async):
     connector = Coinbase()
     loop = asyncio.get_event_loop()
     connector.start(loop)
-    await asyncio.sleep(1)
+    while len(ret) < 10:
+        await asyncio.sleep(0.1)
     for msg in ret:
         assert msg.get('type', None) in types
     await connector.stop()

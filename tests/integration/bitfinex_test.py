@@ -35,7 +35,8 @@ async def test_bitfinex_connector(teardown_async):
     loop = asyncio.get_event_loop()
     connector.start(loop)
     # Bitfinex has a slow startup, so we'll wait a bit longer than usual
-    await asyncio.sleep(3)
+    while len(ret) < 10:
+        await asyncio.sleep(0.1)
     for msg in ret:
         assert msg[-2] in types
     await connector.stop()
