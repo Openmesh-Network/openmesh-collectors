@@ -205,6 +205,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         """
         msg = json.loads(message)
         msg = enrich_raw(msg, timestamp)
+        print(json.dumps(msg))
         await self.kafka_connector.write(json.dumps(msg))
 
     def _init_rest(self) -> list:
@@ -246,7 +247,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :type loop: asyncio.AbstractEventLoop
         """
         logging.info('%s: Starting Kafka Connector', self.name)
-        self.kafka_connector = KafkaConnector(self.__class__, self.key_field)
+        self.kafka_connector = KafkaConnector(self.__class__)
         self.kafka_connector.create_exchange_topics(
             [*self.ws_channels.keys(), *self.rest_channels.keys(), 'raw'])
         self.kafka_connector.start(loop)

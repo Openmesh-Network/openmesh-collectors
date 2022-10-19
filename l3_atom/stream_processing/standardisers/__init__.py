@@ -6,6 +6,8 @@ from .bitfinex import BitfinexStandardiser
 from .apollox import ApolloXStandardiser
 from .gemini import GeminiStandardiser
 from .deribit import DeribitStandardiser
+from .bybit import BybitStandardiser
+from .ftx import FTXStandardiser
 
 standardisers = [CoinbaseStandardiser,
-                 BinanceStandardiser, BinanceFuturesStandardiser, BitfinexStandardiser, DydxStandardiser, ApolloXStandardiser, GeminiStandardiser, DeribitStandardiser]
+                 BinanceStandardiser, BinanceFuturesStandardiser, BitfinexStandardiser, DydxStandardiser, ApolloXStandardiser, GeminiStandardiser, DeribitStandardiser, BybitStandardiser, FTXStandardiser]

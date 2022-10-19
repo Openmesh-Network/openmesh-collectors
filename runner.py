@@ -6,19 +6,7 @@ def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == 'connector':
 
-        from l3_atom.off_chain import Coinbase, Binance, BinanceFutures, Bitfinex, Gemini, Deribit, Dydx, ApolloX, Bybit
-
-        mapping = {
-            'coinbase': Coinbase,
-            'binance': Binance,
-            'binance-futures': BinanceFutures,
-            'bitfinex': Bitfinex,
-            'dydx': Dydx,
-            'apollox': ApolloX,
-            'gemini': Gemini,
-            'deribit': Deribit,
-            'bybit': Bybit
-        }
+        from l3_atom.off_chain import mapping
 
         exchange_feed = mapping[sys.argv[2]]()
         loop = asyncio.get_event_loop()

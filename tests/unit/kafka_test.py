@@ -5,6 +5,7 @@ from multiprocessing import Pipe
 
 import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
+from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 
 
 class MockTopics:
@@ -19,13 +20,18 @@ def new_config():
     }
 
 
+class MockExchange(OrderBookExchangeFeed):
+    name = 'test'
+    key_field = 0
+
+
 @pytest.fixture()
 def mock_kafka():
     kafka_multiprocessed.get_kafka_config = new_config
     kafka_multiprocessed.AdminClient = Mock()
     kafka_multiprocessed.SchemaRegistryClient = Mock()
     kafka_multiprocessed.NewTopic = Mock()
-    kafka = KafkaConnector('test', 0)
+    kafka = KafkaConnector(MockExchange)
     kafka.pipe = Pipe(duplex=False)
 
     kafka._admin_init()

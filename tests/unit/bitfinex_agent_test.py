@@ -6,7 +6,7 @@ from l3_atom.stream_processing.standardisers import BitfinexStandardiser
 
 
 @pytest.mark.asyncio()
-async def test_binance_agent(mock_kafka):
+async def test_bitfinex_agent(mock_kafka):
     exchange = BitfinexStandardiser()
     for topic in exchange.normalised_topics:
         exchange.normalised_topics[topic] = Mock()

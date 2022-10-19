@@ -5,7 +5,6 @@ from confluent_kafka.admin import AdminClient, NewTopic
 from confluent_kafka.schema_registry import SchemaRegistryClient
 from l3_atom.sink_connector.sink_connector import SinkMessageHandler
 from l3_atom.helpers.read_config import get_kafka_config
-from l3_atom.helpers.enrich_data import enrich_raw
 import ssl
 import uuid
 import logging
@@ -23,7 +22,7 @@ class Kafka(SinkMessageHandler):
     :type key_field: str
     """
 
-    def __init__(self, exchange, key_field: str):
+    def __init__(self, exchange):
         super().__init__(exchange)
         conf = get_kafka_config()
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
@@ -36,7 +35,6 @@ class Kafka(SinkMessageHandler):
         self.admin_client = None
         self.schema_client = None
         self.topic = f"{self.exchange}_raw"
-        self.key_field = key_field
 
 
 class KafkaConnector(Kafka):

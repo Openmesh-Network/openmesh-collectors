@@ -1,6 +1,7 @@
 from datetime import datetime as dt
 from l3_atom.helpers.enrich_data import month_code
 
+
 class Symbol:
 
     """
@@ -34,7 +35,7 @@ class Symbol:
         self.type = symbol_type
         self.option_type = option_type
         self.strike_price = strike_price
-        
+
         if expiry_date:
             self.expiry_date = self.normalise_date(expiry_date)
 

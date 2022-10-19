@@ -7,3 +7,17 @@ from .bitfinex import Bitfinex
 from .gemini import Gemini
 from .deribit import Deribit
 from .bybit import Bybit
+from .ftx import FTX
+
+mapping = {
+    'coinbase': Coinbase,
+    'binance': Binance,
+    'binance-futures': BinanceFutures,
+    'bitfinex': Bitfinex,
+    'dydx': Dydx,
+    'apollox': ApolloX,
+    'gemini': Gemini,
+    'deribit': Deribit,
+    'bybit': Bybit,
+    'ftx': FTX
+}
