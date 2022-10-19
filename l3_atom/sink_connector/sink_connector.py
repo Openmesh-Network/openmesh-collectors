@@ -14,8 +14,9 @@ class SinkMessageHandler:
     :param exchange: Name of the exchange
     """
 
-    def __init__(self, exchange: str):
-        self.exchange = exchange
+    def __init__(self, exchange):
+        self.exchange_ref = exchange
+        self.exchange = exchange.name
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """

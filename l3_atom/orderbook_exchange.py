@@ -179,7 +179,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.num_messages = 0
         self.tot_latency = 0
 
-    async def subscribe(self, conn: AsyncFeed, feeds: list):
+    async def subscribe(self, conn: AsyncFeed, feeds: list, symbols: list):
         """
         Subscribes to the provided feeds on the provided connection
 
@@ -187,6 +187,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :type conn: AsyncFeed
         :param feeds: Feeds to subscribe to
         :type feeds: list
+        :param symbols: Symbols to subscribe to
+        :type symbols: list
         """
         pass
 
@@ -214,6 +216,28 @@ class OrderBookExchangeFeed(OrderBookExchange):
         """
         return []
 
+    @classmethod
+    def get_key(cls, message: dict) -> str:
+        """
+        Returns the key for the provided message
+
+        :param message: Message to get the key for
+        :type message: dict
+        :return: Key for the message
+        :rtype: str
+        """
+        if cls.key_field and isinstance(cls.key_field, str):
+            key = message.get(cls.key_field, None)
+        else:
+            try:
+                key = message[cls.key_field]
+            except IndexError:
+                logging.warning(f"Key field {cls.key_field} not found in message")
+                key = None
+        if isinstance(key, str):
+            key = key.encode()
+        return key
+
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
         """
         Initialises the Kafka connections
@@ -222,7 +246,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :type loop: asyncio.AbstractEventLoop
         """
         logging.info('%s: Starting Kafka Connector', self.name)
-        self.kafka_connector = KafkaConnector(self.name, self.key_field)
+        self.kafka_connector = KafkaConnector(self.__class__, self.key_field)
         self.kafka_connector.create_exchange_topics(
             [*self.ws_channels.keys(), *self.rest_channels.keys(), 'raw'])
         self.kafka_connector.start(loop)

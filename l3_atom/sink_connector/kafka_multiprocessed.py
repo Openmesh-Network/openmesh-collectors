@@ -23,7 +23,7 @@ class Kafka(SinkMessageHandler):
     :type key_field: str
     """
 
-    def __init__(self, exchange: str, key_field: str):
+    def __init__(self, exchange, key_field: str):
         super().__init__(exchange)
         conf = get_kafka_config()
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
@@ -35,7 +35,7 @@ class Kafka(SinkMessageHandler):
         self.kafka_producer = None
         self.admin_client = None
         self.schema_client = None
-        self.topic = f"{exchange}_raw"
+        self.topic = f"{self.exchange}_raw"
         self.key_field = key_field
 
 
@@ -49,16 +49,7 @@ class KafkaConnector(Kafka):
             async with self.read_from_pipe() as messages:
                 for message in messages:
                     msg = json.loads(message)
-                    if self.key_field and isinstance(self.key_field, str):
-                        key = msg.get(self.key_field, None)
-                    else:
-                        try:
-                            key = msg[self.key_field]
-                        except IndexError:
-                            logging.warning(f"Key field {self.key_field} not found in message")
-                            key = None
-                    if isinstance(key, str):
-                        key = key.encode()
+                    key = self.exchange_ref.get_key(msg)
                     await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key if key else None)
         await self.kafka_producer.stop()
 

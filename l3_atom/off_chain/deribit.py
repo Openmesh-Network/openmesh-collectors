@@ -6,7 +6,6 @@ from yapic import json
 
 class Deribit(OrderBookExchangeFeed):
     name = "deribit"
-    key_field = 's'
     ws_endpoints = {
         WSEndpoint("wss://www.deribit.com/ws/api/v2"): ["lob", "ticker", "trades", "candle"]
     }
@@ -21,6 +20,17 @@ class Deribit(OrderBookExchangeFeed):
     }
 
     symbols_endpoint = [f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'SOL', 'USDC']]
+
+    @classmethod
+    def get_key(cls, msg):
+        if 'params' in msg:
+            channel = msg['params']['channel']
+            if channel.startswith('chart'):
+                return channel.split('.')[2].encode()
+            elif channel.startswith('trade'):
+                return msg['params']['data'][0]['instrument_name'].encode()
+            else:
+                return msg['params']['data']['instrument_name'].encode()
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}

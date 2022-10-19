@@ -6,3 +6,4 @@ from .dydx import Dydx
 from .bitfinex import Bitfinex
 from .gemini import Gemini
 from .deribit import Deribit
+from .bybit import Bybit

@@ -6,7 +6,7 @@ def main():
 
     if len(sys.argv) > 1 and sys.argv[1] == 'connector':
 
-        from l3_atom.off_chain import Coinbase, Binance, BinanceFutures, Bitfinex, Gemini, Deribit, Dydx, ApolloX
+        from l3_atom.off_chain import Coinbase, Binance, BinanceFutures, Bitfinex, Gemini, Deribit, Dydx, ApolloX, Bybit
 
         mapping = {
             'coinbase': Coinbase,
@@ -16,7 +16,8 @@ def main():
             'dydx': Dydx,
             'apollox': ApolloX,
             'gemini': Gemini,
-            'deribit': Deribit
+            'deribit': Deribit,
+            'bybit': Bybit
         }
 
         exchange_feed = mapping[sys.argv[2]]()

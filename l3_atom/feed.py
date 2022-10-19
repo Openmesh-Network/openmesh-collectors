@@ -1,3 +1,4 @@
+from random import random
 import time
 import asyncio
 from typing import Awaitable, Iterator, Union
@@ -98,9 +99,8 @@ class AsyncFeed(Feed):
             conn = self.conn
             self.conn = None
             await conn.close()
-            logging.info('%s: closed connection %r after %d messages sent, %d messages, received (%.2fs)', self.id,
-                         conn.__class__.__name__, self.sent_messages, self.received_messages, (self.get_time_us() - self.start_time
-                         ) / 1e6)
+            logging.info('%s: closed connection after %d messages sent, %d messages received (%.2fs)', self.id, self.sent_messages, self.received_messages, (self.get_time_us() - self.start_time
+                                                                                                                                                             ) / 1e6)
 
 
 class HTTPConnection(AsyncFeed):
@@ -270,13 +270,13 @@ class AsyncConnectionManager:
     :type delay: int, optional
     """
 
-    def __init__(self, conn: AsyncFeed, subscribe: Awaitable, callback: Awaitable, auth: Awaitable, channels, retries: int, interval: int = 30, timeout: int = 120, delay: int = 0):
+    def __init__(self, conn: AsyncFeed, subscribe: Awaitable, callback: Awaitable, auth: Awaitable, channels, retries: int = 5, interval: int = 30, timeout: int = 120, delay: int = 0):
         self.conn = conn
         self.subscribe = subscribe
         self.callback = callback
         self.auth = auth
         self.channels = channels
-        self.retries = retries
+        self.max_retries = retries
         self.interval = interval
         self.timeout = timeout * 1e6
         self.delay = delay
@@ -309,72 +309,57 @@ class AsyncConnectionManager:
         Initializes the connection to the feed. Handles disconnects, errors, rate limits, e.t.c. and links to callback function.
         """
         await asyncio.sleep(self.delay)
+        delay = limited = 1
         retries = 0
-        delay = 1
-        limited = 1
-        while (retries <= self.retries or self.retries == -1) and self.running:
+        while self.running and retries < self.max_retries:
             try:
-                async with self.conn.connect() as connection:
-                    if self.auth:
-                        await self.auth(connection)
-                    if self.subscribe:
-                        await self.subscribe(connection, self.channels, self.conn.symbols)
-                    retries = 0
-                    limited = 0
-                    delay = 1
-                    if self.timeout != -1:
-                        loop = asyncio.get_running_loop()
-                        loop.create_task(self._monitor())
-                    await self._callback(connection, self.callback)
-            except (ConnectionClosed, ConnectionAbortedError, ConnectionResetError) as e:
-                logging.warning("%s: connection issue - %s. reconnecting in %.1f seconds...",
-                                self.conn.id, str(e), delay, exc_info=True)
-                await asyncio.sleep(delay)
-                retries += 1
-                delay *= 2
+                await self.conn._open()
+                self.auth and await self.auth()
+                self.subscribe and await self.subscribe(self.conn, self.channels, self.conn.symbols)
+                delay = limited = 1
+                retries = 0
+                loop = asyncio.get_event_loop()
+                loop.create_task(self._monitor())
+                logging.info('%s: connection established', self.conn.id)
+                async for data in self.conn.read_data():
+                    if not self.running:
+                        logging.info(
+                            '%s: Terminating the connection callback as manager is not running', self.conn.id)
+                        await self.conn.close()
+                        return
+                    await self.callback(data, self.conn, self.conn.last_received_time)
             except InvalidStatusCode as e:
-                if e.status_code == 429:
+                code = e.status_code
+                if code == 429:
+                    wait = int(e.headers.get('Retry-After', -1))
+                    if wait == -1:
+                        wait = limited * random.uniform(0.8, 1.2) * 60
+                        limited += 1
                     logging.warning(
-                        "%s: Connection was rate limited. Retrying in %d seconds...", self.conn.id, (limited * 60))
-                    await asyncio.sleep(limited * 60)
-                    limited += 1
-                else:
-                    logging.warning("%s: Invalid status code %d: %s. reconnecting in %.1f seconds...", self.conn.id, e.status_code, str(
-                        e), delay, exc_info=True)
+                        '%s: rate limit exceeded, retrying in %d seconds', self.conn.id, wait)
+                    await asyncio.sleep(wait)
+                elif code == 401:
+                    logging.warning(
+                        '%s: authentication failed, retrying in %d seconds', self.conn.id, delay)
                     await asyncio.sleep(delay)
-                    retries += 1
                     delay *= 2
+                else:
+                    logging.warning(
+                        '%s: invalid status code %d, retrying in %d seconds', self.conn.id, code, delay)
+                    await asyncio.sleep(delay)
+                    delay *= 2
+                    retries += 1
             except Exception as e:
-                logging.error("%s: Encountered exception: %s. reconnecting in %.1f seconds",
-                              self.conn.id, str(e), delay, exc_info=True)
+                logging.warning(
+                    '%s: Encountered Exception %s, retrying in %d seconds', self.conn.id, e, delay)
                 await asyncio.sleep(delay)
-                retries += 1
                 delay *= 2
+                retries += 1
 
         if self.running:
             logging.error(
                 '%s: After %d retries, connection failed. Exiting...', self.conn.id, retries)
             raise TooManyRetries()
-        else:
-            logging.info(
-                '%s: Connection is no longer running', self.conn.id)
-
-    async def _callback(self, connection: AsyncFeed, callback: Awaitable):
-        """
-        Links the connection to the callback function.
-
-        :param connection: connection to the feed
-        :type connection: AsyncFeed
-        :param callback: callback function to be called when data is received
-        :type callback: Awaitable
-        """
-        async for data in connection.read_data():
-            if not self.running:
-                logging.info(
-                    '%s: Terminating the connection callback as manager is not running', self.conn.id)
-                await connection.close()
-                return
-            await callback(data, connection, self.conn.last_received_time)
 
 
 class WSEndpoint:
