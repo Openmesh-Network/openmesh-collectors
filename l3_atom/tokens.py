@@ -67,7 +67,7 @@ class Symbol:
                 year = int(date[:2])
                 month = int(date[2:4])
                 day = int(date[4:])
-                date = dt(year, month, day)
+                date = dt(year + 2000, month, day)
             else:
                 date = dt.fromisoformat(date)
         if isinstance(date, dt):
