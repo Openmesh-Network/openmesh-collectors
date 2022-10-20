@@ -22,8 +22,8 @@ class OrderBookExchange:
 
     :param name: Name of the exchange
     :type name: str
-    :param key_field: The field in the message that will be used as the key for the Kafka message
-    :type key_field: str
+    :param key_field: The field in the message that will be used as the key for the Kafka message. If a string, is used as a dictionary key. If an int, is used as an index in a list
+    :type key_field: Union[str, int]
     :param ws_endpoints: Dictionary of websocket endpoints and the feeds they support
     :type ws_endpoints: dict
     :param ws_channels: Dictionary of standardised websocket feeds to the exchange formats
@@ -205,7 +205,6 @@ class OrderBookExchangeFeed(OrderBookExchange):
         """
         msg = json.loads(message)
         msg = enrich_raw(msg, timestamp)
-        print(json.dumps(msg))
         await self.kafka_connector.write(json.dumps(msg))
 
     def _init_rest(self) -> list:
@@ -217,6 +216,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         """
         return []
 
+    # TODO: Use this to simplify the standardisation -- this already retrieves the symbol from the data
     @classmethod
     def get_key(cls, message: dict) -> str:
         """
@@ -232,7 +232,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         else:
             try:
                 key = message[cls.key_field]
-            except IndexError:
+            except (IndexError, KeyError):
                 logging.warning(f"Key field {cls.key_field} not found in message")
                 key = None
         if isinstance(key, str):
