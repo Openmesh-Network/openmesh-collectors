@@ -279,8 +279,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
                     self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
                     symbols = []
         if symbols:
-            connection = WSConnection(
-                        self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+            connection = WSConnection(self.name, url, authentication=None, symbols=symbols, **endpoint.options)
             self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
             symbols = []
 
