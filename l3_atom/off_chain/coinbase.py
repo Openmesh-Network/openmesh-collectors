@@ -31,8 +31,6 @@ class Coinbase(OrderBookExchangeFeed):
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
         for feed in feeds:
-            if feed == "trades_l3":
-                continue
             msg = json.dumps({
                 "type": "subscribe",
                 "product_ids": symbols,

@@ -8,6 +8,7 @@ from .gemini import Gemini
 from .deribit import Deribit
 from .bybit import Bybit
 from .ftx import FTX
+from .kraken import Kraken
 
 mapping = {
     'coinbase': Coinbase,
@@ -19,5 +20,6 @@ mapping = {
     'gemini': Gemini,
     'deribit': Deribit,
     'bybit': Bybit,
-    'ftx': FTX
+    'ftx': FTX,
+    'kraken': Kraken
 }
