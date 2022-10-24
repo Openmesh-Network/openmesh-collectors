@@ -39,7 +39,6 @@ class FTX(OrderBookExchangeFeed):
                     "channel": self.get_channel_from_feed(feed),
                     "market": symbol
                 }
-                print(msg)
                 await conn.send_data(json.dumps(msg))
 
     def auth(self, conn: WSConnection):

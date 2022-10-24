@@ -8,7 +8,7 @@ from l3_atom.off_chain import BinanceFutures
 
 @pytest.mark.asyncio()
 async def test_binance_futures_connector(teardown_async):
-    types = ['bookTicker', 'trade', 'depthUpdate', 'kline', 'markPriceUpdate']
+    types = ['bookTicker', 'aggTrade', 'depthUpdate', 'kline', 'markPriceUpdate']
     ret = []
     BinanceFutures.process_message = mock_process_message(ret)
     BinanceFutures._init_kafka = Mock()
