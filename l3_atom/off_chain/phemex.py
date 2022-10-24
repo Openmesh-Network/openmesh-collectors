@@ -20,21 +20,25 @@ class Phemex(OrderBookExchangeFeed):
     symbols_endpoint = "https://api.phemex.com/exchange/public/cfg/v2/products"
 
     # Phemex sends out integers for prices and quantities, so we need to convert them to floats depending on the individual symbol
-    decimal_places = {}
+    price_decimal_places = {}
+    qty_decimal_places = {}
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
         for s in sym_list['data']['products']:
             if s['status'] != "Listed":
                 continue
-            base, quote = [a.strip() for a in s['displaySymbol'].split('/')]
+            base, quote = [x.strip() for x in s['displaySymbol'].split('/')]
             sym_type = s['type'].lower()
             normalised_symbol = Symbol(base, quote, symbol_type=sym_type)
             ret[normalised_symbol] = s['symbol']
 
-            exponent = s.get('priceScale', None)
+            price_exponent = s.get('priceScale', None)
+            qty_exponent = s.get('ratioScale', None)
             # Default is 10^8
-            self.decimal_places[normalised_symbol] = 10 ** exponent if exponent else 10 ** 8
+            self.price_decimal_places[normalised_symbol] = 10 ** price_exponent if price_exponent else 10 ** 8
+            self.qty_decimal_places[normalised_symbol] = 10 ** qty_exponent if qty_exponent else 10 ** 8
+
         return ret
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):

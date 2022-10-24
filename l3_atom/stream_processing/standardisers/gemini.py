@@ -60,7 +60,10 @@ class GeminiStandardiser(Standardiser):
             await self.send_to_topic("candle", **msg)
 
     async def handle_message(self, msg):
-        if msg['type'] == 'trade':
+        # Snapshot
+        if "trades" in msg:
+            return
+        elif msg['type'] == 'trade':
             await self._trade(msg)
         elif msg['type'] == 'l2_updates':
             await self._book(msg)

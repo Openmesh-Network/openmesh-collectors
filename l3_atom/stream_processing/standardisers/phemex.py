@@ -7,84 +7,82 @@ from decimal import Decimal
 class PhemexStandardiser(Standardiser):
     exchange = Phemex
 
-    def _get_decimals(self, sym):
-        return self.exchange.decimal_places[sym]
+    def _get_price_scale(self, sym):
+        return self.exchange.price_decimal_places[sym]
+
+    def _get_size_scale(self, sym):
+        return self.exchange.qty_decimal_places[sym]
 
     async def _trade(self, message):
-        symbol = self.normalise_symbol(message['s'])
+        symbol = self.normalise_symbol(message['symbol'])
         atom_timestamp = message['atom_timestamp']
-        msg = dict(
-            symbol=self.normalise_symbol(message['s']),
-            price=Decimal(message['p']),
-            size=Decimal(message['q']),
-            taker_side='sell' if message['m'] else 'buy',
-            trade_id=str(message['t']),
-            maker_order_id=str(
-                message['b']) if message['m'] else str(message['a']),
-            taker_order_id=str(
-                message['a']) if message['m'] else str(message['b']),
-            event_timestamp=message['E'],
-            atom_timestamp=message['atom_timestamp']
-        )
-        await self.send_to_topic("trades_l3", **msg)
+        for event_timestamp, side, price, size in message['trades']:
+            msg = dict(
+                symbol=symbol,
+                price=Decimal(price) / Decimal(self._get_price_scale(symbol)),
+                size=Decimal(size) / Decimal(self._get_size_scale(symbol)),
+                taker_side=side.lower(),
+                event_timestamp=event_timestamp // 1_000_000,
+                atom_timestamp=atom_timestamp,
+                trade_id=""
+            )
+            await self.send_to_topic("trades", **msg)
 
     async def _book(self, message):
-        symbol = self.normalise_symbol(message['s'])
-        event_timestamp = message['E']
+        if message['type'] == 'snapshot':
+            return
+        symbol = self.normalise_symbol(message['symbol'])
+        event_timestamp = message['timestamp'] // 1_000_000
         atom_timestamp = message['atom_timestamp']
-        for s, side in (('b', 'buy'), ('a', 'sell')):
-            for price, size in message[s]:
+        for s, side in (('bids', 'buy'), ('asks', 'sell')):
+            for price, size in message['book'][s]:
                 msg = dict(
                     symbol=symbol,
-                    price=Decimal(price),
-                    size=Decimal(size),
+                    price=Decimal(price) / Decimal(self._get_price_scale(symbol)),
+                    size=Decimal(size) / Decimal(self._get_size_scale(symbol)),
                     side=side,
                     event_timestamp=event_timestamp,
                     atom_timestamp=atom_timestamp
                 )
                 await self.send_to_topic("lob", **msg)
 
-    async def _ticker(self, message):
-        msg = dict(
-            symbol=self.normalise_symbol(message['s']),
-            ask_price=Decimal(message['a']),
-            bid_price=Decimal(message['b']),
-            ask_size=Decimal(message['A']),
-            bid_size=Decimal(message['B']),
-            event_timestamp=message['E'] if 'E' in message else -1,
-            atom_timestamp=message['atom_timestamp']
-        )
-        await self.send_to_topic("ticker", **msg)
-
     async def _candle(self, message):
-        msg = dict(
-            symbol=self.normalise_symbol(message['s']),
-            start=message['k']['t'],
-            end=message['k']['T'],
-            interval=message['k']['i'],
-            trades=message['k']['n'],
-            closed=message['k']['x'],
-            o=Decimal(message['k']['o']),
-            h=Decimal(message['k']['h']),
-            l=Decimal(message['k']['l']),
-            c=Decimal(message['k']['c']),
-            v=Decimal(message['k']['v']),
-            event_timestamp=message['E'],
-            atom_timestamp=message['atom_timestamp']
-        )
-        await self.send_to_topic("candle", **msg)
+        if message['type'] == 'snapshot':
+            return
+        interval = '1m'
+        atom_timestamp = message['atom_timestamp']
+        symbol = self.normalise_symbol(message['symbol'])
+        price_scale = Decimal(self._get_price_scale(symbol))
+        for event_timestamp, _, _, o, h, l, c, v, _ in message['kline']:
+            o = Decimal(o) / price_scale
+            h = Decimal(h) / price_scale
+            l = Decimal(l) / price_scale
+            c = Decimal(c) / price_scale
+            v = Decimal(v) / Decimal(self._get_size_scale(symbol))
+            event_timestamp = event_timestamp // 1_000_000
+            msg = dict(
+                symbol=symbol,
+                start=event_timestamp - 60_000,
+                end=event_timestamp,
+                interval=interval,
+                trades=-1,
+                closed=True,
+                o=o,
+                h=h,
+                l=l,
+                c=c,
+                v=v,
+                event_timestamp=event_timestamp,
+                atom_timestamp=atom_timestamp
+            )
+            await self.send_to_topic("candle", **msg)
 
     async def handle_message(self, msg):
-        if 'e' in msg:
-            if msg['e'] == 'trade':
-                await self._trade(msg)
-            elif msg['e'] == 'depthUpdate':
-                await self._book(msg)
-            elif msg['e'] == 'kline':
-                await self._candle(msg)
-            elif msg['e'] == 'bookTicker':
-                await self._ticker(msg)
-        elif 'A' in msg:
-            await self._ticker(msg)
+        if 'trades' in msg:
+            await self._trade(msg)
+        elif 'book' in msg:
+            await self._book(msg)
+        elif 'kline' in msg:
+            await self._candle(msg)
         else:
             logging.warning(f"{self.id}: Unhandled message: {msg}")

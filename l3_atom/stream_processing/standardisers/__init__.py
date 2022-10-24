@@ -10,6 +10,7 @@ from .bybit import BybitStandardiser
 from .ftx import FTXStandardiser
 from .kraken import KrakenStandardiser
 from .kraken_futures import KrakenFuturesStandardiser
+from .phemex import PhemexStandardiser
 
 standardisers = [CoinbaseStandardiser,
-                 BinanceStandardiser, BinanceFuturesStandardiser, BitfinexStandardiser, DydxStandardiser, ApolloXStandardiser, GeminiStandardiser, DeribitStandardiser, BybitStandardiser, FTXStandardiser, KrakenStandardiser, KrakenFuturesStandardiser]
+                 BinanceStandardiser, BinanceFuturesStandardiser, BitfinexStandardiser, DydxStandardiser, ApolloXStandardiser, GeminiStandardiser, DeribitStandardiser, BybitStandardiser, FTXStandardiser, KrakenStandardiser, KrakenFuturesStandardiser, PhemexStandardiser]
