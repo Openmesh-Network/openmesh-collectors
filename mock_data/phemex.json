@@ -1,0 +1,55 @@
+[
+    {
+        "book": {
+            "asks": [
+                [
+                    1942646000000,
+                    1031100
+                ]
+            ],
+            "bids": []
+        },
+        "depth": 30,
+        "sequence": 27986664495,
+        "symbol": "sBTCUSDT",
+        "timestamp": 1666611843311752815,
+        "type": "incremental",
+        "atom_timestamp": 1666611841948205
+    },
+    {
+        "sequence": 27986664473,
+        "symbol": "sBTCUSDT",
+        "trades": [
+            [
+                1666611842452187568,
+                "Sell",
+                1941970000000,
+                1454000
+            ]
+        ],
+        "type": "incremental",
+        "atom_timestamp": 1666611841091088
+    },
+    {
+        "kline": [
+            [
+                1666611840,
+                60,
+                1942051000000,
+                1941977000000,
+                1941977000000,
+                1941970000000,
+                1941970000000,
+                15941100,
+                309571927836
+            ]
+        ],
+        "priceScale": 8,
+        "qtyScale": 8,
+        "sequence": 27986664473,
+        "symbol": "sBTCUSDT",
+        "type": "incremental",
+        "valueScale": 8,
+        "atom_timestamp": 1666611841091112
+    }
+]
