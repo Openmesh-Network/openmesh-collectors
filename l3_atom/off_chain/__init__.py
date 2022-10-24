@@ -10,6 +10,7 @@ from .bybit import Bybit
 from .ftx import FTX
 from .kraken import Kraken
 from .kraken_futures import KrakenFutures
+from .phemex import Phemex
 
 exch = [
     Coinbase,
@@ -23,7 +24,8 @@ exch = [
     Bybit,
     FTX,
     Kraken,
-    KrakenFutures
+    KrakenFutures,
+    Phemex
 ]
 
 mapping = {

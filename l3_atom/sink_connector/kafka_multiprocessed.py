@@ -109,7 +109,7 @@ class KafkaConnector(Kafka):
             if topic not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {topic}")
                 topics.append(
-                    NewTopic(topic, num_partitions=6, replication_factor=1))
+                    NewTopic(topic, num_partitions=6, replication_factor=3))
             else:
                 logging.info(f"{self.exchange}: Topic {topic} already exists")
 
@@ -127,4 +127,11 @@ class KafkaConnector(Kafka):
                     f'{topic}-value', feed_schema)
 
         if topics:
-            self.admin_client.create_topics(topics)
+            futures = self.admin_client.create_topics(topics)
+            for topic, future in futures.items():
+                try:
+                    future.result()
+                    logging.info(f"{self.exchange}: Created topic {topic}")
+                except Exception as e:
+                    logging.error(
+                        f"{self.exchange}: Failed to create topic {topic}: {e}")
