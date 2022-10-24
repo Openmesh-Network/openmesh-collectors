@@ -233,7 +233,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
             try:
                 key = message[cls.key_field]
             except (IndexError, KeyError):
-                logging.warning(f"Key field {cls.key_field} not found in message")
+                logging.warning(
+                    f"Key field {cls.key_field} not found in message")
                 key = None
         if isinstance(key, str):
             key = key.encode()
@@ -264,7 +265,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self._init_kafka(loop)
         rest_connections = self._init_rest()
         for connection in rest_connections:
-            self.connection_handlers.append(AsyncConnectionManager(connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
+            self.connection_handlers.append(AsyncConnectionManager(
+                connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
         for (endpoint, channels) in self.ws_endpoints.items():
             for symbol in self.symbols.values():
                 if not channels:
@@ -276,11 +278,14 @@ class OrderBookExchangeFeed(OrderBookExchange):
                 if len(symbols) == max_syms:
                     connection = WSConnection(
                         self.name, url, authentication=None, symbols=symbols, **endpoint.options)
-                    self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
+                    self.connection_handlers.append(AsyncConnectionManager(
+                        connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
                     symbols = []
         if symbols:
-            connection = WSConnection(self.name, url, authentication=None, symbols=symbols, **endpoint.options)
-            self.connection_handlers.append(AsyncConnectionManager(connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
+            connection = WSConnection(
+                self.name, url, authentication=None, symbols=symbols, **endpoint.options)
+            self.connection_handlers.append(AsyncConnectionManager(
+                connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
             symbols = []
 
         for handler in self.connection_handlers:
