@@ -57,7 +57,3 @@ class Gemini(OrderBookExchangeFeed):
 
     def auth(self, conn: WSConnection):
         pass
-
-    async def process_message(self, message: str, conn: AsyncFeed, channel: str):
-        print(message)
-        await self.kafka_connector.write(message)

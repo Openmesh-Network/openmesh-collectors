@@ -28,11 +28,23 @@ class BinanceFuturesStandardiser(BinanceStandardiser):
         )
         await self.send_to_topic("open_interest", **msg)
 
+    async def _trade(self, message):
+        msg = dict(
+            symbol=self.normalise_symbol(message['s']),
+            price=Decimal(message['p']),
+            size=Decimal(message['q']),
+            taker_side=message['m'] and 'buy' or 'sell',
+            trade_id=str(message['a']),
+            event_timestamp=message['E'],
+            atom_timestamp=message['atom_timestamp']
+        )
+        await self.send_to_topic("trades", **msg)
+
     async def handle_message(self, msg):
         if 'openInterest' in msg:
             await self._open_interest(msg)
         elif 'e' in msg:
-            if msg['e'] == 'trade':
+            if msg['e'] == 'aggTrade':
                 await self._trade(msg)
             elif msg['e'] == 'depthUpdate':
                 await self._book(msg)

@@ -6,7 +6,7 @@ from l3_atom.feed import WSConnection, WSEndpoint, HTTPConnection
 class BinanceFutures(Binance):
     name = "binance-futures"
     ws_endpoints = {
-        WSEndpoint("wss://fstream.binance.com/ws"): [*Binance.ws_channels.keys(), "funding_rate"]
+        WSEndpoint("wss://fstream.binance.com/ws"): ["lob", "ticker", "candle", "trades", "funding_rate"]
     }
 
     rest_endpoints = {
@@ -15,7 +15,7 @@ class BinanceFutures(Binance):
 
     ws_channels = {
         "lob": "depth@100ms",
-        "trades_l3": "trade",
+        "trades": "aggTrade",
         "ticker": "bookTicker",
         "candle": "kline_1s",
         "funding_rate": "markPrice@1s"
