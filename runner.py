@@ -17,9 +17,11 @@ def main():
 
         from l3_atom.stream_processing import app
 
-        del sys.argv[1]
+        old_args = sys.argv[2:]
+        sys.argv = [sys.argv[0]]
 
         sys.argv.extend(['worker', '-l', 'info'])
+        sys.argv.extend(old_args)
         f_app = app.init()
         f_app.main()
 

@@ -8,6 +8,7 @@ from l3_atom.stream_processing.standardisers import KrakenFuturesStandardiser
 @pytest.mark.asyncio()
 async def test_kraken_futures_agent(mock_kafka):
     exchange = KrakenFuturesStandardiser()
+    exchange.start_exchange()
     for topic in exchange.normalised_topics:
         exchange.normalised_topics[topic] = Mock()
         exchange.normalised_topics[topic].send = AsyncMock()

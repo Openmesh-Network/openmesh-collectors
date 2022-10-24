@@ -8,6 +8,7 @@ from l3_atom.stream_processing.standardisers import ApolloXStandardiser
 @pytest.mark.asyncio()
 async def test_binance_futures_agent(mock_kafka):
     exchange = ApolloXStandardiser()
+    exchange.start_exchange()
     for topic in exchange.normalised_topics:
         exchange.normalised_topics[topic] = Mock()
         exchange.normalised_topics[topic].send = AsyncMock()

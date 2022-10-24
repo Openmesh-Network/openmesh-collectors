@@ -8,6 +8,7 @@ from l3_atom.stream_processing.standardisers import CoinbaseStandardiser
 @pytest.mark.asyncio()
 async def test_coinbase_agent(mock_kafka):
     exchange = CoinbaseStandardiser()
+    exchange.start_exchange()
     for topic in exchange.normalised_topics:
         exchange.normalised_topics[topic] = Mock()
         exchange.normalised_topics[topic].send = AsyncMock()

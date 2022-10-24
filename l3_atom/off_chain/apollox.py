@@ -6,7 +6,7 @@ class ApolloX(BinanceFutures):
     name = "apollox"
 
     ws_endpoints = {
-        WSEndpoint("wss://fstream.apollox.finance/ws"): ["lob", "ticker", "candle", "trades_l3"]
+        WSEndpoint("wss://fstream.apollox.finance/ws"): ["lob", "ticker", "candle", "trades"]
     }
 
     rest_channels = {
