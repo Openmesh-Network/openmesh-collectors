@@ -34,7 +34,7 @@ class Kafka(SinkMessageHandler):
         self.kafka_producer = None
         self.admin_client = None
         self.schema_client = None
-        self.topic = f"{self.exchange}_raw"
+        self.topic = f"raw"
 
 
 class KafkaConnector(Kafka):
@@ -101,8 +101,10 @@ class KafkaConnector(Kafka):
             self._admin_init()
         if not self.schema_client:
             self._schema_init()
-        topic_metadata = self.admin_client.list_topics(timeout=5)
         topics = []
+        topic_metadata = self.admin_client.list_topics(timeout=5)
+        if "raw" not in topic_metadata.topics:
+            topics.append(NewTopic("raw", 50, 3))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
             topic = f'{self.exchange}_{feed}'

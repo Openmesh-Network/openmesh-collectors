@@ -236,6 +236,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
                 logging.warning(
                     f"Key field {cls.key_field} not found in message")
                 key = None
+        key = f"{cls.name}_{key}"
         if isinstance(key, str):
             key = key.encode()
         return key
@@ -250,7 +251,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         logging.info('%s: Starting Kafka Connector', self.name)
         self.kafka_connector = KafkaConnector(self.__class__)
         self.kafka_connector.create_exchange_topics(
-            [*self.ws_channels.keys(), *self.rest_channels.keys(), 'raw'])
+            [*self.ws_channels.keys(), *self.rest_channels.keys()])
         self.kafka_connector.start(loop)
 
     def start(self, loop: asyncio.AbstractEventLoop):

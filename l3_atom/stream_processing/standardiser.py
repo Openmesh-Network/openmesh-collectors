@@ -22,12 +22,16 @@ class Standardiser:
 
     def __init__(self) -> None:
         self.id = self.exchange.name
-        self.raw_topic = f'{self.id}_raw'
-        self.exchange = self.exchange()
+        self.raw_topic = f'raw'
+        self.exchange_started = False
         self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
         self.normalised_topics = {
             f"{feed}": f"{self.id}_{feed}" for feed in self.feeds
         }
+
+    def start_exchange(self):
+        self.exchange = self.exchange()
+        self.exchange_started = True
 
     def normalise_symbol(self, exch_symbol: str) -> str:
         """Get the normalised symbol from the exchange symbol"""
@@ -57,16 +61,3 @@ class Standardiser:
         :type msg: dict
         """
         raise NotImplementedError
-
-    async def process(self, stream: AsyncIterable) -> AsyncIterable:
-        """
-        Indefinite iterator over the stream of messages coming in over the raw topic. Continuously iterates and processes each incoming message.
-
-        :param stream: The stream of messages to process
-        :type stream: AsyncIterable
-        :return: Iterator over the stream of raw processed messages
-        :rtype: AsyncIterable
-        """
-        async for message in stream:
-            await self.handle_message(message)
-            yield message

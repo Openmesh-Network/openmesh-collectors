@@ -30,7 +30,7 @@ class Bybit(OrderBookExchangeFeed):
     @classmethod
     def get_key(cls, msg: dict):
         if 'topic' in msg:
-            return msg['topic'].split('.')[-1].encode()
+            return f'{cls.name}_{msg["topic"].split(".")[-1]}'.encode()
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
         args = []
