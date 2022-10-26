@@ -57,7 +57,7 @@ class FTXStandardiser(Standardiser):
         await self.send_to_topic("ticker", **msg)
 
     async def handle_message(self, msg):
-        if 'channel' in msg:
+        if 'channel' in msg and msg.get('type') != 'subscribed':
             if msg['channel'] == 'trades':
                 await self._trade(msg)
             elif msg['channel'] == 'orderbook':
