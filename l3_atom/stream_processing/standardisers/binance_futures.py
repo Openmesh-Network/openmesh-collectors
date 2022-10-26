@@ -13,7 +13,7 @@ class BinanceFuturesStandardiser(BinanceStandardiser):
             mark_price=Decimal(message['p']),
             funding_rate=Decimal(message['r']),
             next_funding_time=message['T'],
-            predicted_rate=Decimal(message['P']),
+            predicted_rate=-1,
             event_timestamp=message['E'],
             atom_timestamp=message['atom_timestamp']
         )
