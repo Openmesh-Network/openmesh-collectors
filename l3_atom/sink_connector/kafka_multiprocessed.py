@@ -104,7 +104,7 @@ class KafkaConnector(Kafka):
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
         if "raw" not in topic_metadata.topics:
-            topics.append(NewTopic("raw", 50, 1))
+            topics.append(NewTopic("raw", 100, 1))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
             if feed not in topic_metadata.topics:
