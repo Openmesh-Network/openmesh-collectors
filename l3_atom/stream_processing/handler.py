@@ -18,15 +18,20 @@ async def process(stream: AsyncIterable) -> AsyncIterable:
         :rtype: AsyncIterable
         """
         async for key, message in stream.items():
-            if not key:
+            try:
+                if not key:
+                    continue
+                key = key.decode()
+                exchange = key.split('_')[0]
+                standardiser = handlers[exchange]
+                if not standardiser.exchange_started:
+                    standardiser.start_exchange()
+                await standardiser.handle_message(message)
+                yield message
+            except Exception as e:
+                logging.error(f"Error processing message: {e}")
+                logging.error(f"Message: {message}")
                 continue
-            key = key.decode()
-            exchange = key.split('_')[0]
-            standardiser = handlers[exchange]
-            if not standardiser.exchange_started:
-                standardiser.start_exchange()
-            await standardiser.handle_message(message)
-            yield message
 
 def initialise_agents(app):
     """Initialises the Faust agent"""

@@ -104,13 +104,13 @@ class KafkaConnector(Kafka):
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
         if "raw" not in topic_metadata.topics:
-            topics.append(NewTopic("raw", 50, 3))
+            topics.append(NewTopic("raw", 50, 1))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
-                    NewTopic(feed, num_partitions=50, replication_factor=3))
+                    NewTopic(feed, num_partitions=50, replication_factor=1))
             else:
                 logging.info(f"{self.exchange}: Topic {feed} already exists")
 
