@@ -112,7 +112,7 @@ class KafkaConnector(Kafka):
                 topics.append(
                     NewTopic(feed, num_partitions=50, replication_factor=3))
             else:
-                logging.info(f"{self.exchange}: Topic {topic} already exists")
+                logging.info(f"{self.exchange}: Topic {feed} already exists")
 
             if f'{feed}-value' in schemas:
                 logging.info(
