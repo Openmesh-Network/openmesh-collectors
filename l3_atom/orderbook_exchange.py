@@ -36,7 +36,8 @@ class OrderBookExchange:
     :type rest_channels: dict
     """
     name = NotImplemented
-    key_field = NotImplemented
+    sym_field = NotImplemented
+    type_field = NotImplemented
     """
     {
         <WSEndpoint>: [channels to subscribe to],
@@ -153,6 +154,47 @@ class OrderBookExchange:
         """
         return self.inv_symbols[symbol]
 
+    @classmethod
+    def _get_field(cls, msg, field):
+        if field and isinstance(field, str):
+            key = msg.get(field, None)
+        else:
+            try:
+                key = msg[field]
+            except (IndexError, KeyError):
+                logging.warning(
+                    f"Key field {field} not found in message")
+                key = None
+        return key
+
+    # Overwrite this method if the exchange uses a different method of getting the msg symbol or msg type
+    @classmethod
+    def get_sym_from_msg(cls, msg):
+        return cls._get_field(msg, cls.sym_field)
+
+    @classmethod
+    def get_type_from_msg(cls, msg):
+        return cls._get_field(msg, cls.type_field)
+
+    # TODO: Use this to simplify the standardisation -- this already retrieves the symbol from the data
+    @classmethod
+    def get_key(cls, message: dict) -> str:
+        """
+        Returns the key for the provided message
+
+        :param message: Message to get the key for
+        :type message: dict
+        :return: Key for the message
+        :rtype: str
+        """
+        s = cls.get_sym_from_msg(message)
+        t = cls.get_type_from_msg(message)
+        if s and t:
+            key = f"{cls.name}_{s}_{t}"
+            if isinstance(key, str):
+                key = key.encode()
+            return key
+
 
 class OrderBookExchangeFeed(OrderBookExchange):
     """
@@ -215,31 +257,6 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :rtype: list
         """
         return []
-
-    # TODO: Use this to simplify the standardisation -- this already retrieves the symbol from the data
-    @classmethod
-    def get_key(cls, message: dict) -> str:
-        """
-        Returns the key for the provided message
-
-        :param message: Message to get the key for
-        :type message: dict
-        :return: Key for the message
-        :rtype: str
-        """
-        if cls.key_field and isinstance(cls.key_field, str):
-            key = message.get(cls.key_field, None)
-        else:
-            try:
-                key = message[cls.key_field]
-            except (IndexError, KeyError):
-                logging.warning(
-                    f"Key field {cls.key_field} not found in message")
-                key = None
-        key = f"{cls.name}_{key}"
-        if isinstance(key, str):
-            key = key.encode()
-        return key
 
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
         """

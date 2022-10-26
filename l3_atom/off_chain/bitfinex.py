@@ -14,8 +14,9 @@ BULK_UPDATES = 536870912
 class Bitfinex(OrderBookExchangeFeed):
     name = "bitfinex"
 
-    # Bitfinex sends arrays, so we provide an index instead of a field
-    key_field = -2
+    # Bitfinex sends arrays, so we provide an index instead of a key
+    sym_field = -2
+    type_field = -3
 
     ws_endpoints = {
         WSEndpoint("wss://api.bitfinex.com/ws/2"): ["lob_l3", "ticker", "candle", "trades"]

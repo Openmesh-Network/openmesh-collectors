@@ -22,7 +22,7 @@ async def process(stream: AsyncIterable) -> AsyncIterable:
                 if not key:
                     continue
                 key = key.decode()
-                exchange = key.split('_')[0]
+                exchange = key.split('_', maxsplit=1)[0]
                 standardiser = handlers[exchange]
                 if not standardiser.exchange_started:
                     standardiser.start_exchange()

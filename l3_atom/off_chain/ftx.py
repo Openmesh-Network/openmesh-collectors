@@ -6,7 +6,9 @@ from yapic import json
 
 class FTX(OrderBookExchangeFeed):
     name = "ftx"
-    key_field = 'market'
+    sym_field = 'market'
+    type_field = 'channel'
+    
     ws_endpoints = {
         WSEndpoint("wss://ftx.com/ws/"): ["lob", "ticker", "trades"]
     }

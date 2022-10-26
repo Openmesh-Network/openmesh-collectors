@@ -6,7 +6,8 @@ from yapic import json
 
 class Dydx(OrderBookExchangeFeed):
     name = "dydx"
-    key_field = 'id'
+    sym_field = 'id'
+    type_field = 'channel'
 
     ws_endpoints = {
         WSEndpoint("wss://api.dydx.exchange/v3/ws"): ["lob", "trades"]

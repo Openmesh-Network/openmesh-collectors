@@ -22,7 +22,8 @@ def new_config():
 
 class MockExchange(OrderBookExchangeFeed):
     name = 'test'
-    key_field = 0
+    sym_field = 0
+    type_field = 0
 
 
 @pytest.fixture()

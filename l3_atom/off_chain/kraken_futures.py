@@ -6,7 +6,8 @@ from l3_atom.helpers.enrich_data import enrich_raw
 
 class KrakenFutures(OrderBookExchangeFeed):
     name = "kraken-futures"
-    key_field = 'product_id'
+    sym_field = 'product_id'
+    type_field = 'feed'
     ws_endpoints = {
         WSEndpoint("wss://futures.kraken.com/ws/v1"): ["lob", 'trades', 'ticker']
     }

@@ -6,7 +6,7 @@ from yapic import json
 
 class Coinbase(OrderBookExchangeFeed):
     name = "coinbase"
-    key_field = 'product_id'
+    sym_field = 'product_id'
     ws_endpoints = {
         WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["lob_l3", "ticker"]
     }
@@ -19,6 +19,13 @@ class Coinbase(OrderBookExchangeFeed):
     }
 
     symbols_endpoint = "https://api.pro.coinbase.com/products"
+
+    @classmethod
+    def get_type_from_msg(cls, msg):
+        if msg['type'] in ('open', 'done', 'change'):
+            return 'lob_l3'
+        else:
+            return msg['type']
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
