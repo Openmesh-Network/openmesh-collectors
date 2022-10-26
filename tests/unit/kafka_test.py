@@ -38,12 +38,12 @@ def mock_kafka():
     kafka.admin_client = Mock()
     kafka.admin_client.list_topics = Mock()
     kafka.admin_client.list_topics.return_value = MockTopics(
-        ['raw', 'test_lob'])
+        ['raw', 'lob'])
     kafka.admin_client.create_topics.return_value = {}
     kafka._schema_init()
     kafka.schema_client = Mock()
     kafka.schema_client.get_subjects = Mock()
-    kafka.schema_client.get_subjects.return_value = ['test_lob-value']
+    kafka.schema_client.get_subjects.return_value = ['lob-value']
     kafka.kafka_producer = AsyncMock()
     return kafka
 
@@ -59,7 +59,7 @@ def mock_process_message(ret, **kwargs):
 async def test_topic_and_schema(mock_kafka):
     mock_kafka.create_exchange_topics(['trades', 'lob'])
     mock_kafka.admin_client.create_topics.assert_called_with(
-        [kafka_multiprocessed.NewTopic('test_trades', num_partitions=6, replication_factor=1)])
+        [kafka_multiprocessed.NewTopic('trades', num_partitions=6, replication_factor=1)])
 
 
 @pytest.mark.asyncio()

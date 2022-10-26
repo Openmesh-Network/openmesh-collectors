@@ -76,7 +76,9 @@ class KrakenStandardiser(Standardiser):
         await self.send_to_topic("candle", **msg)
 
     async def handle_message(self, msg):
-        if msg[-3] == 'trade':
+        if isinstance(msg, dict):
+            return
+        elif msg[-3] == 'trade':
             await self._trade(msg)
         elif msg[-3].startswith('book'):
             await self._book(msg)
