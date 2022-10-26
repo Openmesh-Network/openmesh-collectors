@@ -2,6 +2,7 @@ from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
+from l3_atom.helpers.enrich_data import enrich_raw
 
 # Configuration options for Bitfinex API
 TIMESTAMP = 32768
@@ -94,7 +95,7 @@ class Bitfinex(OrderBookExchangeFeed):
     def auth(self, conn: WSConnection):
         pass
 
-    async def process_message(self, message: str, conn: AsyncFeed, channel: str):
+    async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         """
         First method called when a message is received from the exchange. Overloaded as Bitfinex stores unique channel IDs for each subscription that we need to keep track of.
 
@@ -111,4 +112,5 @@ class Bitfinex(OrderBookExchangeFeed):
             channel, symbol = self.chan_ids[chan_id]
             msg.append(channel)
             msg.append(symbol)
+        msg = enrich_raw(msg, timestamp)
         await self.kafka_connector.write(json.dumps(msg))

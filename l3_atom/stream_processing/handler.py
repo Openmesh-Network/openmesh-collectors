@@ -18,6 +18,8 @@ async def process(stream: AsyncIterable) -> AsyncIterable:
         :rtype: AsyncIterable
         """
         async for key, message in stream.items():
+            if not key:
+                continue
             key = key.decode()
             exchange = key.split('_')[0]
             standardiser = handlers[exchange]
