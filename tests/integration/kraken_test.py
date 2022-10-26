@@ -18,6 +18,5 @@ async def test_kraken_connector(teardown_async):
     while len(ret) < 10:
         await asyncio.sleep(0.1)
     for msg in ret:
-        print(msg)
-        assert (isinstance(msg, dict) and 'status' in msg) or any(msg[-2].startswith(t) for t in types)
+        assert (isinstance(msg, dict) and 'status' in msg or 'event' in msg) or any(msg[-2].startswith(t) for t in types)
     await connector.stop()
