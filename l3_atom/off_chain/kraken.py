@@ -2,7 +2,7 @@ from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
-
+from l3_atom.helpers.enrich_data import enrich_raw
 
 class Kraken(OrderBookExchangeFeed):
     name = "kraken"
@@ -52,3 +52,24 @@ class Kraken(OrderBookExchangeFeed):
 
     def auth(self, conn: WSConnection):
         pass
+
+    async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
+        """
+        First method called when a message is received from the exchange. Currently forwards the message to Kafka to be produced.
+
+        :param message: Message received from the exchange
+        :type message: str
+        :param conn: Connection the message was received from
+        :type conn: AsyncFeed
+        :param channel: Channel the message was received on
+        :type channel: str
+        """
+        msg = json.loads(message)
+        msg = enrich_raw(msg, timestamp)
+        try:
+            if msg[-3].startswith('book'):
+                if len(msg[1]["b"]) >= 1 and len(msg[1]["b"][0]) != 3:
+                    print(json.dumps(msg))
+        except:
+            pass
+        await self.kafka_connector.write(json.dumps(msg))

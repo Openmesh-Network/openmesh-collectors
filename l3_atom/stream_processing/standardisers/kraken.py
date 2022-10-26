@@ -20,7 +20,7 @@ class KrakenStandardiser(Standardiser):
                 taker_side='buy' if side == 'b' else 'sell',
                 event_timestamp=event_timestamp,
                 atom_timestamp=atom_timestamp,
-                trade_id=-1
+                trade_id=""
             )
             await self.send_to_topic("trades", **msg)
 
@@ -29,7 +29,12 @@ class KrakenStandardiser(Standardiser):
         atom_timestamp = message[-1]
         data = message[1]
         for s, side in (('b', 'buy'), ('a', 'sell')):
-            for price, size, event_timestamp in data.get(s, []):
+            for e in data.get(s, []):
+                # Kraken has some messages with an appended "r"
+                if len(e) == 4:
+                    price, size, event_timestamp, _ = e
+                else:
+                    price, size, event_timestamp = e
                 event_timestamp = int(Decimal(event_timestamp) * 1000)
                 msg = dict(
                     symbol=symbol,
