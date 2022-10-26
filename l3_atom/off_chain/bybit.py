@@ -27,10 +27,11 @@ class Bybit(OrderBookExchangeFeed):
             ret[normalised_symbol] = m['name']
         return ret
 
+    # This results in a different format than the other keys, but we don't actually care about the format -- just that it groups symbols and message types together
     @classmethod
     def get_key(cls, msg: dict):
         if 'topic' in msg:
-            return f'{cls.name}_{msg["topic"].split(".")[-1]}'.encode()
+            return f'{cls.name}_{msg["topic"]}'.encode()
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
         args = []

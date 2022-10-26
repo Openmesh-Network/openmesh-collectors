@@ -8,7 +8,8 @@ import requests
 
 class Gemini(OrderBookExchangeFeed):
     name = "gemini"
-    key_field = 'symbol'
+    sym_field = 'symbol'
+    type_field = 'type'
     ws_endpoints = {
         WSEndpoint("wss://api.gemini.com/v2/marketdata"): ["lob", "candle"]
     }

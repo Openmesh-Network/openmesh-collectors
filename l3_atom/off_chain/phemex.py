@@ -6,7 +6,7 @@ from yapic import json
 
 class Phemex(OrderBookExchangeFeed):
     name = "phemex"
-    key_field = 'symbol'
+    sym_field = 'symbol'
     ws_endpoints = {
         WSEndpoint("wss://phemex.com/ws"): ["lob", "trades", "candle"]
     }
@@ -22,6 +22,12 @@ class Phemex(OrderBookExchangeFeed):
     # Phemex sends out integers for prices and quantities, so we need to convert them to floats depending on the individual symbol
     price_decimal_places = {}
     qty_decimal_places = {}
+
+    @classmethod
+    def get_type_from_msg(cls, msg):
+        for t in ('trades', 'book', 'cline'):
+            if t in msg:
+                return t
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}

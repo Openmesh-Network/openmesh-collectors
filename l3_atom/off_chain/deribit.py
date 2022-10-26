@@ -24,14 +24,7 @@ class Deribit(OrderBookExchangeFeed):
     @classmethod
     def get_key(cls, msg):
         if 'params' in msg:
-            channel = msg['params']['channel']
-            if channel.startswith('chart'):
-                key = channel.split('.')[2].encode()
-            elif channel.startswith('trade'):
-                key = msg['params']['data'][0]['instrument_name'].encode()
-            else:
-                key = msg['params']['data']['instrument_name'].encode()
-            return f'{cls.name}_{key}'.encode()
+            return f'{cls.name}_{msg["params"]["channel"]}'.encode()
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}

@@ -2,11 +2,12 @@ from l3_atom.orderbook_exchange import OrderBookExchangeFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
-from l3_atom.helpers.enrich_data import enrich_raw
+import logging
 
 class Kraken(OrderBookExchangeFeed):
     name = "kraken"
-    key_field = -2
+    sym_field = -2
+    type_field = -3
     ws_endpoints = {
         WSEndpoint("wss://ws.kraken.com"): ["lob", "ticker", 'trades', 'candle']
     }
@@ -19,6 +20,21 @@ class Kraken(OrderBookExchangeFeed):
     }
 
     symbols_endpoint = "https://api.kraken.com/0/public/AssetPairs"
+
+    @classmethod
+    def _get_field(cls, msg, field):
+        if field and isinstance(field, str):
+            key = msg.get(field, None)
+        else:
+            try:
+                key = msg[field]
+            except (IndexError, KeyError):
+                if 'event' in msg:
+                    return None
+                logging.warning(
+                    f"Key field {field} not found in message")
+                key = None
+        return key
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
@@ -52,24 +68,3 @@ class Kraken(OrderBookExchangeFeed):
 
     def auth(self, conn: WSConnection):
         pass
-
-    async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
-        """
-        First method called when a message is received from the exchange. Currently forwards the message to Kafka to be produced.
-
-        :param message: Message received from the exchange
-        :type message: str
-        :param conn: Connection the message was received from
-        :type conn: AsyncFeed
-        :param channel: Channel the message was received on
-        :type channel: str
-        """
-        msg = json.loads(message)
-        msg = enrich_raw(msg, timestamp)
-        try:
-            if msg[-3].startswith('book'):
-                if len(msg[1]["b"]) >= 1 and len(msg[1]["b"][0]) != 3:
-                    print(json.dumps(msg))
-        except:
-            pass
-        await self.kafka_connector.write(json.dumps(msg))

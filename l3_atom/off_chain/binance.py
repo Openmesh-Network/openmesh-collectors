@@ -6,7 +6,7 @@ from yapic import json
 
 class Binance(OrderBookExchangeFeed):
     name = "binance"
-    key_field = 's'
+    sym_field = 's'
     ws_endpoints = {
         WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades_l3"]
     }
@@ -19,6 +19,13 @@ class Binance(OrderBookExchangeFeed):
     }
 
     symbols_endpoint = "https://api.binance.com/api/v3/exchangeInfo"
+
+    @classmethod
+    def get_type_from_msg(cls, msg):
+        t = msg.get('e', None)
+        if not t:
+            return 'A' in msg and 'ticker' or None
+        return t
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
