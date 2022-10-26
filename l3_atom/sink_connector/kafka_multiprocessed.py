@@ -107,26 +107,25 @@ class KafkaConnector(Kafka):
             topics.append(NewTopic("raw", 50, 3))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
-            topic = f'{self.exchange}_{feed}'
-            if topic not in topic_metadata.topics:
-                logging.info(f"{self.exchange}: Creating topic {topic}")
+            if feed not in topic_metadata.topics:
+                logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
-                    NewTopic(topic, num_partitions=6, replication_factor=3))
+                    NewTopic(feed, num_partitions=50, replication_factor=3))
             else:
                 logging.info(f"{self.exchange}: Topic {topic} already exists")
 
-            if f'{topic}-value' in schemas:
+            if f'{feed}-value' in schemas:
                 logging.info(
-                    f"{self.exchange}: Schema for {topic} already exists")
+                    f"{self.exchange}: Schema for {feed} already exists")
             elif feed == 'raw':
                 logging.info(
-                    f"{self.exchange}: Schema for {topic} is not required")
+                    f"{self.exchange}: Schema for {feed} is not required")
             else:
-                logging.info(f"{self.exchange}: Creating schema for {topic}")
+                logging.info(f"{self.exchange}: Creating schema for {feed}")
                 feed_schema = self.schema_client.get_latest_version(
                     feed).schema
                 self.schema_client.register_schema(
-                    f'{topic}-value', feed_schema)
+                    f'{feed}-value', feed_schema)
 
         if topics:
             futures = self.admin_client.create_topics(topics)

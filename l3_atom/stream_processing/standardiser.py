@@ -26,7 +26,7 @@ class Standardiser:
         self.exchange_started = False
         self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
         self.normalised_topics = {
-            f"{feed}": f"{self.id}_{feed}" for feed in self.feeds
+            f"{feed}": None for feed in self.feeds
         }
 
     def start_exchange(self):
@@ -50,7 +50,7 @@ class Standardiser:
         val.validate()
         await self.normalised_topics[feed].send(
             value=val,
-            key=kwargs['symbol']
+            key=f"{self.id}_{kwargs['symbol']}"
         )
 
     async def handle_message(self, msg: dict):

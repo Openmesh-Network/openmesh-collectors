@@ -32,7 +32,7 @@ def initialise_agents(app):
     """Initialises the Faust agent"""
     logging.info(f"Initialising raw consumer")
     for standardiser in handlers.values():
-        for k, topic in standardiser.normalised_topics.items():
-            standardiser.normalised_topics[k] = app.topic(topic)
+        for topic in standardiser.normalised_topics:
+            standardiser.normalised_topics[topic] = app.topic(topic)
     app.agent(RAW_TOPIC)(process)
 
