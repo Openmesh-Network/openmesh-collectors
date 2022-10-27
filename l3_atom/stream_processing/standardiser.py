@@ -48,7 +48,7 @@ class Standardiser:
         """
         val = self.feed_to_record[feed](**kwargs, exchange=self.id)
         val.validate()
-        await self.normalised_topics[feed].send_soon(
+        await self.normalised_topics[feed].send(
             value=val,
             key=f"{self.id}_{kwargs['symbol']}"
         )
