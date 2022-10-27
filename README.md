@@ -15,7 +15,7 @@ Clone the repository and install the necessary dependencies with `pip`. This pro
 Once you've set up the necessary externalities, you need to tell the app where it can connect to Kafka. Make a `.env` file in `keys/`, and fill it in with the following:
 
 If your Kafka requires SASL authentication:
-```
+```ini
 KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
 KAFKA_SASL_KEY=<Username for SASL Authentication>
 KAFKA_SASL_SECRET=<Secret for SASL Authentication>
@@ -26,7 +26,7 @@ SCHEMA_REGISTRY_API_SECRET=<Secret for Schema Registry Authentication>
 ```
 
 If your Kafka does not require authentication:
-```
+```ini
 KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
 
 SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
@@ -36,7 +36,7 @@ In `config.ini`, you can specify what symbols to subscribe to. We have some defa
 
 Once these are setup, the entry point for running the application is `runner.py`, which can be used in the following two ways:
 
-```
+```bash
 python3 runner.py connector <exchange>
 python3 runner.py processor
 ```
@@ -54,7 +54,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ## Schemas
 
 ### L3 Lob Event
-```
+```json
 {
     "type": "record",
     "name": "L3_LOB",
@@ -100,7 +100,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### L3 Trade Event
-```
+```json
 {
     "type": "record",
     "name": "L3_Trades",
@@ -154,7 +154,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Ticker
-```
+```json
 {
     "type": "record",
     "name": "Ticker",
@@ -200,7 +200,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Lob Event
-```
+```json
 {
     "type": "record",
     "name": "LOB",
@@ -242,7 +242,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Trade Event
-```
+```json
 {
     "type": "record",
     "name": "Trade",
@@ -288,7 +288,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Candlestick
-```
+```json
 {
     "type": "record",
     "name": "Candle",
@@ -364,7 +364,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Funding Rate
-```
+```json
 {
     "type": "record",
     "name": "funding_rate",
@@ -413,7 +413,7 @@ From there, you'll start to see a standardised orderbook feed coming in at low l
 ```
 
 ### Open Interest
-```
+```json
 {
     "type": "record",
     "name": "open_interest",
