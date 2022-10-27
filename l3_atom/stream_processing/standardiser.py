@@ -48,10 +48,11 @@ class Standardiser:
         """
         val = self.feed_to_record[feed](**kwargs, exchange=self.id)
         val.validate()
-        await self.normalised_topics[feed].send(
+        await self.normalised_topics[feed].send_soon(
             value=val,
             key=f"{self.id}_{kwargs['symbol']}"
         )
+        print(f"Sent {val}")
 
     async def handle_message(self, msg: dict):
         """
