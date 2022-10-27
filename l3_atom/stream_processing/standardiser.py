@@ -52,7 +52,6 @@ class Standardiser:
             value=val,
             key=f"{self.id}_{kwargs['symbol']}"
         )
-        print(f"Sent {val}")
 
     async def handle_message(self, msg: dict):
         """
