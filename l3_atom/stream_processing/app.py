@@ -18,7 +18,7 @@ def init():
                         broker=f"aiokafka://{config['KAFKA_BOOTSTRAP_SERVERS']}")
 
     app.conf.consumer_auto_offset_reset = 'latest'
-    app.conf.producer_acks = 0
+    app.conf.producer_acks = 1
 
     codecs.initialise()
     handler.initialise_agents(app)
