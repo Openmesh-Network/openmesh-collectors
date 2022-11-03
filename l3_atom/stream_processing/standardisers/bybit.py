@@ -52,7 +52,7 @@ class BybitStandardiser(Standardiser):
 
     async def _candle(self, message):
         data = message['data']
-        event_timestamp = data['t'] + 60 * 1000
+        event_timestamp = message['ts']
         msg = dict(
             symbol=self.normalise_symbol(data['s']),
             start=data['t'],
