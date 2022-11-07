@@ -36,6 +36,8 @@ class Phemex(OrderBookExchangeFeed):
                 continue
             base, quote = [x.strip() for x in s['displaySymbol'].split('/')]
             sym_type = s['type'].lower()
+            if sym_type == 'perpetualv2':
+                sym_type = 'perpetual'
             normalised_symbol = Symbol(base, quote, symbol_type=sym_type)
             ret[normalised_symbol] = s['symbol']
 

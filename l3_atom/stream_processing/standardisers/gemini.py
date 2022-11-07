@@ -53,7 +53,7 @@ class GeminiStandardiser(Standardiser):
                 v=Decimal(str(v)),
                 event_timestamp=event_timestamp,
                 atom_timestamp=atom_timestamp,
-                closed=None,
+                closed=True,
                 interval='1m',
                 trades=-1
             )
