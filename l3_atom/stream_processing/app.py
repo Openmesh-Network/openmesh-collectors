@@ -20,6 +20,9 @@ def init():
     app.conf.consumer_auto_offset_reset = 'latest'
     app.conf.producer_acks = 1
 
+    app.conf.producer_connections_max_idle_ms = None
+    app.conf.consumer_connections_max_idle_ms = None
+
     codecs.initialise()
     handler.initialise_agents(app)
 
