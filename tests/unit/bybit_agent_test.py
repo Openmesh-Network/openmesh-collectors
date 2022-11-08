@@ -50,5 +50,5 @@ async def test_bybit_agent(mock_kafka):
             assert record['o'] == Decimal('19173')
             assert record['h'] == Decimal('19173')
             assert record['l'] == Decimal('19168')
-            assert record['closed'] is True
+            assert record['closed'] is False
             assert record['trades'] == -1

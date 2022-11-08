@@ -51,11 +51,15 @@ class OrderBookExchange:
     ws_channels: dict = {}
     rest_channels: dict = {}
 
-    def __init__(self):
+    def __init__(self, symbol=None):
         sym_list = self.get_symbols()
+        selected_syms = [symbol] if symbol else []
+        for sym in selected_syms:
+            logging.info(f"{self.name} - using symbol {sym}")
         self.symbols = self.normalise_symbols(sym_list)
         self.inv_symbols = {v: k for k, v in self.symbols.items()}
-        self.filter_symbols(self.symbols, get_conf_symbols(self.name))
+        if selected_syms:
+            self.filter_symbols(self.symbols, selected_syms)
 
     def get_symbols(self) -> list:
         """
@@ -210,8 +214,8 @@ class OrderBookExchangeFeed(OrderBookExchange):
     :type delay: int, optional
     """
 
-    def __init__(self, retries=3, interval=30, timeout=120, delay=0):
-        super().__init__()
+    def __init__(self, symbol=None, retries=3, interval=30, timeout=120, delay=0):
+        super().__init__(symbol=symbol)
         self.connection_handlers = []
         self.retries = retries
         self.interval = interval
@@ -308,6 +312,9 @@ class OrderBookExchangeFeed(OrderBookExchange):
 
         for handler in self.connection_handlers:
             handler.start_connection(loop)
+
+        for chan in [*self.ws_channels.keys(), *self.rest_channels.keys()]:
+            logging.info('%s: Starting connection to %s', self.name, chan)
 
     async def stop(self):
         """

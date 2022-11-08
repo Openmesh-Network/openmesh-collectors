@@ -32,12 +32,12 @@ KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
 SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
 ```
 
-In `config.ini`, you can specify what symbols to subscribe to. We have some default options, but the codebase will work for any symbol supported by the exchange.
+In `config.ini`, we have some example symbols for each exchange. You can use these when running the application, but feel free to use any supported by the exchanges.
 
-Once these are setup, the entry point for running the application is `runner.py`, which can be used in the following two ways:
+The entry point for running the application is `runner.py`, which can be used in the following two ways:
 
 ```bash
-python3 runner.py connector <exchange>
+python3 runner.py connector --source <exchange> --symbol <symbol>
 python3 runner.py processor
 ```
 

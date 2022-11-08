@@ -1,34 +1,45 @@
 import asyncio
 import sys
+import argparse
 
+from l3_atom.off_chain import mapping
+
+def run_connector(source, symbol):
+    connector = mapping[source](symbol=symbol)
+
+    loop = asyncio.get_event_loop()
+    connector.start(loop)
+
+    loop.run_forever()
+
+def run_processor():
+    from l3_atom.stream_processing import app
+
+    old_args = sys.argv[2:]
+    sys.argv = [sys.argv[0]]
+
+    sys.argv.extend(['worker', '-l', 'info'])
+    sys.argv.extend(old_args)
+    f_app = app.init()
+    f_app.main()
 
 def main():
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'connector':
+    parser = argparse.ArgumentParser(description='Run an L3 Atom process. Either a raw data consumer or a normalised data stream processor.')
 
-        from l3_atom.off_chain import mapping
+    subparser = parser.add_subparsers(dest='function', help='The function to run', required=True)
 
-        exchange_feed = mapping[sys.argv[2]]()
-        loop = asyncio.get_event_loop()
-        exchange_feed.start(loop)
+    connector_parser = subparser.add_parser('connector', help='Run a raw data consumer')
+    connector_parser.add_argument('--source', '-c', choices=mapping.keys(), help='The data source to connect to', required=True)
+    connector_parser.add_argument('--symbol', '-s', help='The trading symbol to subscribe to', required=True)
 
-        loop.run_forever()
-    elif len(sys.argv) > 1 and sys.argv[1] == 'processor':
+    subparser.add_parser('processor', help='Run a normalised data stream processor')
 
-        from l3_atom.stream_processing import app
-
-        old_args = sys.argv[2:]
-        sys.argv = [sys.argv[0]]
-
-        sys.argv.extend(['worker', '-l', 'info'])
-        sys.argv.extend(old_args)
-        f_app = app.init()
-        f_app.main()
-
-    else:
-        print('''USAGE:
-    python3 runner.py connector <exchange>
-    python3 runner.py processor''')
+    args = parser.parse_args()
+    if args.function == 'connector':
+        run_connector(args.source, args.symbol)
+    elif args.function == 'processor':
+        run_processor()
 
 
 if __name__ == "__main__":

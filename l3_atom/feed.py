@@ -311,7 +311,7 @@ class AsyncConnectionManager:
         await asyncio.sleep(self.delay)
         delay = limited = 1
         retries = 0
-        while self.running and retries < self.max_retries:
+        while self.running:
             try:
                 await self.conn._open()
                 self.auth and await self.auth()
@@ -356,10 +356,8 @@ class AsyncConnectionManager:
                 delay *= 2
                 retries += 1
 
-        if self.running:
-            logging.error(
-                '%s: After %d retries, connection failed. Exiting...', self.conn.id, retries)
-            raise TooManyRetries()
+        logging.info(
+                '%s: connection closed after %d retries', self.conn.id, retries)
 
 
 class WSEndpoint:

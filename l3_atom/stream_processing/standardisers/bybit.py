@@ -52,14 +52,16 @@ class BybitStandardiser(Standardiser):
 
     async def _candle(self, message):
         data = message['data']
-        event_timestamp = data['t'] + 60 * 1000
+        event_timestamp = message['ts']
+        start = data['t']
+        end = start + 60 * 1000
         msg = dict(
             symbol=self.normalise_symbol(data['s']),
-            start=data['t'],
-            end=event_timestamp,
+            start=start,
+            end=end,
             interval=message['topic'].split('.')[1],
             trades=-1,
-            closed='c' in data,
+            closed=event_timestamp >= end,
             o=Decimal(data['o']),
             h=Decimal(data['h']),
             l=Decimal(data['l']),

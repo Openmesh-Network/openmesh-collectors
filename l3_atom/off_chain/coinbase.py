@@ -29,11 +29,13 @@ class Coinbase(OrderBookExchangeFeed):
 
     def normalise_symbols(self, sym_list: list) -> dict:
         ret = {}
-        symbols = [s['id'] for s in sym_list]
-        for symbol in symbols:
-            base, quote = symbol.split("-")
+        for symbol in sym_list:
+            if symbol['status'] != 'online':
+                continue
+            s = symbol['id']
+            base, quote = s.split("-")
             normalised_symbol = Symbol(base, quote)
-            ret[normalised_symbol] = symbol
+            ret[normalised_symbol] = s
         return ret
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
