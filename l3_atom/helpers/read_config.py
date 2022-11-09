@@ -13,12 +13,7 @@ def get_conf_symbols(exchange: str):
 
 
 def get_kafka_config():
-    config = ConfigParser()
-    config.read(config_path)
-    return {
-        **config['KAFKA'],
-        **dotenv_values(env_path)
-    }
+    return dotenv_values(env_path)
 
 
 def get_redis_config():

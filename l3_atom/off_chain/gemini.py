@@ -4,7 +4,7 @@ from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from l3_atom.helpers.read_config import get_conf_symbols
 from yapic import json
 import requests
-
+import logging
 
 class Gemini(OrderBookExchangeFeed):
     name = "gemini"
@@ -23,15 +23,34 @@ class Gemini(OrderBookExchangeFeed):
     symbols_endpoint = "https://api.gemini.com/v1/symbols"
     symbols_info_endpoint = "https://api.gemini.com/v1/symbols/details/{}"
 
-    # Gemini requires us to query each symbol information separately, to avoid rate limits let's only request the symbols we need
-    def _get_sym_filters(self):
-        conf_symbols = get_conf_symbols(self.name)
-        return [f'{"".join(sym.split("."))}' for sym in conf_symbols]
 
-    def get_symbols(self):
-        sym_list = self._get_sym_filters()
+    def __init__(self, symbol=None, retries=3, interval=30, timeout=120, delay=0):
+        selected_syms = [symbol] if symbol else []
+        for sym in selected_syms:
+            logging.info(f"{self.name} - using symbol {sym}")
+        sym_list = self.get_symbols(selected_syms)
+        self.symbols = self.normalise_symbols(sym_list)
+        self.inv_symbols = {v: k for k, v in self.symbols.items()}
+        if selected_syms:
+            self.filter_symbols(self.symbols, selected_syms)
+
+        self.connection_handlers = []
+        self.retries = retries
+        self.interval = interval
+        self.timeout = timeout
+        self.delay = delay
+        self.kafka_connector = None
+        self.num_messages = 0
+        self.tot_latency = 0
+
+    def _get_sym_filters(self, sym_list):
+        return [f'{"".join(sym.split("."))}' for sym in sym_list]
+
+    # Gemini requires us to query each symbol information separately, to avoid rate limits let's only request the symbols we need
+    def get_symbols(self, sym_list):
+        sym_filters = self._get_sym_filters(sym_list)
         ret = []
-        for sym in sym_list:
+        for sym in sym_filters:
             sym_info = requests.get(
                 self.symbols_info_endpoint.format(sym)).json()
             ret.append(sym_info)
