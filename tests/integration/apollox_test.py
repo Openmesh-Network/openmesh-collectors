@@ -7,7 +7,7 @@ from l3_atom.off_chain import ApolloX
 
 
 @pytest.mark.asyncio()
-async def test_binance_futures_connector(teardown_async):
+async def test_apollox_connector(teardown_async):
     types = ['bookTicker', 'trade', 'depthUpdate', 'kline', 'markPriceUpdate']
     ret = []
     ApolloX.process_message = mock_process_message(ret)

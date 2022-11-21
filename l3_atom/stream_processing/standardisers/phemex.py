@@ -14,6 +14,8 @@ class PhemexStandardiser(Standardiser):
         return self.exchange.qty_decimal_places[sym]
 
     async def _trade(self, message):
+        if message['type'] == 'snapshot':
+            return
         symbol = self.normalise_symbol(message['symbol'])
         atom_timestamp = message['atom_timestamp']
         for event_timestamp, side, price, size in message['trades']:

@@ -204,7 +204,7 @@ class WSConnection(AsyncFeed):
         super().__init__(f'ws:{id}',
                          authentication=authentication, symbols=symbols)
         self.url = url
-        self.auth_kwargs = kwargs
+        self.options = kwargs
 
     async def _open(self):
         """
@@ -213,8 +213,8 @@ class WSConnection(AsyncFeed):
         if self.is_open:
             return
         if self.authentication:
-            self.address, self.ws_kwargs = await self.authentication(self.address, self.ws_kwargs)
-        self.conn = await websockets.connect(self.url, ping_timeout=None, max_size=2**23, max_queue=None, ping_interval=None)
+            self.address, self.options = await self.authentication(self.address, self.options)
+        self.conn = await websockets.connect(self.url, **self.options)
         logging.info('%s: opened connection %r', self.id,
                      self.conn.__class__.__name__)
         self.start_time = self.get_time_us()
