@@ -61,7 +61,6 @@ class PhemexStandardiser(Standardiser):
             l = Decimal(l) / price_scale
             c = Decimal(c) / price_scale
             v = Decimal(v) / Decimal(self._get_size_scale(symbol))
-            event_timestamp = event_timestamp // 1_000_000
             msg = dict(
                 symbol=symbol,
                 start=event_timestamp - 60_000,

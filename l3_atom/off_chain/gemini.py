@@ -24,8 +24,8 @@ class Gemini(OrderBookExchangeFeed):
     symbols_info_endpoint = "https://api.gemini.com/v1/symbols/details/{}"
 
 
-    def __init__(self, symbol=None, retries=3, interval=30, timeout=120, delay=0):
-        selected_syms = [symbol] if symbol else []
+    def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0):
+        selected_syms = symbols if symbols else []
         for sym in selected_syms:
             logging.info(f"{self.name} - using symbol {sym}")
         sym_list = self.get_symbols(selected_syms)
