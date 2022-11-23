@@ -5,7 +5,7 @@ import argparse
 from l3_atom.off_chain import mapping
 
 def run_connector(source, symbol):
-    connector = mapping[source](symbol=symbol)
+    connector = mapping[source](symbols=[symbol])
 
     loop = asyncio.get_event_loop()
     connector.start(loop)
