@@ -7,6 +7,14 @@ from decimal import Decimal
 class GeminiStandardiser(Standardiser):
     exchange = Gemini
 
+    def __init__(self, symbols:list=None):
+        super().__init__()
+        self.symbols = symbols
+
+    def start_exchange(self):
+        self.exchange = self.exchange(symbols=self.symbols)
+        self.exchange_started = True
+
     async def _trade(self, message):
         msg = dict(
             symbol=self.normalise_symbol(message['symbol']),

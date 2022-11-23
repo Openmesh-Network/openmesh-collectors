@@ -1,3 +1,4 @@
+[![Build Status](https://dev.azure.com/gdafund/L3-public/_apis/build/status/GDA-Fund2.L3-Atom-Exchange-Collectors?repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)](https://dev.azure.com/gdafund/L3-public/_build/latest?definitionId=2&repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)
 # L3 Atom
 A massive open source cryptocurrency cloud data lake.
 

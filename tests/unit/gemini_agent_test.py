@@ -7,7 +7,7 @@ from l3_atom.stream_processing.standardisers import GeminiStandardiser
 
 @pytest.mark.asyncio()
 async def test_gemini_agent(mock_kafka):
-    exchange = GeminiStandardiser()
+    exchange = GeminiStandardiser(['BTC.USD', 'ETH.USD'])
     exchange.start_exchange()
     for topic in exchange.normalised_topics:
         exchange.normalised_topics[topic] = Mock()
