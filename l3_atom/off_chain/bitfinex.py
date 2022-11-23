@@ -32,8 +32,8 @@ class Bitfinex(OrderBookExchangeFeed):
     symbols_endpoint = ["https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange",
                         "https://api-pub.bitfinex.com/v2/conf/pub:list:currency", "https://api-pub.bitfinex.com/v2/conf/pub:list:pair:futures"]
 
-    def __init__(self, symbol=None):
-        super().__init__(symbol)
+    def __init__(self, symbols=None):
+        super().__init__(symbols)
         self.chan_ids = dict()
 
     def normalise_symbols(self, sym_list: list) -> dict:
