@@ -22,11 +22,11 @@ class Standardiser:
 
     def __init__(self) -> None:
         self.id = self.exchange.name
-        self.raw_topic = f'raw'
+        self.raw_topic = 'raw'
         self.exchange_started = False
         self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
         self.normalised_topics = {
-            f"{feed}": None for feed in self.feeds
+            feed: None for feed in self.feeds
         }
 
     def start_exchange(self):

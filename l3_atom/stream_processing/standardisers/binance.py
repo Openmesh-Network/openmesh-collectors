@@ -46,7 +46,7 @@ class BinanceStandardiser(Standardiser):
             bid_price=Decimal(message['b']),
             ask_size=Decimal(message['A']),
             bid_size=Decimal(message['B']),
-            event_timestamp=message['E'] if 'E' in message else -1,
+            event_timestamp=message['E'] if 'E' in message else message['atom_timestamp'] // 1000,
             atom_timestamp=message['atom_timestamp']
         )
         await self.send_to_topic("ticker", **msg)

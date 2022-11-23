@@ -58,7 +58,7 @@ class DeribitStandardiser(Standardiser):
         funding_msg = {
             **msg,
             'funding_rate': Decimal(str(data['funding_8h'])),
-            'next_funding_time': -1,
+            'next_funding_time': None,
             'mark_price': Decimal(str(data['mark_price']))
         }
         await self.send_to_topic("funding_rate", **funding_msg)

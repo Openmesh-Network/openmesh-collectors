@@ -30,9 +30,9 @@ class KrakenStandardiser(Standardiser):
         data = message[1]
         for s, side in (('b', 'buy'), ('a', 'sell')):
             for e in data.get(s, []):
-                # Kraken has some messages with an appended "r"
+                # Kraken has some messages with an appended "r" for republished messages, which we ignore
                 if len(e) == 4:
-                    price, size, event_timestamp, _ = e
+                    continue
                 else:
                     price, size, event_timestamp = e
                 event_timestamp = int(Decimal(event_timestamp) * 1000)

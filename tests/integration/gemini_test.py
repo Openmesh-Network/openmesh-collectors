@@ -12,7 +12,7 @@ async def test_gemini_connector(teardown_async):
     ret = []
     Gemini.process_message = mock_process_message(ret)
     Gemini._init_kafka = Mock()
-    connector = Gemini()
+    connector = Gemini(symbols=['BTC.USD', 'ETH.USD'])
     loop = asyncio.get_event_loop()
     connector.start(loop)
     while len(ret) < 10:

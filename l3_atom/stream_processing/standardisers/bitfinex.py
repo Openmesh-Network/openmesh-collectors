@@ -72,10 +72,10 @@ class BitfinexStandardiser(Standardiser):
     async def _candle(self, message):
         if message[1] == 'hb':
             return
-        event_timestamp, o, c, h, l, v = message[1]
+        end, o, c, h, l, v = message[1]
         symbol = self.normalise_symbol(message[-2])
         atom_timestamp = message[-1]
-        end = event_timestamp
+        event_timestamp = atom_timestamp // 1000
         start = end - 60 * 1000
         msg = dict(
             symbol=symbol,
@@ -83,7 +83,7 @@ class BitfinexStandardiser(Standardiser):
             end=end,
             interval='1m',
             trades=-1,
-            closed=None,
+            closed=event_timestamp >= end,
             o=Decimal(str(o)),
             c=Decimal(str(c)),
             h=Decimal(str(h)),
