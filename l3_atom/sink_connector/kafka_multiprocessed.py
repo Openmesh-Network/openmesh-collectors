@@ -156,5 +156,8 @@ class KafkaConnector(Kafka):
 
 
 class AvroKafkaConnector(KafkaConnector):
+
+    def __init__(self)
+
     def serialize(self, msg: dict, feed=None):
         return super().serialize(msg, schema)

@@ -28,6 +28,8 @@ class ChainFeed(Chain, AvroDataFeed):
 
     node_conn: Union[HTTPRPC, WSRPC] = NotImplemented
     data_types: list = NotImplemented
+    # { <feed>: <Kafka Producer> }
+    kafka_backends: dict = NotImplemented
 
     def __init__(self):
         super().__init__(max_syms=None)
@@ -52,10 +54,14 @@ class ChainFeed(Chain, AvroDataFeed):
         return addr, {'headers': [self._get_auth_header(username='', password=self.node_conf['node_password'])]}
 
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
-        logging.info('%s: Starting Kafka connector', self.name)
-        self.kafka_connector = KafkaConnector(self.__class__)
-        self.kafka_connector.create_chain_topics(self.data_types, self.name)
-        self.kafka_connector.start(loop)
+        logging.info('%s: Starting Kafka connectors', self.name)
+        for feed in self.data_types:
+            logging.info('%s: Starting Kafka connector for %s', self.name, feed)
+            self.kafka_backends[feed] = KafkaConnector(
+                self.name, feed, loop)
+        self.kafka_backends.values()[0].create_chain_topics(self.data_types, self.name)
+        for backend in self.kafka_backends.values():
+            backend.start(loop)
 
     def start(self, loop: asyncio.AbstractEventLoop):
         """
