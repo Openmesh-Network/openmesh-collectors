@@ -1,4 +1,4 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
@@ -11,7 +11,7 @@ OB_CHECKSUM = 131072
 BULK_UPDATES = 536870912
 
 
-class Bitfinex(OrderBookExchangeFeed):
+class Bitfinex(DataFeed):
     name = "bitfinex"
 
     # Bitfinex sends arrays, so we provide an index instead of a key

@@ -8,6 +8,9 @@ from l3_atom.helpers.read_config import get_kafka_config
 import ssl
 import uuid
 import logging
+from io import BytesIO
+from fastavro import writer
+from struct import pack
 
 ssl_ctx = ssl.create_default_context()
 
@@ -34,7 +37,10 @@ class Kafka(SinkMessageHandler):
         self.kafka_producer = None
         self.admin_client = None
         self.schema_client = None
-        self.topic = f"raw"
+        self.topic = "raw"
+
+        # { <feed>: (<schema>, <schema id in registry>) }
+        self.schema_map: dict = {}
 
 
 class KafkaConnector(Kafka):
@@ -48,8 +54,13 @@ class KafkaConnector(Kafka):
                 for message in messages:
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
-                    await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key if key else None)
+                    msg = self.serialize(msg)
+                    await self.kafka_producer.send(self.topic, msg, key=key if key else None)
         await self.kafka_producer.stop()
+
+    def serialize(self, msg: dict):
+        """Preprocess message before sending to Kafka"""
+        return json.dumps(msg).encode()
 
     async def _producer_init(self):
         """Initializes the Kafka producer"""
@@ -90,9 +101,9 @@ class KafkaConnector(Kafka):
                 "url": self.schema_url
             })
 
-    def create_exchange_topics(self, feeds: list):
+    def create_exchange_topics(self, feeds: list, prefix=None, include_raw=True):
         """
-        Creates the topics and populates the schemas for the exchange's feeds
+        Creates the topics and populates the schemas for the exchange's feeds. Also stores those schemas in memory.
 
         :param feeds: The feeds to create topics for
         :type feeds: list[str]
@@ -103,10 +114,14 @@ class KafkaConnector(Kafka):
             self._schema_init()
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
-        if "raw" not in topic_metadata.topics:
-            topics.append(NewTopic("raw", 100, 3))
+        if include_raw and "raw" not in topic_metadata.topics:
+            topics.append(NewTopic(f"{prefix}raw", 100, 3))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
+            feed = prefix + feed if prefix else feed
+            feed_schema = self.schema_client.get_latest_version(
+                feed)
+            self.schema_map[feed] = feed_schema
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
@@ -117,15 +132,13 @@ class KafkaConnector(Kafka):
             if f'{feed}-value' in schemas:
                 logging.info(
                     f"{self.exchange}: Schema for {feed} already exists")
-            elif feed == 'raw':
+            elif feed.endswith('raw'):
                 logging.info(
                     f"{self.exchange}: Schema for {feed} is not required")
             else:
                 logging.info(f"{self.exchange}: Creating schema for {feed}")
-                feed_schema = self.schema_client.get_latest_version(
-                    feed).schema
                 self.schema_client.register_schema(
-                    f'{feed}-value', feed_schema)
+                    f'{feed}-value', feed_schema.schema)
 
         if topics:
             futures = self.admin_client.create_topics(topics)
@@ -136,3 +149,12 @@ class KafkaConnector(Kafka):
                 except Exception as e:
                     logging.error(
                         f"{self.exchange}: Failed to create topic {topic}: {e}")
+
+    def create_chain_topics(self, feeds, name):
+        self.create_exchange_topics(
+            feeds, prefix=f"{name}_", include_raw=False)
+
+
+class AvroKafkaConnector(KafkaConnector):
+    def serialize(self, msg: dict, feed=None):
+        return super().serialize(msg, schema)

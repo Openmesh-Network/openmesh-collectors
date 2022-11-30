@@ -5,7 +5,7 @@ from multiprocessing import Pipe
 
 import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 
 
 class MockTopics:
@@ -20,7 +20,7 @@ def new_config():
     }
 
 
-class MockExchange(OrderBookExchangeFeed):
+class MockExchange(DataFeed):
     name = 'test'
     sym_field = 0
     type_field = 0

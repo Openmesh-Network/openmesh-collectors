@@ -16,7 +16,7 @@ import logging
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 
-class OrderBookExchange:
+class DataSource:
     """
     Class to manage methods dealing with an individual exchange. Stores metadata relating to symbols, endpoints, channels, e.t.c.
 
@@ -57,7 +57,8 @@ class OrderBookExchange:
         for sym in selected_syms:
             logging.info(f"{self.name} - using symbol {sym}")
         self.symbols = self.normalise_symbols(sym_list)
-        self.inv_symbols = {v: k for k, v in self.symbols.items()}
+        if self.symbols:
+            self.inv_symbols = {v: k for k, v in self.symbols.items()}
         if selected_syms:
             self.filter_symbols(self.symbols, selected_syms)
 
@@ -200,9 +201,9 @@ class OrderBookExchange:
             return key
 
 
-class OrderBookExchangeFeed(OrderBookExchange):
+class DataFeed(DataSource):
     """
-    Class to handle the connection to the exchange.
+    Class to handle the connection to a exchange.
 
     :param retries: Number of times to retry connecting to the exchange
     :type retries: int, optional
@@ -214,7 +215,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
     :type delay: int, optional
     """
 
-    def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0):
+    def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0, max_syms=10):
         super().__init__(symbols=symbols)
         self.connection_handlers = []
         self.retries = retries
@@ -224,6 +225,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
         self.kafka_connector = None
         self.num_messages = 0
         self.tot_latency = 0
+        self.max_syms = max_syms
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols: list):
         """
@@ -283,7 +285,6 @@ class OrderBookExchangeFeed(OrderBookExchange):
         :type loop: asyncio.AbstractEventLoop
         """
         symbols = []
-        max_syms = 10
         self._init_kafka(loop)
         rest_connections = self._init_rest()
         for connection in rest_connections:
@@ -297,7 +298,7 @@ class OrderBookExchangeFeed(OrderBookExchange):
                 if not url:
                     continue
                 symbols.append(symbol)
-                if len(symbols) == max_syms:
+                if self.max_syms and len(symbols) == self.max_syms:
                     connection = WSConnection(
                         self.name, url, authentication=None, symbols=symbols, **endpoint.options)
                     self.connection_handlers.append(AsyncConnectionManager(
@@ -328,3 +329,24 @@ class OrderBookExchangeFeed(OrderBookExchange):
             tasks.append(handler.conn.close())
             handler.running = False
         await asyncio.gather(*tasks)
+
+class AvroDataFeed(DataFeed):
+    @classmethod
+    def serialize(cls, message: dict, schema_map: dict) -> bytes:
+        """
+        Serializes the provided message using the provided schema map
+
+        {
+            <feed>: <schema>,
+            ...
+        }
+
+        :param message: Message to serialize
+        :type message: dict
+        :param schema_map: Schema to use for serialization
+        :type schema_map: dict
+        :return: Serialized message
+        :rtype: bytes
+        """
+        schema = schema_map[cls.get_key(message)]
+        return schema.serialize(message)

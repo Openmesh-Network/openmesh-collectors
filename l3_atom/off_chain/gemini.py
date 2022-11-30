@@ -1,4 +1,4 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from l3_atom.helpers.read_config import get_conf_symbols
@@ -6,7 +6,8 @@ from yapic import json
 import requests
 import logging
 
-class Gemini(OrderBookExchangeFeed):
+
+class Gemini(DataFeed):
     name = "gemini"
     sym_field = 'symbol'
     type_field = 'type'
@@ -22,7 +23,6 @@ class Gemini(OrderBookExchangeFeed):
 
     symbols_endpoint = "https://api.gemini.com/v1/symbols"
     symbols_info_endpoint = "https://api.gemini.com/v1/symbols/details/{}"
-
 
     def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0):
         selected_syms = symbols if symbols else []

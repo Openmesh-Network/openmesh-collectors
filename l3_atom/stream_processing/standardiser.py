@@ -1,5 +1,5 @@
 from typing import AsyncIterable
-from l3_atom.orderbook_exchange import OrderBookExchange
+from l3_atom.data_source import DataSource
 from l3_atom.stream_processing.records import record_mapping
 
 
@@ -17,14 +17,15 @@ class Standardiser:
     :type feed_to_record: dict
     """
     raw_topic: str = NotImplemented
-    exchange: OrderBookExchange = NotImplemented
+    exchange: DataSource = NotImplemented
     feed_to_record: dict = record_mapping
 
     def __init__(self) -> None:
         self.id = self.exchange.name
         self.raw_topic = 'raw'
         self.exchange_started = False
-        self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
+        self.feeds = [*self.exchange.ws_channels.keys(), *
+                      self.exchange.rest_channels.keys()]
         self.normalised_topics = {
             feed: None for feed in self.feeds
         }
