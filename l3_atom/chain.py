@@ -43,15 +43,15 @@ class ChainFeed(Chain, AvroDataFeed):
         }
 
     def _init_node_conn(self, http_node_url=None, node_secret=None, **kwargs):
-        self.node_conn = HTTPRPC(http_node_url, node_secret)
+        self.node_conn = HTTPRPC(http_node_url, auth_secret=node_secret)
 
     def _get_auth_header(self, username, password):
         assert ':' not in username
         auth = base64.b64encode(f'{username}:{password}'.encode()).decode()
         return ('Authorization', f'Basic {auth}')
 
-    def auth_ws(self, addr, options):
-        return addr, {'headers': [self._get_auth_header(username='', password=self.node_conf['node_password'])]}
+    async def auth_ws(self, addr, options):
+        return addr, {'extra_headers': [self._get_auth_header(username='', password=self.node_conf['node_secret'])]}
 
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
         logging.info('%s: Starting Kafka connectors', self.name)
@@ -77,7 +77,7 @@ class ChainFeed(Chain, AvroDataFeed):
                 connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
         for (endpoint, channels) in self.rpc_endpoints.items():
             connection = WSRPC(
-                self.name, endpoint, authentication=self.auth_ws)
+                self.name, addr=endpoint, authentication=self.auth_ws)
             self.connection_handlers.append(AsyncConnectionManager(
                 connection, self.subscribe, self.process_message, None, channels, self.retries, self.interval, self.timeout, self.delay))
 

@@ -52,8 +52,9 @@ class AsyncFeed(Feed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, authentication: Awaitable = None, symbols: list = None):
+    def __init__(self, id: str, addr: str = None, authentication: Awaitable = None, symbols: list = None, **kwargs):
         self.id = id
+        self.addr = addr
         self.received_messages: int = 0
         self.sent_messages: int = 0
         self.start_time = None
@@ -124,10 +125,8 @@ class HTTPConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, addr: str, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, authentication: Awaitable = None, symbols: list = None):
-        super().__init__(f'http:{id}',
-                         authentication=authentication, symbols=symbols)
-        self.addr = addr
+    def __init__(self, id: str, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, **kwargs):
+        super().__init__(f'http:{id}', **kwargs)
         self.poll_frequency = poll_frequency
         self.retry = retry
         self.rate_limit_retry = rate_limit_retry
@@ -201,9 +200,8 @@ class WSConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, addr: str, authentication: Awaitable = None, symbols: list = None, **kwargs):
-        super().__init__(f'ws:{id}',
-                         authentication=authentication, symbols=symbols)
+    def __init__(self, id: str, addr: str, **kwargs):
+        super().__init__(f'ws:{id}', **kwargs)
         self.addr = addr
         self.options = kwargs
 
@@ -251,12 +249,8 @@ class RPC(AsyncFeed):
     """
     Handles connection to a remote procedure call (RPC) server.
     """
-    def __init__(self, id: str, addr: str, retry: int = 5, rate_limit_retry: int = 60, authentication: Awaitable = None, auth_secret: str = None):
-        super().__init__(f'rpc:{id}', authentication)
-        self.addr = addr
-        self.retry = retry
-        self.rate_limit_retry = rate_limit_retry
-        self.auth_secret = auth_secret
+    def __init__(self, id: str, **kwargs):
+        super().__init__(f'rpc:{id}', **kwargs)
 
     async def make_call(self, method, params):
         """
@@ -283,9 +277,9 @@ class HTTPRPC(RPC, HTTPConnection):
     Handles JSON RPC calls over HTTP. Mainly used in connecting to blockchain nodes.
     """
 
-    def __init__(self, id: str, addr: str, retry: int = 5, rate_limit_retry: int = 60, authentication: Awaitable = None, auth_secret: str = None):
-        super().__init__(id, addr, retry, rate_limit_retry,
-                     authentication, auth_secret)
+    def __init__(self, *args, auth_secret: str = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.auth_secret = auth_secret
 
     async def _send_payload(self, payload):
         """
@@ -322,8 +316,9 @@ class WSRPC(RPC, WSConnection):
     Handles JSON RPC calls over Websockets. Mainly used in connecting to blockchain nodes.
     """
 
-    def __init__(self, id: str, addr: str, authentication: Awaitable = None):
-        super().__init__(id, addr, authentication)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        print(self.authentication)
 
     async def _send_payload(self, payload):
         """

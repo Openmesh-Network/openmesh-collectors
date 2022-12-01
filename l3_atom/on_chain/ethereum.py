@@ -24,37 +24,45 @@ class Ethereum(ChainFeed):
     data_types = ['blocks', 'transactions', 'logs', 'token_transfers']
 
     async def subscribe(self, conn, feeds, symbols):
-        self.block_sub_id = await conn.make_call('eth_subscribe', ['newHeads'])['result']
-        self.logs_sub_id = await conn.make_call('eth_subscribe', ['logs', {'topics': []}])['result']
+        blocks_res = await conn.make_call('eth_subscribe', ['newHeads'])
+        self.block_sub_id = blocks_res['result']
+        logging.info(f"Subscribed to newHeads with id {self.block_sub_id}")
+        logs_res = await conn.make_call('eth_subscribe', ['logs', {'topics': []}])
+        self.log_sub_id = logs_res['result']
+        logging.info(f"Subscribed to logs with id {self.log_sub_id}")
 
     # TODO: Implement this with the Avro Kafka Connector
     @classmethod
     def serialize(cls, msg, schema_map):
         pass
 
-    def get_transactions_by_block(self, conn: RPC, block_number: int):
-        res = conn.make_call('eth_getBlockByNumber', [hex(block_number), True])
+    async def get_transactions_by_block(self, conn: RPC, block_number: int):
+        res = await conn.make_call('eth_getBlockByNumber', [hex(block_number), True])
+        print(res)
         return res['result']['transactions']
 
     # TODO: Implement these to send data to Kafka after preprocessing
     async def _transactions(self, conn: RPC, transactions: list):
-        pass
+        logging.info(f"Received {len(transactions)} transactions")
+        print(transactions[0])
 
     async def _log(self, conn: RPC, log: dict):
-        pass
+        logging.info(f"Received log")
 
     async def _block(self, conn: RPC, block: dict):
-        pass
+        logging.info(f"Received block")
 
     async def _token_transfer(self, conn: RPC, transfer: dict):
-        pass
+        logging.info(f"Received token transfer")
+        print(transfer)
 
     async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         msg = json.loads(message)
         data = msg['params']
+        print(data['subscription'])
         if data['subscription'] == self.block_sub_id:
             block_number = int(data['result']['number'], 16)
-            transactions = self.get_transactions_by_block(conn, block_number)
+            transactions = await self.get_transactions_by_block(conn, block_number)
             await self._transactions(conn, transactions)
         else:
             await self._log(conn, data['result'])
