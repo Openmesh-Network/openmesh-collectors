@@ -329,24 +329,3 @@ class DataFeed(DataSource):
             tasks.append(handler.conn.close())
             handler.running = False
         await asyncio.gather(*tasks)
-
-class AvroDataFeed(DataFeed):
-    @classmethod
-    def serialize(cls, message: dict, schema_map: dict) -> bytes:
-        """
-        Serializes the provided message using the provided schema map
-
-        {
-            <feed>: <schema>,
-            ...
-        }
-
-        :param message: Message to serialize
-        :type message: dict
-        :param schema_map: Schema to use for serialization
-        :type schema_map: dict
-        :return: Serialized message
-        :rtype: bytes
-        """
-        schema = schema_map[cls.get_key(message)]
-        return schema.serialize(message)

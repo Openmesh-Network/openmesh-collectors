@@ -9,11 +9,12 @@ import ssl
 import uuid
 import logging
 from io import BytesIO
-from fastavro import writer
+from fastavro import schemaless_writer
 from struct import pack
 
 ssl_ctx = ssl.create_default_context()
 
+CONFLUENT_MAGIC_BYTE = 0
 
 class Kafka(SinkMessageHandler):
     """
@@ -157,6 +158,10 @@ class KafkaConnector(Kafka):
 
 class AvroKafkaConnector(KafkaConnector):
 
+    def serialize(self, msg: dict):
+        msg_schema, schema_id = self.schema_map[msg['feed']]
+        res = BytesIO()
+        res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, schema_id))
+        schemaless_writer(res, msg_schema, msg)
+        return res.getvalue()
 
-    def serialize(self, msg: dict, feed=None):
-        return super().serialize(msg, schema)

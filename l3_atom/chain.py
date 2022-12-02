@@ -26,7 +26,7 @@ class Chain:
 
 class ChainFeed(Chain, AvroDataFeed):
 
-    node_conn: Union[HTTPRPC, WSRPC] = NotImplemented
+    http_node_conn: Union[HTTPRPC, WSRPC] = NotImplemented
     data_types: list = NotImplemented
     # { <feed>: <Kafka Producer> }
     kafka_backends: dict = NotImplemented
@@ -34,16 +34,16 @@ class ChainFeed(Chain, AvroDataFeed):
     def __init__(self):
         super().__init__(max_syms=None)
         self.node_conf = self.load_node_conf()
-        self._init_node_conn(**self.node_conf)
+        self._init_http_node_conn(**self.node_conf)
 
-        self.rpc_endpoints = {
+        self.ws_rpc_endpoints = {
             self.node_conf['node_ws_url']: [
                 self.name
             ]
         }
 
-    def _init_node_conn(self, http_node_url=None, node_secret=None, **kwargs):
-        self.node_conn = HTTPRPC(http_node_url, auth_secret=node_secret)
+    def _init_http_node_conn(self, node_http_url=None, node_secret=None, **kwargs):
+        self.http_node_conn = HTTPRPC(self.name, addr=node_http_url, auth_secret=node_secret)
 
     def _get_auth_header(self, username, password):
         assert ':' not in username
@@ -56,10 +56,12 @@ class ChainFeed(Chain, AvroDataFeed):
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
         logging.info('%s: Starting Kafka connectors', self.name)
         for feed in self.data_types:
-            logging.info('%s: Starting Kafka connector for %s', self.name, feed)
+            logging.info('%s: Starting Kafka connector for %s',
+                         self.name, feed)
             self.kafka_backends[feed] = KafkaConnector(
                 self.name, feed, loop)
-        self.kafka_backends.values()[0].create_chain_topics(self.data_types, self.name)
+        self.kafka_backends.values()[0].create_chain_topics(
+            self.data_types, self.name)
         for backend in self.kafka_backends.values():
             backend.start(loop)
 
@@ -75,7 +77,7 @@ class ChainFeed(Chain, AvroDataFeed):
         for connection in rest_connections:
             self.connection_handlers.append(AsyncConnectionManager(
                 connection, None, self.process_message, None, None, self.retries, self.interval, self.timeout, self.delay))
-        for (endpoint, channels) in self.rpc_endpoints.items():
+        for (endpoint, channels) in self.ws_rpc_endpoints.items():
             connection = WSRPC(
                 self.name, addr=endpoint, authentication=self.auth_ws)
             self.connection_handlers.append(AsyncConnectionManager(

@@ -14,12 +14,6 @@ from websockets.exceptions import InvalidStatusCode
 from l3_atom.exceptions import TooManyRetries
 from yapic import json
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-    datefmt="%d/%b/%Y %H:%M:%S",
-    stream=sys.stdout)
-
 
 class Feed(object):
     """
@@ -292,6 +286,7 @@ class HTTPRPC(RPC, HTTPConnection):
         """
         if not self.is_open:
             await self._open()
+        auth = None
         if self.auth_secret:
             auth = aiohttp.BasicAuth('', self.auth_secret)
         for _ in range(self.retry):
@@ -315,10 +310,6 @@ class WSRPC(RPC, WSConnection):
     """
     Handles JSON RPC calls over Websockets. Mainly used in connecting to blockchain nodes.
     """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print(self.authentication)
 
     async def _send_payload(self, payload):
         """
@@ -417,6 +408,7 @@ class AsyncConnectionManager:
                             '%s: Terminating the connection callback as manager is not running', self.conn.id)
                         await self.conn.close()
                         return
+                    logging.debug('%s: received %r', self.conn.id, data)
                     await self.callback(data, self.conn, self.conn.last_received_time)
             except InvalidStatusCode as e:
                 code = e.status_code
