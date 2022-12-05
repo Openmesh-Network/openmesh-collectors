@@ -17,12 +17,17 @@ from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection, HTTPRP
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
 
 import logging
-from decimal import Decimal
+from decimal import Decimal, getcontext
 
 TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 
+getcontext().prec = 38
+
 # Handles the conversions between hex digits and their decimal equivalents automatically
+@dataclasses.dataclass
 class EthereumObject:
+    atomTimestamp: int
+
     def __post_init__(self):
         for field in dataclasses.fields(self):
             value = getattr(self, field.name)
@@ -30,6 +35,10 @@ class EthereumObject:
                 setattr(self, field.name, int(value, 16))
             if field.type is Decimal and isinstance(value, str):
                 setattr(self, field.name, Decimal(int(value, 16)))
+            if field.type is Decimal and isinstance(value, (float, int)):
+                setattr(self, field.name, Decimal(value))
+            if field.type is str and isinstance(value, int):
+                setattr(self, field.name, hex(value))
 
     def to_dict(self):
         return dataclasses.asdict(self)
@@ -39,7 +48,6 @@ class EthereumObject:
 
 @dataclasses.dataclass
 class EthereumBlock(EthereumObject):
-    feed = 'ethereum_blocks'
     baseFeePerGas: int
     number: int
     hash: str
@@ -51,16 +59,16 @@ class EthereumBlock(EthereumObject):
     stateRoot: str
     receiptsRoot: str
     miner: str
-    difficulty: Decimal
+    difficulty: int
+    totalDifficulty: Decimal
     extraData: str
     size: int
-    gasLimit: int
-    gasUsed: int
+    gasLimit: Decimal
+    gasUsed: Decimal
     timestamp: int
 
 @dataclasses.dataclass
 class EthereumTransaction(EthereumObject):
-    feed = 'ethereum_transactions'
     blockTimestamp: int
     hash: str
     nonce: str
@@ -73,13 +81,12 @@ class EthereumTransaction(EthereumObject):
     gas: int
     gasPrice: int
     input: str
-    maxFeePerGas: int
-    maxPriorityFeePerGas: int
-    type: int
+    type: str
+    maxFeePerGas: int = None
+    maxPriorityFeePerGas: int = None
 
 @dataclasses.dataclass
 class EthereumLog(EthereumObject):
-    feed = 'ethereum_logs'
     blockTimestamp: int
     blockNumber: int
     blockHash: str
@@ -89,17 +96,17 @@ class EthereumLog(EthereumObject):
     address: str
     data: str
     topic0: str
-    topic1: str
-    topic2: str
-    topic3: str
+    topic1: str = None
+    topic2: str = None
+    topic3: str = None
 
 @dataclasses.dataclass
 class EthereumTransfer(EthereumObject):
-    feed = 'ethereum_token_transfers'
     blockTimestamp: int
     blockNumber: int
     blockHash: str
     transactionHash: str
+    transactionIndex: int
     logIndex: int
     fromAddr: str
     toAddr: str
@@ -108,7 +115,30 @@ class EthereumTransfer(EthereumObject):
 
 class Ethereum(ChainFeed):
     name = "ethereum"
-    data_types = ['blocks', 'transactions', 'logs', 'token_transfers']
+    chain_objects = {
+        'blocks': EthereumBlock,
+        'transactions': EthereumTransaction,
+        'logs': EthereumLog,
+        'token_transfers': EthereumTransfer
+    }
+
+    type_map = {
+        '0x0': 'Legacy',
+        '0x1': 'EIP-2930',
+        '0x2': 'EIP-1559'
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_block_num = 0
+        self.last_block_hash = None
+        self.last_block_time = 0
+
+    @classmethod
+    def get_key(cls, msg: dict):
+        if 'topic0' in msg:
+            return f"{msg['topic0']};{msg['address']}".encode()
+        return None
 
     async def subscribe(self, conn, feeds, symbols):
         blocks_res = await conn.make_call('eth_subscribe', ['newHeads'])
@@ -116,16 +146,6 @@ class Ethereum(ChainFeed):
             "%s: Attempting to subscribe to newHeads with result %s", self.name, blocks_res)
         self.block_sub_id = blocks_res['result']
         logging.info(f"Subscribed to newHeads with id {self.block_sub_id}")
-        logs_res = await conn.make_call('eth_subscribe', ['logs', {'topics': []}])
-        logging.debug(
-            "%s: Attempting to subscribe to logs with result %s", self.name, logs_res)
-        self.log_sub_id = logs_res['result']
-        logging.info(f"Subscribed to logs with id {self.log_sub_id}")
-
-    # TODO: Implement this with the Avro Kafka Connector
-    @classmethod
-    def serialize(cls, msg, schema_map):
-        pass
 
     def hex_to_int(self, hex_str: str):
         return int(hex_str, 16)
@@ -144,28 +164,84 @@ class Ethereum(ChainFeed):
             res = await conn.make_call('eth_getBlockByNumber', [block_number, True])
         return res['result']
 
+    async def get_logs_by_block_number(self, conn: RPC, block_number: str):
+        res = await conn.make_call('eth_getLogs', [{
+            'fromBlock': block_number,
+            'toBlock': block_number
+        }])
+        while 'result' not in res:
+            await asyncio.sleep(1)
+            res = await conn.make_call('eth_getLogs', [{
+                'fromBlock': block_number,
+                'toBlock': block_number
+            }])
+        return res['result']
+
     # TODO: Implement these to send data to Kafka after preprocessing
-    async def _transactions(self, conn: RPC, transactions: list):
-        logging.debug(f"Received {len(transactions)} transactions")
+    async def _transactions(self, conn: RPC, transactions: list, ts: int):
+        for transaction in transactions:
+            del transaction['v']
+            del transaction['r']
+            del transaction['s']
+            transaction.pop('chainId', None)
+            transaction.pop('accessList', None)
+            transaction['fromAddr'] = transaction.pop('from')
+            transaction['toAddr'] = transaction.pop('to')
+            transaction['type'] = self.type_map[transaction['type']]
+            transaction_obj = EthereumTransaction(**transaction, blockTimestamp=self.last_block_time, atomTimestamp=ts)
+            logging.debug(f"Received transaction {transaction_obj.hash}")
+            await self.kafka_backends['transactions'].write(transaction_obj.to_json_string())
 
-    async def _log(self, conn: RPC, log: dict):
+    async def _log(self, conn: RPC, log: dict, ts: int):
         logging.debug(f"Received log")
+        del log['removed']
+        topics = {f'topic{i}': topic for i, topic in enumerate(log['topics'])}
+        del log['topics']
+        log_obj = EthereumLog(**log, **topics, blockTimestamp=self.last_block_time, atomTimestamp=ts)
+        await self.kafka_backends['logs'].write(log_obj.to_json_string())
 
-    async def _block(self, conn: RPC, block: dict):
-        print("-----------------\n\n")
-        logging.debug(f"Received block")
-        print("\n\n-----------------")
+    async def _block(self, conn: RPC, block: dict, ts: int):
+        logging.debug("-----------------\n\n\nReceived block\n\n\n-----------------")
         del block['mixHash']
         del block['transactions']
-        del block['totalDifficulty']
         del block['uncles']
-        print(block)
-        blockObj = EthereumBlock(**block)
-        print(blockObj)
+        block['timestamp'] = self.hex_to_int(block['timestamp']) * 1000
+        block_obj = EthereumBlock(**block, atomTimestamp=ts)
+        self.last_block_hash = block_obj.hash
+        self.last_block_num = block_obj.number
+        self.last_block_time = block_obj.timestamp
+        await self.kafka_backends['blocks'].write(block_obj.to_json_string())
 
+    def _word_to_addr(self, word: str):
+        if len(word) > 40:
+            return word[-40:]
+        return word
 
-    async def _token_transfer(self, conn: RPC, transfer: dict):
+    async def _token_transfer(self, conn: RPC, transfer: dict, ts: int):
         logging.debug(f"Received token transfer")
+        topics = transfer['topics']
+        from_addr = self._word_to_addr(topics[1])
+        to_addr = self._word_to_addr(topics[2])
+        value = transfer['data'][:66]
+        # Could be another Transfer event other than the standard ERC20 method. value is expected to be a 256 bit unsigned integer
+        # https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol#L113
+        if len(value) < 66:
+            return
+        msg = dict(
+            tokenAddr = transfer['address'],
+            transactionHash = transfer['transactionHash'],
+            transactionIndex = transfer['transactionIndex'],
+            blockNumber = transfer['blockNumber'],
+            logIndex = transfer['logIndex'],
+            blockHash = transfer['blockHash'],
+            blockTimestamp = self.last_block_time,
+            fromAddr = from_addr,
+            toAddr = to_addr,
+            value = value,
+            atomTimestamp = ts
+        )
+        transferObj = EthereumTransfer(**msg)
+        await self.kafka_backends['token_transfers'].write(transferObj.to_json_string())
 
     async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         msg = json.loads(message)
@@ -173,10 +249,13 @@ class Ethereum(ChainFeed):
         if data['subscription'] == self.block_sub_id:
             block_number = data['result']['number']
             block = await self.get_block_by_number(self.http_node_conn, block_number)
-            await self._block(conn, block)
-            await self._transactions(conn, block['transactions'])
+            await self._block(conn, block.copy(), timestamp)
+            await self._transactions(conn, block['transactions'], timestamp)
+            logs = await self.get_logs_by_block_number(self.http_node_conn, block_number)
+            for log in logs:
+                topics = log['topics']
+                await self._log(conn, log.copy(), timestamp)
+                if topics[0].casefold() == TRANSFER_TOPIC:
+                    await self._token_transfer(conn, log, timestamp)
         else:
-            await self._log(conn, data['result'])
-            topics = data['result']['topics']
-            if topics[0].casefold() == TRANSFER_TOPIC:
-                await self._token_transfer(conn, data['result'])
+            logging.warning(f"Received unknown message {msg}")

@@ -194,8 +194,8 @@ class WSConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, addr: str, **kwargs):
-        super().__init__(f'ws:{id}', **kwargs)
+    def __init__(self, id: str, addr: str, authentication=None, symbols=None, **kwargs):
+        super().__init__(f'ws:{id}', authentication=authentication, symbols=symbols, **kwargs)
         self.addr = addr
         self.options = kwargs
 

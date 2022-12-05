@@ -16,13 +16,12 @@ class Standardiser:
     :param feed_to_record: Mapping of feed to record class
     :type feed_to_record: dict
     """
-    raw_topic: str = NotImplemented
+    raw_topic: str = 'raw'
     exchange: DataSource = NotImplemented
     feed_to_record: dict = record_mapping
 
     def __init__(self) -> None:
         self.id = self.exchange.name
-        self.raw_topic = 'raw'
         self.exchange_started = False
         self.feeds = [*self.exchange.ws_channels.keys(), *
                       self.exchange.rest_channels.keys()]
@@ -62,3 +61,4 @@ class Standardiser:
         :type msg: dict
         """
         raise NotImplementedError
+

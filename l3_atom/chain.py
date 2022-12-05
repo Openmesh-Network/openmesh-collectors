@@ -8,11 +8,11 @@ import requests
 import uvloop
 from yapic import json
 import web3
-from l3_atom.data_source import AvroDataFeed
+from l3_atom.data_source import DataFeed
 import base64
 
 from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection, HTTPRPC, WSRPC
-from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
+from l3_atom.sink_connector.kafka_multiprocessed import AvroKafkaConnector
 
 import logging
 
@@ -24,10 +24,11 @@ class Chain:
         return {k.split('_', maxsplit=1)[1].lower(): v for k, v in secrets.items() if k.startswith(self.name.upper())}
 
 
-class ChainFeed(Chain, AvroDataFeed):
+class ChainFeed(Chain, DataFeed):
 
     http_node_conn: Union[HTTPRPC, WSRPC] = NotImplemented
-    data_types: list = NotImplemented
+    # { <feed>: <feed object>}
+    chain_objects: dict = NotImplemented
     # { <feed>: <Kafka Producer> }
     kafka_backends: dict = NotImplemented
 
@@ -35,6 +36,7 @@ class ChainFeed(Chain, AvroDataFeed):
         super().__init__(max_syms=None)
         self.node_conf = self.load_node_conf()
         self._init_http_node_conn(**self.node_conf)
+        self.kafka_backends = {}
 
         self.ws_rpc_endpoints = {
             self.node_conf['node_ws_url']: [
@@ -55,13 +57,13 @@ class ChainFeed(Chain, AvroDataFeed):
 
     def _init_kafka(self, loop: asyncio.AbstractEventLoop):
         logging.info('%s: Starting Kafka connectors', self.name)
-        for feed in self.data_types:
+        for feed, feed_obj in self.chain_objects.items():
             logging.info('%s: Starting Kafka connector for %s',
                          self.name, feed)
-            self.kafka_backends[feed] = KafkaConnector(
-                self.name, feed, loop)
-        self.kafka_backends.values()[0].create_chain_topics(
-            self.data_types, self.name)
+            self.kafka_backends[feed] = AvroKafkaConnector(
+                self, topic=f"{self.name}_{feed}", record=feed_obj)
+        list(self.kafka_backends.values())[0].create_chain_topics(
+            self.chain_objects, self.name)
         for backend in self.kafka_backends.values():
             backend.start(loop)
 
@@ -72,7 +74,7 @@ class ChainFeed(Chain, AvroDataFeed):
         :param loop: Event loop to run the connection on
         :type loop: asyncio.AbstractEventLoop
         """
-        # self._init_kafka(loop)
+        self._init_kafka(loop)
         rest_connections = self._init_rest()
         for connection in rest_connections:
             self.connection_handlers.append(AsyncConnectionManager(

@@ -9,7 +9,7 @@ import ssl
 import uuid
 import logging
 from io import BytesIO
-from fastavro import schemaless_writer
+from fastavro import schemaless_writer, parse_schema
 from struct import pack
 
 ssl_ctx = ssl.create_default_context()
@@ -26,8 +26,8 @@ class Kafka(SinkMessageHandler):
     :type key_field: str
     """
 
-    def __init__(self, exchange):
-        super().__init__(exchange)
+    def __init__(self, *args, topic="raw", **kwargs):
+        super().__init__(*args, **kwargs)
         conf = get_kafka_config()
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
         self.sasl_username = conf['KAFKA_SASL_KEY'] if 'KAFKA_SASL_KEY' in conf else None
@@ -38,7 +38,7 @@ class Kafka(SinkMessageHandler):
         self.kafka_producer = None
         self.admin_client = None
         self.schema_client = None
-        self.topic = "raw"
+        self.topic = topic
 
         # { <feed>: (<schema>, <schema id in registry>) }
         self.schema_map: dict = {}
@@ -46,6 +46,7 @@ class Kafka(SinkMessageHandler):
 
 class KafkaConnector(Kafka):
     """Class to handle the backend connection to Kafka"""
+
     async def producer(self):
         """Handles the production of messages to Kafka. Runs indefinitely until the termination sentinel is sent over the pipe"""
         if not self.kafka_producer:
@@ -56,7 +57,7 @@ class KafkaConnector(Kafka):
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
                     msg = self.serialize(msg)
-                    await self.kafka_producer.send(self.topic, msg, key=key if key else None)
+                    await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
         await self.kafka_producer.stop()
 
     def serialize(self, msg: dict):
@@ -122,7 +123,6 @@ class KafkaConnector(Kafka):
             feed = prefix + feed if prefix else feed
             feed_schema = self.schema_client.get_latest_version(
                 feed)
-            self.schema_map[feed] = feed_schema
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
@@ -158,10 +158,23 @@ class KafkaConnector(Kafka):
 
 class AvroKafkaConnector(KafkaConnector):
 
+    def __init__(self, *args, record=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_topic_schema()
+        self.record = record
+
+    def _init_topic_schema(self):
+        if not self.schema_client:
+            self._schema_init()
+        feed_schema = self.schema_client.get_latest_version(
+                self.topic)
+        self.topic_schema = parse_schema(json.loads(feed_schema.schema.schema_str))
+        self.topic_schema_id = feed_schema.schema_id
+        
     def serialize(self, msg: dict):
-        msg_schema, schema_id = self.schema_map[msg['feed']]
         res = BytesIO()
-        res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, schema_id))
-        schemaless_writer(res, msg_schema, msg)
+        msg_obj = self.record(**msg)
+        res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, self.topic_schema_id))
+        schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
         return res.getvalue()
 

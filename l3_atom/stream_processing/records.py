@@ -3,7 +3,7 @@ import faust
 from decimal import Decimal
 
 
-class BaseRecord(faust.Record):
+class BaseCEXRecord(faust.Record):
     """
     Base record for all other records.
 
@@ -22,7 +22,7 @@ class BaseRecord(faust.Record):
     atom_timestamp: int
 
 
-class Trade(BaseRecord, serializer='trades'):
+class Trade(BaseCEXRecord, serializer='trades'):
     """
     Record for a trade without order IDs.
 
@@ -41,7 +41,7 @@ class Trade(BaseRecord, serializer='trades'):
     trade_id: str
 
 
-class Lob(BaseRecord, serializer='lob'):
+class Lob(BaseCEXRecord, serializer='lob'):
     """
     Record for a level 2 order book update.
 
@@ -57,7 +57,7 @@ class Lob(BaseRecord, serializer='lob'):
     side: Literal['buy', 'sell']
 
 
-class Candle(BaseRecord, serializer='candle'):
+class Candle(BaseCEXRecord, serializer='candle'):
     """
     Record for a candlestick event.
 
@@ -117,7 +117,7 @@ class LobL3(Lob, serializer='lob_l3'):
     order_id: str
 
 
-class Ticker(BaseRecord, serializer='ticker'):
+class Ticker(BaseCEXRecord, serializer='ticker'):
     """
     Record for a ticker update.
 
@@ -136,7 +136,7 @@ class Ticker(BaseRecord, serializer='ticker'):
     bid_size: Decimal
 
 
-class FundingRate(BaseRecord, serializer='funding_rate'):
+class FundingRate(BaseCEXRecord, serializer='funding_rate'):
     """
     Record for a funding rate update.
 
@@ -155,13 +155,39 @@ class FundingRate(BaseRecord, serializer='funding_rate'):
     predicted_rate: Decimal = Decimal(-1)
 
 
-class OpenInterest(BaseRecord, serializer='open_interest'):
+class OpenInterest(BaseCEXRecord, serializer='open_interest'):
     """
     Record for an open interest update.
 
     :param open_interest: The open interest
     """
     open_interest: Decimal
+
+
+class BaseChainRecord(faust.Record):
+    """
+    Base record for all on-chain messages.
+    """
+    blockTimestamp: int
+    atomTimestamp: int
+
+class DexTrade(BaseChainRecord, serializer='dex_trades'):
+    """
+    Record for a DEX trade.
+    """
+
+    amountUSD: float
+    exchange: str
+    tokenBought: str
+    tokenSold: str
+    tokenBoughtAddr: str
+    tokenSoldAddr: str
+    amountBought: float
+    amountSold: float
+    txHash: str
+    logIdx: int
+    blockNumber: int
+    blockHash: str
 
 
 record_mapping = {
