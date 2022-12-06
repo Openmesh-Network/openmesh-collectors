@@ -119,8 +119,8 @@ class HTTPConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, **kwargs):
-        super().__init__(f'http:{id}', **kwargs)
+    def __init__(self, id: str, *args, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, **kwargs):
+        super().__init__(f'http:{id}', *args, **kwargs)
         self.poll_frequency = poll_frequency
         self.retry = retry
         self.rate_limit_retry = rate_limit_retry

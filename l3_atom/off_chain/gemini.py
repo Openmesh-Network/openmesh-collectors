@@ -17,7 +17,7 @@ class Gemini(DataFeed):
 
     ws_channels = {
         "lob": "l2",
-        "trades": 'l2',
+        "trades": "l2",
         "candle": "candles_1m"
     }
 
@@ -28,6 +28,7 @@ class Gemini(DataFeed):
         selected_syms = symbols if symbols else []
         for sym in selected_syms:
             logging.info(f"{self.name} - using symbol {sym}")
+        self.max_syms = None
         sym_list = self.get_symbols(selected_syms)
         self.symbols = self.normalise_symbols(sym_list)
         self.inv_symbols = {v: k for k, v in self.symbols.items()}

@@ -151,9 +151,10 @@ class KafkaConnector(Kafka):
                     logging.error(
                         f"{self.exchange}: Failed to create topic {topic}: {e}")
 
-    def create_chain_topics(self, feeds, name):
+    def create_chain_topics(self, chain_objects, event_objects, name):
         self.create_exchange_topics(
-            feeds, prefix=f"{name}_", include_raw=False)
+            chain_objects, prefix=f"{name}_", include_raw=False)
+        self.create_exchange_topics(event_objects)
 
 
 class AvroKafkaConnector(KafkaConnector):

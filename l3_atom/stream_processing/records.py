@@ -1,6 +1,7 @@
 from typing import Literal, Optional
 import faust
 from decimal import Decimal
+from l3_atom.on_chain.ethereum import EthereumLog
 
 
 class BaseCEXRecord(faust.Record):
@@ -171,6 +172,7 @@ class BaseChainRecord(faust.Record):
     blockTimestamp: int
     atomTimestamp: int
 
+
 class DexTrade(BaseChainRecord, serializer='dex_trades'):
     """
     Record for a DEX trade.
@@ -178,16 +180,25 @@ class DexTrade(BaseChainRecord, serializer='dex_trades'):
 
     amountUSD: float
     exchange: str
+    pairAddr: str
     tokenBought: str
     tokenSold: str
     tokenBoughtAddr: str
     tokenSoldAddr: str
     amountBought: float
     amountSold: float
-    txHash: str
-    logIdx: int
+    liquidity: float
+    transactionHash: str
+    logIndex: int
     blockNumber: int
     blockHash: str
+
+
+class EthereumLogRecord(EthereumLog, faust.Record, serializer='ethereum_logs'):
+    """
+    Record for an Ethereum log.
+    """
+    pass
 
 
 record_mapping = {
@@ -198,5 +209,7 @@ record_mapping = {
     'trades': Trade,
     'candle': Candle,
     'funding_rate': FundingRate,
-    'open_interest': OpenInterest
+    'open_interest': OpenInterest,
+    'ethereum_logs': EthereumLogRecord,
+    'dex_trades': DexTrade
 }

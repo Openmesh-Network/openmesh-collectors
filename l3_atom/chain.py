@@ -29,6 +29,10 @@ class ChainFeed(Chain, DataFeed):
     http_node_conn: Union[HTTPRPC, WSRPC] = NotImplemented
     # { <feed>: <feed object>}
     chain_objects: dict = NotImplemented
+
+    # List of all the feeds related to individual contract events
+    event_objects: list = NotImplemented
+
     # { <feed>: <Kafka Producer> }
     kafka_backends: dict = NotImplemented
 
@@ -63,7 +67,7 @@ class ChainFeed(Chain, DataFeed):
             self.kafka_backends[feed] = AvroKafkaConnector(
                 self, topic=f"{self.name}_{feed}", record=feed_obj)
         list(self.kafka_backends.values())[0].create_chain_topics(
-            self.chain_objects, self.name)
+            self.chain_objects, self.event_objects, self.name)
         for backend in self.kafka_backends.values():
             backend.start(loop)
 

@@ -37,7 +37,7 @@ class Standardiser:
         """Get the normalised symbol from the exchange symbol"""
         return self.exchange.get_normalised_symbol(exch_symbol).normalised
 
-    async def send_to_topic(self, feed: str, **kwargs):
+    async def send_to_topic(self, feed: str, exchange=None, key_field='symbol', **kwargs):
         """
         Given a feed and arguments, send to the correct topic
 
@@ -46,11 +46,12 @@ class Standardiser:
         :param kwargs: The arguments to use in the relevant Record
         :type kwargs: dict
         """
-        val = self.feed_to_record[feed](**kwargs, exchange=self.id)
+        source = exchange if exchange else self.id
+        val = self.feed_to_record[feed](**kwargs, exchange=source)
         val.validate()
         await self.normalised_topics[feed].send(
             value=val,
-            key=f"{self.id}_{kwargs['symbol']}"
+            key=f"{source}_{kwargs[key_field]}"
         )
 
     async def handle_message(self, msg: dict):

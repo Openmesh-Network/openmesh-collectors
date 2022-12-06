@@ -122,6 +122,8 @@ class Ethereum(ChainFeed):
         'token_transfers': EthereumTransfer
     }
 
+    event_objects = ['dex_trades']
+
     type_map = {
         '0x0': 'Legacy',
         '0x1': 'EIP-2930',
