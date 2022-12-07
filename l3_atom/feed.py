@@ -413,7 +413,11 @@ class AsyncConnectionManager:
             except InvalidStatusCode as e:
                 code = e.status_code
                 if code == 429:
-                    wait = int(e.headers.get('Retry-After', -1))
+                    wait = -1
+                    try:
+                        wait = int(e.headers.get('Retry-After', -1))
+                    except:
+                        pass
                     if wait == -1:
                         wait = limited * random.uniform(0.8, 1.2) * 60
                         limited += 1

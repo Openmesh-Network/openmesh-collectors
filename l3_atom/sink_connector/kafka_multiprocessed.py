@@ -57,7 +57,11 @@ class KafkaConnector(Kafka):
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
                     msg = self.serialize(msg)
-                    await self.kafka_producer.send(self.topic, msg, key=key)
+                    # Because block messages are so infrequent, we need to ensure the request goes through by waiting
+                    if self.topic == 'ethereum_blocks':
+                        await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
+                    else:
+                        await self.kafka_producer.send(self.topic, msg, key=key)
         await self.kafka_producer.stop()
 
     def serialize(self, msg: dict):
