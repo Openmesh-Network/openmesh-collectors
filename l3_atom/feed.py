@@ -12,15 +12,10 @@ from websockets import ConnectionClosed
 from websockets.exceptions import InvalidStatusCode
 
 from l3_atom.exceptions import TooManyRetries
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-    datefmt="%d/%b/%Y %H:%M:%S",
-    stream=sys.stdout)
+from yapic import json
 
 
-class Feed:
+class Feed(object):
     """
     Parent class for all feeds.
     """
@@ -51,8 +46,9 @@ class AsyncFeed(Feed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, authentication: Awaitable = None, symbols: list = None):
+    def __init__(self, id: str, addr: str = None, authentication: Awaitable = None, symbols: list = None, **kwargs):
         self.id = id
+        self.addr = addr
         self.received_messages: int = 0
         self.sent_messages: int = 0
         self.start_time = None
@@ -123,10 +119,8 @@ class HTTPConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, addr: str, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, authentication: Awaitable = None, symbols: list = None):
-        super().__init__(f'http:{id}',
-                         authentication=authentication, symbols=symbols)
-        self.addr = addr
+    def __init__(self, id: str, *args, poll_frequency: int = 60, retry: int = 5, rate_limit_retry: int = 60, **kwargs):
+        super().__init__(f'http:{id}', *args, **kwargs)
         self.poll_frequency = poll_frequency
         self.retry = retry
         self.rate_limit_retry = rate_limit_retry
@@ -200,10 +194,9 @@ class WSConnection(AsyncFeed):
     :type symbols: list, optional
     """
 
-    def __init__(self, id: str, url: str, authentication: Awaitable = None, symbols: list = None, **kwargs):
-        super().__init__(f'ws:{id}',
-                         authentication=authentication, symbols=symbols)
-        self.url = url
+    def __init__(self, id: str, addr: str, authentication=None, symbols=None, **kwargs):
+        super().__init__(f'ws:{id}', authentication=authentication, symbols=symbols, **kwargs)
+        self.addr = addr
         self.options = kwargs
 
     async def _open(self):
@@ -213,8 +206,8 @@ class WSConnection(AsyncFeed):
         if self.is_open:
             return
         if self.authentication:
-            self.address, self.options = await self.authentication(self.address, self.options)
-        self.conn = await websockets.connect(self.url, **self.options)
+            self.addr, self.options = await self.authentication(self.addr, self.options)
+        self.conn = await websockets.connect(self.addr, **self.options)
         logging.info('%s: opened connection %r', self.id,
                      self.conn.__class__.__name__)
         self.start_time = self.get_time_us()
@@ -246,9 +239,97 @@ class WSConnection(AsyncFeed):
             yield data
 
 
+class RPC(AsyncFeed):
+    """
+    Handles connection to a remote procedure call (RPC) server.
+    """
+    def __init__(self, id: str, **kwargs):
+        super().__init__(f'rpc:{id}', **kwargs)
+
+    async def make_call(self, method, params):
+        """
+        Makes a call to the RPC server.
+
+        :param method: RPC method to call
+        :type method: str
+        :param params: parameters to pass to the RPC method
+        :type params: list
+        :return: response from the RPC server
+        :rtype: dict
+        """
+        payload = {
+            'jsonrpc': '2.0',
+            'method': method,
+            'params': params,
+            'id': 1
+        }
+        return await self._send_payload(payload)
+
+
+class HTTPRPC(RPC, HTTPConnection):
+    """
+    Handles JSON RPC calls over HTTP. Mainly used in connecting to blockchain nodes.
+    """
+
+    def __init__(self, *args, auth_secret: str = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.auth_secret = auth_secret
+
+    async def _send_payload(self, payload):
+        """
+        Sends a payload to the RPC server.
+
+        :param payload: payload to send
+        :type payload: dict
+        :return: response from the RPC server
+        :rtype: dict
+        """
+        if not self.is_open:
+            await self._open()
+        auth = None
+        if self.auth_secret:
+            auth = aiohttp.BasicAuth('', self.auth_secret)
+        for _ in range(self.retry):
+            try:
+                async with self.conn.post(self.addr, json=payload, auth=auth) as resp:
+                    if resp.status == 429:
+                        logging.warning(
+                            '%s: rate limit exceeded, retrying in %d seconds', self.id, self.rate_limit_retry)
+                        await asyncio.sleep(self.rate_limit_retry)
+                        continue
+                    resp.raise_for_status()
+                    return await resp.json()
+            except aiohttp.ClientError as e:
+                logging.error('%s: error sending payload %r: %r',
+                              self.id, payload, e)
+                await asyncio.sleep(1)
+        raise TooManyRetries(f'{self.id}: too many retries')
+
+
+class WSRPC(RPC, WSConnection):
+    """
+    Handles JSON RPC calls over Websockets. Mainly used in connecting to blockchain nodes.
+    """
+
+    async def _send_payload(self, payload):
+        """
+        Sends a payload to the RPC server and waits for a response.
+
+        :param payload: payload to send
+        :type payload: dict
+        :return: response from the RPC server
+        :rtype: dict
+        """
+        if not self.is_open:
+            await self._open()
+        await self.send_data(json.dumps(payload))
+        async for data in self.read_data():
+            return json.loads(data)
+
+
 class AsyncConnectionManager:
     """
-    Manages an asynchronous connection to a feed -- handling errors, rate limits, e.t.c.
+    Manages an asynchronous connection to a feed -- handling errors, rate limits, e.t.c. Used when data is consistently sent over the feed rather than a request/response model.
 
     :param conn: Asynchronous connection to some feed
     :type conn: AsyncFeed
@@ -327,6 +408,7 @@ class AsyncConnectionManager:
                             '%s: Terminating the connection callback as manager is not running', self.conn.id)
                         await self.conn.close()
                         return
+                    logging.debug('%s: received %r', self.conn.id, data)
                     await self.callback(data, self.conn, self.conn.last_received_time)
             except InvalidStatusCode as e:
                 code = e.status_code
@@ -351,13 +433,14 @@ class AsyncConnectionManager:
                     retries += 1
             except Exception as e:
                 logging.warning(
-                    '%s: Encountered Exception %s, retrying in %d seconds', self.conn.id, e, delay)
+                    '%s: Encountered Exception, retrying in %d seconds', self.conn.id, delay)
+                logging.exception(e)
                 await asyncio.sleep(delay)
                 delay *= 2
                 retries += 1
 
         logging.info(
-                '%s: connection closed after %d retries', self.conn.id, retries)
+            '%s: connection closed after %d retries', self.conn.id, retries)
 
 
 class WSEndpoint:

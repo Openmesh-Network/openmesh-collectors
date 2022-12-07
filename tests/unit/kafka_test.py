@@ -5,7 +5,7 @@ from multiprocessing import Pipe
 
 import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
 from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 
 
 class MockTopics:
@@ -20,7 +20,7 @@ def new_config():
     }
 
 
-class MockExchange(OrderBookExchangeFeed):
+class MockExchange(DataFeed):
     name = 'test'
     sym_field = 0
     type_field = 0
@@ -70,7 +70,7 @@ async def test_producer(mock_kafka):
         await mock_kafka.write(msg)
     ret = mock_kafka.producer()
     await ret
-    args = mock_kafka.kafka_producer.send.call_args
+    args = mock_kafka.kafka_producer.send_and_wait.call_args
     assert args[0][0] == 'raw'
     assert json.loads(args[0][1].decode())[0] == 4
     mock_kafka.kafka_producer.stop.assert_called()

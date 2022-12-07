@@ -1,14 +1,14 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
 
-class FTX(OrderBookExchangeFeed):
+class FTX(DataFeed):
     name = "ftx"
     sym_field = 'market'
     type_field = 'channel'
-    
+
     ws_endpoints = {
         WSEndpoint("wss://ftx.com/ws/"): ["lob", "ticker", "trades"]
     }

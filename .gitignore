@@ -5,6 +5,7 @@ keys/*
 !keys/README.md
 schema-standardiser-data/*
 temp.txt
+.vscode
 
 # Log files
 *.ids 

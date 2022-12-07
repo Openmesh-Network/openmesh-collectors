@@ -8,9 +8,13 @@ from l3_atom.helpers.read_config import get_kafka_config
 import ssl
 import uuid
 import logging
+from io import BytesIO
+from fastavro import schemaless_writer, parse_schema
+from struct import pack
 
 ssl_ctx = ssl.create_default_context()
 
+CONFLUENT_MAGIC_BYTE = 0
 
 class Kafka(SinkMessageHandler):
     """
@@ -22,8 +26,8 @@ class Kafka(SinkMessageHandler):
     :type key_field: str
     """
 
-    def __init__(self, exchange):
-        super().__init__(exchange)
+    def __init__(self, *args, topic="raw", **kwargs):
+        super().__init__(*args, **kwargs)
         conf = get_kafka_config()
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
         self.sasl_username = conf['KAFKA_SASL_KEY'] if 'KAFKA_SASL_KEY' in conf else None
@@ -34,11 +38,15 @@ class Kafka(SinkMessageHandler):
         self.kafka_producer = None
         self.admin_client = None
         self.schema_client = None
-        self.topic = f"raw"
+        self.topic = topic
+
+        # { <feed>: (<schema>, <schema id in registry>) }
+        self.schema_map: dict = {}
 
 
 class KafkaConnector(Kafka):
     """Class to handle the backend connection to Kafka"""
+
     async def producer(self):
         """Handles the production of messages to Kafka. Runs indefinitely until the termination sentinel is sent over the pipe"""
         if not self.kafka_producer:
@@ -48,8 +56,13 @@ class KafkaConnector(Kafka):
                 for message in messages:
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
-                    await self.kafka_producer.send(self.topic, json.dumps(msg).encode(), key=key if key else None)
+                    msg = self.serialize(msg)
+                    await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
         await self.kafka_producer.stop()
+
+    def serialize(self, msg: dict):
+        """Preprocess message before sending to Kafka"""
+        return json.dumps(msg).encode()
 
     async def _producer_init(self):
         """Initializes the Kafka producer"""
@@ -57,10 +70,10 @@ class KafkaConnector(Kafka):
         if self.sasl_username and self.sasl_password:
             self.kafka_producer = aiokafka.AIOKafkaProducer(
                 loop=loop, bootstrap_servers=self.bootstrap, sasl_mechanism="PLAIN", sasl_plain_username=self.sasl_username,
-                sasl_plain_password=self.sasl_password, security_protocol="SASL_SSL", ssl_context=ssl_ctx, linger_ms=0, acks=1, client_id=f"{self.exchange}-raw-producer-{str(uuid.uuid4())[:8]}", connections_max_idle_ms=None)
+                sasl_plain_password=self.sasl_password, security_protocol="SASL_SSL", ssl_context=ssl_ctx, acks=1, client_id=f"{self.exchange}-raw-producer-{str(uuid.uuid4())[:8]}", connections_max_idle_ms=None, linger_ms=10)
         else:
             self.kafka_producer = aiokafka.AIOKafkaProducer(
-                loop=loop, bootstrap_servers=self.bootstrap, linger_ms=0, acks=1)
+                loop=loop, bootstrap_servers=self.bootstrap, acks=1, linger_ms=10)
         await self.kafka_producer.start()
 
     def _admin_init(self):
@@ -90,9 +103,9 @@ class KafkaConnector(Kafka):
                 "url": self.schema_url
             })
 
-    def create_exchange_topics(self, feeds: list):
+    def create_exchange_topics(self, feeds: list, prefix=None, include_raw=True):
         """
-        Creates the topics and populates the schemas for the exchange's feeds
+        Creates the topics and populates the schemas for the exchange's feeds. Also stores those schemas in memory.
 
         :param feeds: The feeds to create topics for
         :type feeds: list[str]
@@ -103,10 +116,13 @@ class KafkaConnector(Kafka):
             self._schema_init()
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
-        if "raw" not in topic_metadata.topics:
-            topics.append(NewTopic("raw", 100, 3))
+        if include_raw and "raw" not in topic_metadata.topics:
+            topics.append(NewTopic(f"{prefix}raw", 100, 3))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
+            feed = prefix + feed if prefix else feed
+            feed_schema = self.schema_client.get_latest_version(
+                feed)
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
@@ -117,15 +133,13 @@ class KafkaConnector(Kafka):
             if f'{feed}-value' in schemas:
                 logging.info(
                     f"{self.exchange}: Schema for {feed} already exists")
-            elif feed == 'raw':
+            elif feed.endswith('raw'):
                 logging.info(
                     f"{self.exchange}: Schema for {feed} is not required")
             else:
                 logging.info(f"{self.exchange}: Creating schema for {feed}")
-                feed_schema = self.schema_client.get_latest_version(
-                    feed).schema
                 self.schema_client.register_schema(
-                    f'{feed}-value', feed_schema)
+                    f'{feed}-value', feed_schema.schema)
 
         if topics:
             futures = self.admin_client.create_topics(topics)
@@ -136,3 +150,32 @@ class KafkaConnector(Kafka):
                 except Exception as e:
                     logging.error(
                         f"{self.exchange}: Failed to create topic {topic}: {e}")
+
+    def create_chain_topics(self, chain_objects, event_objects, name):
+        self.create_exchange_topics(
+            chain_objects, prefix=f"{name}_", include_raw=False)
+        self.create_exchange_topics(event_objects)
+
+
+class AvroKafkaConnector(KafkaConnector):
+
+    def __init__(self, *args, record=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._init_topic_schema()
+        self.record = record
+
+    def _init_topic_schema(self):
+        if not self.schema_client:
+            self._schema_init()
+        feed_schema = self.schema_client.get_latest_version(
+                self.topic)
+        self.topic_schema = parse_schema(json.loads(feed_schema.schema.schema_str))
+        self.topic_schema_id = feed_schema.schema_id
+        
+    def serialize(self, msg: dict):
+        res = BytesIO()
+        msg_obj = self.record(**msg)
+        res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, self.topic_schema_id))
+        schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
+        return res.getvalue()
+
