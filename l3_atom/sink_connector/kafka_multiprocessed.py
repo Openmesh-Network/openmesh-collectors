@@ -57,7 +57,7 @@ class KafkaConnector(Kafka):
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
                     msg = self.serialize(msg)
-                    await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
+                    await self.kafka_producer.send(self.topic, msg, key=key)
         await self.kafka_producer.stop()
 
     def serialize(self, msg: dict):
@@ -70,10 +70,10 @@ class KafkaConnector(Kafka):
         if self.sasl_username and self.sasl_password:
             self.kafka_producer = aiokafka.AIOKafkaProducer(
                 loop=loop, bootstrap_servers=self.bootstrap, sasl_mechanism="PLAIN", sasl_plain_username=self.sasl_username,
-                sasl_plain_password=self.sasl_password, security_protocol="SASL_SSL", ssl_context=ssl_ctx, acks=1, client_id=f"{self.exchange}-raw-producer-{str(uuid.uuid4())[:8]}", connections_max_idle_ms=None)
+                sasl_plain_password=self.sasl_password, security_protocol="SASL_SSL", ssl_context=ssl_ctx, acks=1, client_id=f"{self.exchange}-raw-producer-{str(uuid.uuid4())[:8]}", connections_max_idle_ms=None, linger_ms=10)
         else:
             self.kafka_producer = aiokafka.AIOKafkaProducer(
-                loop=loop, bootstrap_servers=self.bootstrap, acks=1)
+                loop=loop, bootstrap_servers=self.bootstrap, acks=1, linger_ms=10)
         await self.kafka_producer.start()
 
     def _admin_init(self):
