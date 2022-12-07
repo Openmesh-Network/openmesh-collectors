@@ -52,6 +52,8 @@ class BinanceFuturesStandardiser(BinanceStandardiser):
                 await self._candle(msg)
             elif msg['e'] == 'markPriceUpdate':
                 await self._funding_rate(msg)
+            elif msg['e'] == 'bookTicker':
+                await self._ticker(msg)
         elif 'A' in msg:
             await self._ticker(msg)
         else:

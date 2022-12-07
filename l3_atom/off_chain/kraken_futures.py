@@ -1,10 +1,11 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 from l3_atom.helpers.enrich_data import enrich_raw
 
-class KrakenFutures(OrderBookExchangeFeed):
+
+class KrakenFutures(DataFeed):
     name = "kraken-futures"
     sym_field = 'product_id'
     type_field = 'feed'
@@ -42,7 +43,8 @@ class KrakenFutures(OrderBookExchangeFeed):
 
             base, quote = sym[:3], sym[3:]
 
-            normalised_symbol = Symbol(base, quote, expiry_date=expiry_date, symbol_type=t)
+            normalised_symbol = Symbol(
+                base, quote, expiry_date=expiry_date, symbol_type=t)
             ret[normalised_symbol] = s['symbol'].upper()
         return ret
 
@@ -56,4 +58,3 @@ class KrakenFutures(OrderBookExchangeFeed):
 
     def auth(self, conn: WSConnection):
         pass
-

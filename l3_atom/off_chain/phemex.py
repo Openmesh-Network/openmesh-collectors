@@ -1,10 +1,10 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
 
-class Phemex(OrderBookExchangeFeed):
+class Phemex(DataFeed):
     name = "phemex"
     sym_field = 'symbol'
     ws_endpoints = {

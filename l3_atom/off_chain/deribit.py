@@ -1,10 +1,10 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
 
-class Deribit(OrderBookExchangeFeed):
+class Deribit(DataFeed):
     name = "deribit"
     ws_endpoints = {
         WSEndpoint("wss://www.deribit.com/ws/api/v2"): ["lob", "ticker", "trades", "candle"]
@@ -19,7 +19,8 @@ class Deribit(OrderBookExchangeFeed):
         "candle": "chart.trades"
     }
 
-    symbols_endpoint = [f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'SOL', 'USDC']]
+    symbols_endpoint = [
+        f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'SOL', 'USDC']]
 
     @classmethod
     def get_key(cls, msg):
@@ -41,7 +42,8 @@ class Deribit(OrderBookExchangeFeed):
                 if 'strike' in t:
                     strike_price = int(t['strike'])
                 expiry = t['expiration_timestamp']
-                normalised_symbol = Symbol(base, quote, symbol_type=symbol_type, option_type=option_type, strike_price=strike_price, expiry_date=expiry // 1000)
+                normalised_symbol = Symbol(base, quote, symbol_type=symbol_type,
+                                           option_type=option_type, strike_price=strike_price, expiry_date=expiry // 1000)
                 ret[normalised_symbol] = t['instrument_name']
         return ret
 

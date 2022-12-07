@@ -1,10 +1,10 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
 
-class Bybit(OrderBookExchangeFeed):
+class Bybit(DataFeed):
     name = "bybit"
     ws_endpoints = {
         WSEndpoint("wss://stream.bybit.com/spot/public/v3"): ["lob", "ticker", "candle", "trades"]
@@ -36,7 +36,8 @@ class Bybit(OrderBookExchangeFeed):
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols):
         args = []
         for feed in feeds:
-            args.extend([f"{self.get_channel_from_feed(feed)}{symbol}" for symbol in symbols])
+            args.extend(
+                [f"{self.get_channel_from_feed(feed)}{symbol}" for symbol in symbols])
         msg = {
             "op": "subscribe",
             "args": args

@@ -1,10 +1,11 @@
-from l3_atom.orderbook_exchange import OrderBookExchangeFeed
+from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 import logging
 
-class Kraken(OrderBookExchangeFeed):
+
+class Kraken(DataFeed):
     name = "kraken"
     sym_field = -2
     type_field = -3

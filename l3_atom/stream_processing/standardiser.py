@@ -1,5 +1,5 @@
 from typing import AsyncIterable
-from l3_atom.orderbook_exchange import OrderBookExchange
+from l3_atom.data_source import DataSource
 from l3_atom.stream_processing.records import record_mapping
 
 
@@ -16,15 +16,15 @@ class Standardiser:
     :param feed_to_record: Mapping of feed to record class
     :type feed_to_record: dict
     """
-    raw_topic: str = NotImplemented
-    exchange: OrderBookExchange = NotImplemented
+    raw_topic: str = 'raw'
+    exchange: DataSource = NotImplemented
     feed_to_record: dict = record_mapping
 
     def __init__(self) -> None:
         self.id = self.exchange.name
-        self.raw_topic = 'raw'
         self.exchange_started = False
-        self.feeds = [*self.exchange.ws_channels.keys(), *self.exchange.rest_channels.keys()]
+        self.feeds = [*self.exchange.ws_channels.keys(), *
+                      self.exchange.rest_channels.keys()]
         self.normalised_topics = {
             feed: None for feed in self.feeds
         }
@@ -37,7 +37,7 @@ class Standardiser:
         """Get the normalised symbol from the exchange symbol"""
         return self.exchange.get_normalised_symbol(exch_symbol).normalised
 
-    async def send_to_topic(self, feed: str, **kwargs):
+    async def send_to_topic(self, feed: str, exchange=None, key_field='symbol', **kwargs):
         """
         Given a feed and arguments, send to the correct topic
 
@@ -46,11 +46,12 @@ class Standardiser:
         :param kwargs: The arguments to use in the relevant Record
         :type kwargs: dict
         """
-        val = self.feed_to_record[feed](**kwargs, exchange=self.id)
+        source = exchange if exchange else self.id
+        val = self.feed_to_record[feed](**kwargs, exchange=source)
         val.validate()
         await self.normalised_topics[feed].send(
             value=val,
-            key=f"{self.id}_{kwargs['symbol']}"
+            key=f"{source}_{kwargs[key_field]}"
         )
 
     async def handle_message(self, msg: dict):
@@ -61,3 +62,4 @@ class Standardiser:
         :type msg: dict
         """
         raise NotImplementedError
+
