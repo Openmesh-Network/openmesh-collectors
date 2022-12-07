@@ -16,6 +16,10 @@ class EthereumStandardiser(Standardiser):
         self.log_handlers = {
             handler.topic0: handler(self) for handler in log_handlers
         }
+        self.feeds = ['dex_trades']
+        self.normalised_topics = {
+            feed: None for feed in self.feeds
+        }
         self.graph_connected = False
 
     async def _open_graph_conn(self):

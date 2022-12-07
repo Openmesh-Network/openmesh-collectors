@@ -70,7 +70,7 @@ async def test_producer(mock_kafka):
         await mock_kafka.write(msg)
     ret = mock_kafka.producer()
     await ret
-    args = mock_kafka.kafka_producer.send.call_args
+    args = mock_kafka.kafka_producer.send_and_wait.call_args
     assert args[0][0] == 'raw'
     assert json.loads(args[0][1].decode())[0] == 4
     mock_kafka.kafka_producer.stop.assert_called()

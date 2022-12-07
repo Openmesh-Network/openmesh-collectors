@@ -3,6 +3,7 @@ import traceback
 
 from hexbytes import HexBytes
 
+
 class EthereumLogHandler:
     """
     Handler for Ethereum logs. The main Ethereum standardiser maps topics to these handlers to filter and standardise incoming logs. Each handler monitors a specific topic with a unique contract address and ABI.
@@ -22,9 +23,10 @@ class EthereumLogHandler:
     def __init__(self, standardiser) -> None:
         self.standardiser = standardiser
         self.web3 = standardiser.web3
-        self.contract = self.web3.eth.contract(abi=json.loads(open(f'static/abis/{self.abi_name}.json').read()), address=self.example_contract)
+        self.contract = self.web3.eth.contract(abi=json.loads(
+            open(f'static/abis/{self.abi_name}.json').read()), address=self.example_contract)
 
-    async def event_callback(self, event_data):
+    async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         """Callback for after an event is processed"""
         pass
 
@@ -32,8 +34,9 @@ class EthereumLogHandler:
         """Process a log"""
         try:
             log = log.asdict()
-            log['topics'] = [HexBytes(t) for t in [log['topic0'], log['topic1'], log['topic2'], log['topic3']] if t]
+            log['topics'] = [HexBytes(t) for t in [
+                log['topic0'], log['topic1'], log['topic2'], log['topic3']] if t]
             event = self.contract.events[self.event_name]().processLog(log)
         except Exception:
             traceback.print_exc()
-        await self.event_callback(event)
+        await self.event_callback(event, blockTimestamp=log['blockTimestamp'], atomTimestamp=log['atomTimestamp'])

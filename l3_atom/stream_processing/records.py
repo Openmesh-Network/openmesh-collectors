@@ -178,7 +178,6 @@ class DexTrade(BaseChainRecord, serializer='dex_trades'):
     Record for a DEX trade.
     """
 
-    amountUSD: float
     exchange: str
     pairAddr: str
     tokenBought: str
@@ -187,7 +186,6 @@ class DexTrade(BaseChainRecord, serializer='dex_trades'):
     tokenSoldAddr: str
     amountBought: float
     amountSold: float
-    liquidity: float
     transactionHash: str
     logIndex: int
     blockNumber: int
