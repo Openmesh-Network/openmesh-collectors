@@ -394,22 +394,21 @@ class AsyncConnectionManager:
         retries = 0
         while self.running:
             try:
-                await self.conn._open()
-                self.auth and await self.auth()
-                self.subscribe and await self.subscribe(self.conn, self.channels, self.conn.symbols)
-                delay = limited = 1
-                retries = 0
-                loop = asyncio.get_event_loop()
-                loop.create_task(self._monitor())
-                logging.info('%s: connection established', self.conn.id)
-                async for data in self.conn.read_data():
-                    if not self.running:
-                        logging.info(
-                            '%s: Terminating the connection callback as manager is not running', self.conn.id)
-                        await self.conn.close()
-                        return
-                    logging.debug('%s: received %r', self.conn.id, data)
-                    await self.callback(data, self.conn, self.conn.last_received_time)
+                async with self.conn.connect() as conn:
+                    self.auth and await self.auth()
+                    self.subscribe and await self.subscribe(conn, self.channels, conn.symbols)
+                    delay = limited = 1
+                    retries = 0
+                    loop = asyncio.get_event_loop()
+                    loop.create_task(self._monitor())
+                    logging.info('%s: connection established', conn.id)
+                    async for data in self.conn.read_data():
+                        if not self.running:
+                            logging.info(
+                                '%s: Terminating the connection callback as manager is not running', conn.id)
+                            return
+                        logging.debug('%s: received %r', conn.id, data)
+                        await self.callback(data, conn, conn.last_received_time)
             except InvalidStatusCode as e:
                 code = e.status_code
                 if code == 429:

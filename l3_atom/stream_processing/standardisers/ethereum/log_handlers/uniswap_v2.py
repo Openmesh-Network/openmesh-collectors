@@ -4,22 +4,24 @@ from yapic import json
 import logging
 from decimal import Decimal
 
-class UniswapV3Handler(EthereumLogHandler):
-    exchange = 'uniswap-v3'
-    graph_endpoint: str = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3'
 
-class UniswapV3SwapHandler(UniswapV3Handler):
-    topic0 = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
+# Also handles Sushiswap
+class UniswapV2Handler(EthereumLogHandler):
+    graph_endpoint: str = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
+
+class UniswapV2SwapHandler(UniswapV2Handler):
+    topic0 = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
     event_name = "Swap"
-    abi_name = 'uniswap_v3_pool'
-    example_contract = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640'
+    abi_name = 'uniswap_v2_pair'
+    example_contract = '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.loaded_pool_data = False
 
     def _load_pool_data(self):
-        self.pool_data = json.loads(open('static/lists/uniswap_v3_pools.json').read())
+        self.uni_pool_data = json.loads(open('static/lists/uniswap_v2_pairs.json').read())
+        self.sushi_pool_data = json.loads(open('static/lists/sushiswap_pairs.json').read())
         self.loaded_pool_data = True
 
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
@@ -27,26 +29,31 @@ class UniswapV3SwapHandler(UniswapV3Handler):
             self._load_pool_data()
         args = event.args
         poolAddr = event.address
-        pairDetails = self.pool_data.get(poolAddr, None)
-        if pairDetails is None:
-            logging.warning(f'Uniswap V3 pool {poolAddr} not found in list')
+        if poolAddr in self.uni_pool_data:
+            exchange = 'uniswap-v2'
+            pairDetails = self.uni_pool_data[poolAddr]
+        elif poolAddr in self.sushi_pool_data:
+            exchange = 'sushiswap'
+            pairDetails = self.sushi_pool_data[poolAddr]
+        else:
+            logging.warning(f'Uniswap V2 / Sushiswap pair {poolAddr} not found in list')
             return
         token0 = pairDetails['token0']
         token1 = pairDetails['token1']
-        if args['amount0'] > 0:
-            tokenBought = token0['symbol']
-            tokenBoughtAddr = token0['id']
-            tokenSold = token1['symbol']
-            tokenSoldAddr = token1['id']
-            amountBought = args['amount0']
-            amountSold = abs(args['amount1'])
-        else:
-            tokenBought = token1['symbol']
-            tokenBoughtAddr = token1['id']
+        if args.amount0In > 0:
+            amountSold = args.amount0In
             tokenSold = token0['symbol']
             tokenSoldAddr = token0['id']
-            amountBought = args['amount1']
-            amountSold = abs(args['amount0'])
+            amountBought = args.amount1Out
+            tokenBought = token1['symbol']
+            tokenBoughtAddr = token1['id']
+        else:
+            amountSold = args.amount1In
+            tokenSold = token1['symbol']
+            tokenSoldAddr = token1['id']
+            amountBought = args.amount0Out
+            tokenBought = token0['symbol']
+            tokenBoughtAddr = token0['id']
 
         msg = dict(
             blockNumber = event.blockNumber,
@@ -60,7 +67,7 @@ class UniswapV3SwapHandler(UniswapV3Handler):
             tokenSoldAddr = tokenSoldAddr,
             blockTimestamp = blockTimestamp,
             atomTimestamp = atomTimestamp,
-            exchange=self.exchange,
+            exchange=exchange,
             amountBought = Decimal(amountBought),
             amountSold = Decimal(amountSold)
         )
