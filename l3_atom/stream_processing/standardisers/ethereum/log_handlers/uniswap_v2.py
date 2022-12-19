@@ -9,6 +9,7 @@ from decimal import Decimal
 class UniswapV2Handler(EthereumLogHandler):
     graph_endpoint: str = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
 
+
 class UniswapV2SwapHandler(UniswapV2Handler):
     topic0 = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822"
     event_name = "Swap"
@@ -20,8 +21,11 @@ class UniswapV2SwapHandler(UniswapV2Handler):
         self.loaded_pool_data = False
 
     def _load_pool_data(self):
-        self.uni_pool_data = json.loads(open('static/lists/uniswap_v2_pairs.json').read())
-        self.sushi_pool_data = json.loads(open('static/lists/sushiswap_pairs.json').read())
+        self.uni_pool_data = json.loads(
+            open('static/lists/uniswap_v2_pairs.json').read())
+        self.sushi_pool_data = json.loads(
+            open('static/lists/sushiswap_pairs.json').read())
+        self.load_erc20_data()
         self.loaded_pool_data = True
 
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
@@ -36,7 +40,6 @@ class UniswapV2SwapHandler(UniswapV2Handler):
             exchange = 'sushiswap'
             pairDetails = self.sushi_pool_data[poolAddr]
         else:
-            logging.warning(f'Uniswap V2 / Sushiswap pair {poolAddr} not found in list')
             return
         token0 = pairDetails['token0']
         token1 = pairDetails['token1']
@@ -55,21 +58,28 @@ class UniswapV2SwapHandler(UniswapV2Handler):
             tokenBought = token0['symbol']
             tokenBoughtAddr = token0['id']
 
+        tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
+        tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
+        amountBought = Decimal(amountBought) / Decimal(10**tokenBoughtDecimals)
+        amountSold = Decimal(amountSold) / Decimal(10**tokenSoldDecimals)
+        taker = args.to
+
         msg = dict(
-            blockNumber = event.blockNumber,
-            blockHash = event.blockHash,
-            transactionHash = event.transactionHash,
-            logIndex = event.logIndex,
-            pairAddr = poolAddr,
-            tokenBought = tokenBought,
-            tokenBoughtAddr = tokenBoughtAddr,
-            tokenSold = tokenSold,
-            tokenSoldAddr = tokenSoldAddr,
-            blockTimestamp = blockTimestamp,
-            atomTimestamp = atomTimestamp,
+            blockNumber=event.blockNumber,
+            blockHash=event.blockHash,
+            transactionHash=event.transactionHash,
+            logIndex=event.logIndex,
+            pairAddr=poolAddr,
+            tokenBought=tokenBought,
+            tokenBoughtAddr=tokenBoughtAddr,
+            tokenSold=tokenSold,
+            tokenSoldAddr=tokenSoldAddr,
+            blockTimestamp=blockTimestamp,
+            atomTimestamp=atomTimestamp,
             exchange=exchange,
-            amountBought = Decimal(amountBought),
-            amountSold = Decimal(amountSold)
+            amountBought=amountBought,
+            amountSold=amountSold,
+            taker=taker
         )
-        
+
         await self.standardiser.send_to_topic('dex_trades', key_field='pairAddr', **msg)

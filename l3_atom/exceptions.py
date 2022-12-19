@@ -4,3 +4,7 @@ class ConnectionNotOpen(Exception):
 
 class TooManyRetries(Exception):
     pass
+
+
+class TokenNotFound(Exception):
+    pass
