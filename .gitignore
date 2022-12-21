@@ -6,6 +6,8 @@ keys/*
 schema-standardiser-data/*
 temp.txt
 .vscode
+script.py
+*_raw.json
 
 # Log files
 *.ids 

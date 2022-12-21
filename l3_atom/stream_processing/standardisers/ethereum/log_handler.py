@@ -1,6 +1,8 @@
 from yapic import json
 import traceback
 
+from l3_atom.exceptions import TokenNotFound
+
 from hexbytes import HexBytes
 
 
@@ -26,6 +28,23 @@ class EthereumLogHandler:
         self.contract = self.web3.eth.contract(abi=json.loads(
             open(f'static/abis/{self.abi_name}.json').read()), address=self.example_contract)
 
+    def load_erc20_data(self):
+        """Loads in a list of ERC20 token data if needed for standardising logs"""
+        self.erc20_data = json.loads(
+            open('static/lists/erc_20.json').read())
+
+    def get_decimals(self, addr):
+        """Get the decimals of an ERC20 token, defaulting to 18"""
+        if addr not in self.erc20_data:
+            raise TokenNotFound("Token not found in list when getting decimals")
+        return self.erc20_data[addr]['decimals']
+
+    def get_symbol(self, addr):
+        """Get the symbol of an ERC20 token, defaulting to None"""
+        if addr not in self.erc20_data:
+            raise TokenNotFound("Token not found in list when getting symbol")
+        return self.erc20_data.get['addr']['symbol']
+
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         """Callback for after an event is processed"""
         pass
@@ -37,6 +56,8 @@ class EthereumLogHandler:
             log['topics'] = [HexBytes(t) for t in [
                 log['topic0'], log['topic1'], log['topic2'], log['topic3']] if t]
             event = self.contract.events[self.event_name]().processLog(log)
+            await self.event_callback(event, blockTimestamp=log['blockTimestamp'], atomTimestamp=log['atomTimestamp'])
+        except TokenNotFound:
+            pass
         except Exception:
             traceback.print_exc()
-        await self.event_callback(event, blockTimestamp=log['blockTimestamp'], atomTimestamp=log['atomTimestamp'])

@@ -184,12 +184,14 @@ class DexTrade(BaseChainRecord, serializer='dex_trades'):
     tokenSold: str
     tokenBoughtAddr: str
     tokenSoldAddr: str
-    amountBought: float
-    amountSold: float
+    amountBought: Decimal
+    amountSold: Decimal
     transactionHash: str
     logIndex: int
     blockNumber: int
     blockHash: str
+    maker: str=None
+    taker: str=None
 
 
 class EthereumLogRecord(EthereumLog, faust.Record, serializer='ethereum_logs'):

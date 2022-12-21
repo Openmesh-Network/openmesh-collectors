@@ -146,7 +146,7 @@ class Ethereum(ChainFeed):
         blocks_res = await conn.make_call('eth_subscribe', ['newHeads'])
         logging.debug(
             "%s: Attempting to subscribe to newHeads with result %s", self.name, blocks_res)
-        self.block_sub_id = blocks_res['result']
+        self.block_sub_id = blocks_res.get('result', None)
         logging.info(f"Subscribed to newHeads with id {self.block_sub_id}")
 
     def hex_to_int(self, hex_str: str):
@@ -161,7 +161,7 @@ class Ethereum(ChainFeed):
 
     async def get_block_by_number(self, conn: RPC, block_number: str):
         res = await conn.make_call('eth_getBlockByNumber', [block_number, True])
-        while 'result' not in res:
+        while not res.get('result', None):
             await asyncio.sleep(1)
             res = await conn.make_call('eth_getBlockByNumber', [block_number, True])
         return res['result']
@@ -222,6 +222,9 @@ class Ethereum(ChainFeed):
     async def _token_transfer(self, conn: RPC, transfer: dict, ts: int):
         logging.debug(f"Received token transfer")
         topics = transfer['topics']
+        # If we don't at least have a from address, we don't care
+        if len(topics) <= 1:
+            return
         from_addr = self._word_to_addr(topics[1])
         to_addr = self._word_to_addr(topics[2])
         value = transfer['data'][:66]
@@ -248,7 +251,8 @@ class Ethereum(ChainFeed):
     async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         msg = json.loads(message)
         data = msg['params']
-        if data['subscription'] == self.block_sub_id:
+        # For some reason the subscription id can be truncated in the message, so we'll add a few checks to see if the message is a new block
+        if data['subscription'] == self.block_sub_id or data['subscription'] in self.block_sub_id or 'number' in data['result']:
             block_number = data['result']['number']
             block = await self.get_block_by_number(self.http_node_conn, block_number)
             await self._block(conn, block.copy(), timestamp)

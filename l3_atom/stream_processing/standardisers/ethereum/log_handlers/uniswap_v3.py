@@ -4,9 +4,11 @@ from yapic import json
 import logging
 from decimal import Decimal
 
+
 class UniswapV3Handler(EthereumLogHandler):
     exchange = 'uniswap-v3'
     graph_endpoint: str = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3'
+
 
 class UniswapV3SwapHandler(UniswapV3Handler):
     topic0 = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
@@ -19,7 +21,9 @@ class UniswapV3SwapHandler(UniswapV3Handler):
         self.loaded_pool_data = False
 
     def _load_pool_data(self):
-        self.pool_data = json.loads(open('static/lists/uniswap_v3_pools.json').read())
+        self.pool_data = json.loads(
+            open('static/lists/uniswap_v3_pools.json').read())
+        self.load_erc20_data()
         self.loaded_pool_data = True
 
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
@@ -29,40 +33,50 @@ class UniswapV3SwapHandler(UniswapV3Handler):
         poolAddr = event.address
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
-            logging.warning(f'Uniswap V3 pool {poolAddr} not found in list')
             return
         token0 = pairDetails['token0']
         token1 = pairDetails['token1']
+        token0Sym = token0['symbol']
+        token1Sym = token1['symbol']
+        token0Id = token0['id']
+        token1Id = token1['id']
         if args['amount0'] > 0:
-            tokenBought = token0['symbol']
-            tokenBoughtAddr = token0['id']
-            tokenSold = token1['symbol']
-            tokenSoldAddr = token1['id']
+            tokenBought = token0Sym
+            tokenBoughtAddr = token0Id
+            tokenSold = token1Sym
+            tokenSoldAddr = token1Id
             amountBought = args['amount0']
-            amountSold = args['amount1']
+            amountSold = abs(args['amount1'])
         else:
-            tokenBought = token1['symbol']
-            tokenBoughtAddr = token1['id']
-            tokenSold = token0['symbol']
-            tokenSoldAddr = token0['id']
+            tokenBought = token1Sym
+            tokenBoughtAddr = token1Id
+            tokenSold = token0Sym
+            tokenSoldAddr = token0Id
             amountBought = args['amount1']
-            amountSold = args['amount0']
+            amountSold = abs(args['amount0'])
+
+        tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
+        tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
+        amountBought = Decimal(amountBought) / Decimal(10 ** tokenBoughtDecimals)
+        amountSold = Decimal(amountSold) / Decimal(10 ** tokenSoldDecimals)
+        taker = args.recipient
 
         msg = dict(
-            blockNumber = event.blockNumber,
-            blockHash = event.blockHash,
-            transactionHash = event.transactionHash,
-            logIndex = event.logIndex,
-            pairAddr = poolAddr,
-            tokenBought = tokenBought,
-            tokenBoughtAddr = tokenBoughtAddr,
-            tokenSold = tokenSold,
-            tokenSoldAddr = tokenSoldAddr,
-            blockTimestamp = blockTimestamp,
-            atomTimestamp = atomTimestamp,
+            blockNumber=event.blockNumber,
+            blockHash=event.blockHash,
+            transactionHash=event.transactionHash,
+            logIndex=event.logIndex,
+            pairAddr=poolAddr,
+            tokenBought=tokenBought,
+            tokenBoughtAddr=tokenBoughtAddr,
+            tokenSold=tokenSold,
+            tokenSoldAddr=tokenSoldAddr,
+            blockTimestamp=blockTimestamp,
+            atomTimestamp=atomTimestamp,
             exchange=self.exchange,
-            amountBought = Decimal(amountBought),
-            amountSold = Decimal(amountSold)
+            amountBought=amountBought,
+            amountSold=amountSold,
+            taker=taker,
         )
-        
+
         await self.standardiser.send_to_topic('dex_trades', key_field='pairAddr', **msg)
