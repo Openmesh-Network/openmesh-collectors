@@ -207,11 +207,11 @@ class Ethereum(ChainFeed):
         del block['mixHash']
         del block['transactions']
         del block['uncles']
-        block['blockTimestamp'] = self.hex_to_int(block['timestamp']) * 1000
+        block['blockTimestamp'] = self.hex_to_int(block.pop('timestamp')) * 1000
         block_obj = EthereumBlock(**block, atomTimestamp=ts)
         self.last_block_hash = block_obj.hash
         self.last_block_num = block_obj.number
-        self.last_block_time = block_obj.timestamp
+        self.last_block_time = block_obj.blockTimestamp
         await self.kafka_backends['blocks'].write(block_obj.to_json_string())
 
     def _word_to_addr(self, word: str):
