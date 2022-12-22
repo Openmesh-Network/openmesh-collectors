@@ -53,7 +53,8 @@ def main():
     parser = argparse.ArgumentParser(
         description='Run an L3 Atom process. Either a raw data consumer or a normalised data stream processor.')
 
-    parser.add_argument('--logging', '-l', default='info', help='Set the logging level', choices=logging_map.keys())
+    parser.add_argument('--logging', '-l', default='info',
+                        help='Set the logging level', choices=logging_map.keys())
 
     subparser = parser.add_subparsers(
         dest='function', help='The function to run', required=True)
@@ -72,7 +73,7 @@ def main():
 
     level = logging_map[args.logging] if args.logging else logging.INFO
     set_logging(level)
-    
+
     if args.function == 'connector':
         run_connector(args.source, args.symbol)
     elif args.function == 'processor':

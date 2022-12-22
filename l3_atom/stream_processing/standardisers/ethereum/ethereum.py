@@ -4,6 +4,7 @@ import aiohttp
 import web3
 from .log_handlers import log_handlers
 
+
 class EthereumStandardiser(Standardiser):
     raw_topic = 'ethereum_logs'
     exchange = Ethereum

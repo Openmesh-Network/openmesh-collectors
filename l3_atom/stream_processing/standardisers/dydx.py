@@ -10,7 +10,7 @@ class DydxStandardiser(Standardiser):
 
     def __init__(self):
         super().__init__()
-        
+
     def start_exchange(self):
         super().start_exchange()
         self.book_sequences = {

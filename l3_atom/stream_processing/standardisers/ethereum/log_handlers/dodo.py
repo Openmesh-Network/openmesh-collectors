@@ -1,7 +1,5 @@
 from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
-from l3_atom.stream_processing.records import DexTrade
 from yapic import json
-import logging
 from decimal import Decimal
 
 
@@ -42,8 +40,10 @@ class DodoexSwapHandler(DodoexPairHandler):
             return
         tokenSoldAddr = args.toToken
         tokenBoughtAddr = args.fromToken
-        tokenSold = pairDetails['baseToken']['symbol'] if tokenSoldAddr == pairDetails['baseToken']['id'] else pairDetails['quoteToken']['symbol']
-        tokenBought = pairDetails['baseToken']['symbol'] if tokenBoughtAddr == pairDetails['baseToken']['id'] else pairDetails['quoteToken']['symbol']
+        tokenSold = pairDetails['baseToken']['symbol'] if tokenSoldAddr == pairDetails[
+            'baseToken']['id'] else pairDetails['quoteToken']['symbol']
+        tokenBought = pairDetails['baseToken']['symbol'] if tokenBoughtAddr == pairDetails[
+            'baseToken']['id'] else pairDetails['quoteToken']['symbol']
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
         amountSold = Decimal(args.toAmount) / Decimal(10 ** tokenSoldDecimals)

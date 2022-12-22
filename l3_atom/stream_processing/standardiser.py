@@ -1,4 +1,3 @@
-from typing import AsyncIterable
 from l3_atom.data_source import DataSource
 from l3_atom.stream_processing.records import record_mapping
 
@@ -62,4 +61,3 @@ class Standardiser:
         :type msg: dict
         """
         raise NotImplementedError
-

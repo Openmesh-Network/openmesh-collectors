@@ -16,6 +16,7 @@ ssl_ctx = ssl.create_default_context()
 
 CONFLUENT_MAGIC_BYTE = 0
 
+
 class Kafka(SinkMessageHandler):
     """
     Class to handle the metadata for Kafka
@@ -172,14 +173,14 @@ class AvroKafkaConnector(KafkaConnector):
         if not self.schema_client:
             self._schema_init()
         feed_schema = self.schema_client.get_latest_version(
-                self.topic)
-        self.topic_schema = parse_schema(json.loads(feed_schema.schema.schema_str))
+            self.topic)
+        self.topic_schema = parse_schema(
+            json.loads(feed_schema.schema.schema_str))
         self.topic_schema_id = feed_schema.schema_id
-        
+
     def serialize(self, msg: dict):
         res = BytesIO()
         msg_obj = self.record(**msg)
         res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, self.topic_schema_id))
         schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
         return res.getvalue()
-

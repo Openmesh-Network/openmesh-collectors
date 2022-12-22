@@ -1,7 +1,5 @@
 from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
-from l3_atom.stream_processing.records import DexTrade
 from yapic import json
-import logging
 from decimal import Decimal
 
 

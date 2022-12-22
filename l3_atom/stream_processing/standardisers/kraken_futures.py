@@ -55,9 +55,9 @@ class KrakenFuturesStandardiser(Standardiser):
         }
         await self.send_to_topic("funding_rate", **funding_msg)
 
-        oi_msg = {**msg, "open_interest": Decimal(str(message["openInterest"]))}
+        oi_msg = {
+            **msg, "open_interest": Decimal(str(message["openInterest"]))}
         await self.send_to_topic("open_interest", **oi_msg)
-
 
     async def handle_message(self, msg):
         if msg['feed'] == 'ticker':

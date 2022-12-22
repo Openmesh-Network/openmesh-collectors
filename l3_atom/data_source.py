@@ -1,6 +1,5 @@
 from abc import abstractmethod
 from typing import Union
-from l3_atom.helpers.read_config import get_conf_symbols
 from l3_atom.helpers.enrich_data import enrich_raw
 from datetime import datetime as dt
 import asyncio

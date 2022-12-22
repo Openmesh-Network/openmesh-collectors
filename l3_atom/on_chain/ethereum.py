@@ -1,20 +1,10 @@
-from abc import abstractmethod
-from typing import Union
-from l3_atom.helpers.read_config import get_conf_symbols, get_ethereum_provider
 from l3_atom.feed import RPC
-from l3_atom.helpers.enrich_data import enrich_raw
-from datetime import datetime as dt
 import asyncio
-import requests
-import uvloop
 from yapic import json
-import web3
 from l3_atom.chain import ChainFeed
-import asyncio
 import dataclasses
 
-from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection, HTTPRPC, WSRPC
-from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
+from l3_atom.feed import AsyncFeed
 
 import logging
 from decimal import Decimal, getcontext
@@ -24,6 +14,8 @@ TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523
 getcontext().prec = 38
 
 # Handles the conversions between hex digits and their decimal equivalents automatically
+
+
 @dataclasses.dataclass
 class EthereumObject:
     atomTimestamp: int
@@ -46,6 +38,7 @@ class EthereumObject:
     def to_json_string(self):
         return json.dumps(self.to_dict())
 
+
 @dataclasses.dataclass
 class EthereumBlock(EthereumObject):
     baseFeePerGas: int
@@ -65,7 +58,8 @@ class EthereumBlock(EthereumObject):
     size: int
     gasLimit: Decimal
     gasUsed: Decimal
-    timestamp: int
+    blockTimestamp: int
+
 
 @dataclasses.dataclass
 class EthereumTransaction(EthereumObject):
@@ -85,6 +79,7 @@ class EthereumTransaction(EthereumObject):
     maxFeePerGas: int = None
     maxPriorityFeePerGas: int = None
 
+
 @dataclasses.dataclass
 class EthereumLog(EthereumObject):
     blockTimestamp: int
@@ -100,6 +95,7 @@ class EthereumLog(EthereumObject):
     topic2: str = None
     topic3: str = None
 
+
 @dataclasses.dataclass
 class EthereumTransfer(EthereumObject):
     blockTimestamp: int
@@ -112,6 +108,7 @@ class EthereumTransfer(EthereumObject):
     toAddr: str
     tokenAddr: str
     value: Decimal
+
 
 class Ethereum(ChainFeed):
     name = "ethereum"
@@ -190,24 +187,27 @@ class Ethereum(ChainFeed):
             transaction['fromAddr'] = transaction.pop('from')
             transaction['toAddr'] = transaction.pop('to')
             transaction['type'] = self.type_map[transaction['type']]
-            transaction_obj = EthereumTransaction(**transaction, blockTimestamp=self.last_block_time, atomTimestamp=ts)
+            transaction_obj = EthereumTransaction(
+                **transaction, blockTimestamp=self.last_block_time, atomTimestamp=ts)
             logging.debug(f"Received transaction {transaction_obj.hash}")
             await self.kafka_backends['transactions'].write(transaction_obj.to_json_string())
 
     async def _log(self, conn: RPC, log: dict, ts: int):
-        logging.debug(f"Received log")
+        logging.debug("Received log")
         del log['removed']
         topics = {f'topic{i}': topic for i, topic in enumerate(log['topics'])}
         del log['topics']
-        log_obj = EthereumLog(**log, **topics, blockTimestamp=self.last_block_time, atomTimestamp=ts)
+        log_obj = EthereumLog(
+            **log, **topics, blockTimestamp=self.last_block_time, atomTimestamp=ts)
         await self.kafka_backends['logs'].write(log_obj.to_json_string())
 
     async def _block(self, conn: RPC, block: dict, ts: int):
-        logging.debug("-----------------\n\n\nReceived block\n\n\n-----------------")
+        logging.debug(
+            "-----------------\n\n\nReceived block\n\n\n-----------------")
         del block['mixHash']
         del block['transactions']
         del block['uncles']
-        block['timestamp'] = self.hex_to_int(block['timestamp']) * 1000
+        block['blockTimestamp'] = self.hex_to_int(block['timestamp']) * 1000
         block_obj = EthereumBlock(**block, atomTimestamp=ts)
         self.last_block_hash = block_obj.hash
         self.last_block_num = block_obj.number
@@ -220,7 +220,7 @@ class Ethereum(ChainFeed):
         return word
 
     async def _token_transfer(self, conn: RPC, transfer: dict, ts: int):
-        logging.debug(f"Received token transfer")
+        logging.debug("Received token transfer")
         topics = transfer['topics']
         # If we don't at least have a from address, we don't care
         if len(topics) <= 1:
@@ -233,17 +233,17 @@ class Ethereum(ChainFeed):
         if len(value) < 66:
             return
         msg = dict(
-            tokenAddr = transfer['address'],
-            transactionHash = transfer['transactionHash'],
-            transactionIndex = transfer['transactionIndex'],
-            blockNumber = transfer['blockNumber'],
-            logIndex = transfer['logIndex'],
-            blockHash = transfer['blockHash'],
-            blockTimestamp = self.last_block_time,
-            fromAddr = from_addr,
-            toAddr = to_addr,
-            value = value,
-            atomTimestamp = ts
+            tokenAddr=transfer['address'],
+            transactionHash=transfer['transactionHash'],
+            transactionIndex=transfer['transactionIndex'],
+            blockNumber=transfer['blockNumber'],
+            logIndex=transfer['logIndex'],
+            blockHash=transfer['blockHash'],
+            blockTimestamp=self.last_block_time,
+            fromAddr=from_addr,
+            toAddr=to_addr,
+            value=value,
+            atomTimestamp=ts
         )
         transferObj = EthereumTransfer(**msg)
         await self.kafka_backends['token_transfers'].write(transferObj.to_json_string())

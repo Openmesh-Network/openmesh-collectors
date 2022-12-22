@@ -1,12 +1,11 @@
 from random import random
-import time
 import asyncio
 from typing import Awaitable, Iterator, Union
 import websockets
 import aiohttp
 from contextlib import asynccontextmanager
 import logging
-import sys
+from datetime import datetime, timezone
 
 from websockets import ConnectionClosed
 from websockets.exceptions import InvalidStatusCode
@@ -59,7 +58,7 @@ class AsyncFeed(Feed):
         self.last_received_time = None
 
     def get_time_us(self):
-        return time.time_ns() // 1000
+        return int(datetime.now(timezone.utc).timestamp() * 1e6)
 
     @asynccontextmanager
     async def connect(self):
@@ -415,7 +414,7 @@ class AsyncConnectionManager:
                     wait = -1
                     try:
                         wait = int(e.headers.get('Retry-After', -1))
-                    except:
+                    except Exception:
                         pass
                     if wait == -1:
                         wait = limited * random.uniform(0.8, 1.2) * 60

@@ -32,30 +32,33 @@ async def process_cex(stream: AsyncIterable) -> AsyncIterable:
                 standardiser.start_exchange()
             await standardiser.handle_message(message)
             yield message
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             logging.error(f"Message: {message}")
             continue
 
+
 async def process_chain(stream: AsyncIterable) -> AsyncIterable:
-    async for key, message in stream.items():
+    async for _, message in stream.items():
         try:
             standardiser = handlers['ethereum']
             if not standardiser.exchange_started:
                 standardiser.start_exchange()
             await standardiser.handle_message(message)
             yield message
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             logging.error(f"Message: {message}")
             continue
 
+
 def initialise_agents(app):
     """Initialises the Faust agent"""
-    logging.info(f"Initialising raw consumer")
+    logging.info("Initialising raw consumer")
     for standardiser in handlers.values():
         for topic in standardiser.normalised_topics:
             standardiser.normalised_topics[topic] = app.topic(topic)
     app.agent(RAW_CEX_TOPIC)(process_cex)
-    ethereum_logs_topic = app.topic(RAW_CHAIN_TOPIC, value_type=EthereumLogRecord)
+    ethereum_logs_topic = app.topic(
+        RAW_CHAIN_TOPIC, value_type=EthereumLogRecord)
     app.agent(ethereum_logs_topic)(process_chain)
