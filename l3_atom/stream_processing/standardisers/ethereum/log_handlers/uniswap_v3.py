@@ -1,7 +1,5 @@
 from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
-from l3_atom.stream_processing.records import DexTrade
 from yapic import json
-import logging
 from decimal import Decimal
 
 
@@ -57,7 +55,8 @@ class UniswapV3SwapHandler(UniswapV3Handler):
 
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
-        amountBought = Decimal(amountBought) / Decimal(10 ** tokenBoughtDecimals)
+        amountBought = Decimal(amountBought) / \
+            Decimal(10 ** tokenBoughtDecimals)
         amountSold = Decimal(amountSold) / Decimal(10 ** tokenSoldDecimals)
         taker = args.recipient
 

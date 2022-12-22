@@ -190,8 +190,8 @@ class DexTrade(BaseChainRecord, serializer='dex_trades'):
     logIndex: int
     blockNumber: int
     blockHash: str
-    maker: str=None
-    taker: str=None
+    maker: str = None
+    taker: str = None
 
 
 class EthereumLogRecord(EthereumLog, faust.Record, serializer='ethereum_logs'):

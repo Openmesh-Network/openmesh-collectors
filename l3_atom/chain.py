@@ -1,17 +1,10 @@
-from abc import abstractmethod
 from typing import Union
 from l3_atom.helpers.read_config import get_secrets
-from l3_atom.helpers.enrich_data import enrich_raw
-from datetime import datetime as dt
 import asyncio
-import requests
-import uvloop
-from yapic import json
-import web3
 from l3_atom.data_source import DataFeed
 import base64
 
-from l3_atom.feed import AsyncConnectionManager, AsyncFeed, WSConnection, HTTPRPC, WSRPC
+from l3_atom.feed import AsyncConnectionManager, HTTPRPC, WSRPC
 from l3_atom.sink_connector.kafka_multiprocessed import AvroKafkaConnector
 
 import logging
@@ -49,7 +42,8 @@ class ChainFeed(Chain, DataFeed):
         }
 
     def _init_http_node_conn(self, node_http_url=None, node_secret=None, **kwargs):
-        self.http_node_conn = HTTPRPC(self.name, addr=node_http_url, auth_secret=node_secret)
+        self.http_node_conn = HTTPRPC(
+            self.name, addr=node_http_url, auth_secret=node_secret)
 
     def _get_auth_header(self, username, password):
         assert ':' not in username

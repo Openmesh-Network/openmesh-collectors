@@ -40,7 +40,8 @@ class PhemexStandardiser(Standardiser):
             for price, size in message['book'][s]:
                 msg = dict(
                     symbol=symbol,
-                    price=Decimal(price) / Decimal(self._get_price_scale(symbol)),
+                    price=Decimal(price) /
+                    Decimal(self._get_price_scale(symbol)),
                     size=Decimal(size) / Decimal(self._get_size_scale(symbol)),
                     side=side,
                     event_timestamp=event_timestamp,
@@ -56,11 +57,11 @@ class PhemexStandardiser(Standardiser):
         symbol = self.normalise_symbol(message['symbol'])
         price_scale = Decimal(self._get_price_scale(symbol))
         for event_timestamp, _, _, o, h, l, c, v, _ in message['kline']:
-            o = Decimal(o) / price_scale
-            h = Decimal(h) / price_scale
-            l = Decimal(l) / price_scale
-            c = Decimal(c) / price_scale
-            v = Decimal(v) / Decimal(self._get_size_scale(symbol))
+            op = Decimal(o) / price_scale
+            high = Decimal(h) / price_scale
+            low = Decimal(l) / price_scale
+            close = Decimal(c) / price_scale
+            vol = Decimal(v) / Decimal(self._get_size_scale(symbol))
             msg = dict(
                 symbol=symbol,
                 start=event_timestamp - 60_000,
@@ -68,11 +69,11 @@ class PhemexStandardiser(Standardiser):
                 interval=interval,
                 trades=-1,
                 closed=True,
-                o=o,
-                h=h,
-                l=l,
-                c=c,
-                v=v,
+                o=op,
+                h=high,
+                l=low,
+                c=close,
+                v=vol,
                 event_timestamp=event_timestamp,
                 atom_timestamp=atom_timestamp
             )

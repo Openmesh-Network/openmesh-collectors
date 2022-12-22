@@ -7,14 +7,15 @@ from decimal import Decimal
 class GeminiStandardiser(Standardiser):
     exchange = Gemini
 
-    def __init__(self, symbols:list=None):
+    def __init__(self, symbols: list = None):
         super().__init__()
         self.symbols = symbols
         self.sym_map = {}
 
     def normalise_symbol(self, symbol):
         if symbol not in self.sym_map:
-            temp_map = self.exchange.normalise_symbols(self.exchange.get_symbols([symbol]))
+            temp_map = self.exchange.normalise_symbols(
+                self.exchange.get_symbols([symbol]))
             norm, _ = list(temp_map.items())[0]
             self.sym_map[symbol] = norm
         return self.sym_map[symbol].normalised

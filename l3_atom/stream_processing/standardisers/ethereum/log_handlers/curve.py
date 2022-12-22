@@ -1,6 +1,5 @@
 from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
 from yapic import json
-import logging
 from decimal import Decimal
 
 
@@ -40,8 +39,10 @@ class CurveSwapHandler(CurveHandler):
         tokenBoughtAddr = tokens[args.bought_id]['id']
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
 
-        amountSold = Decimal(args.tokens_sold) / Decimal(10 ** tokenSoldDecimals)
-        amountBought = Decimal(args.tokens_bought) / Decimal(10 ** tokenBoughtDecimals)
+        amountSold = Decimal(args.tokens_sold) / \
+            Decimal(10 ** tokenSoldDecimals)
+        amountBought = Decimal(args.tokens_bought) / \
+            Decimal(10 ** tokenBoughtDecimals)
 
         taker = args.buyer
 

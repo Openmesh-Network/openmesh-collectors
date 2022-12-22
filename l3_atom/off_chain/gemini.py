@@ -1,7 +1,6 @@
 from l3_atom.data_source import DataFeed
 from l3_atom.tokens import Symbol
 from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
-from l3_atom.helpers.read_config import get_conf_symbols
 from yapic import json
 import requests
 import logging
