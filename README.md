@@ -8,7 +8,7 @@ A massive open source cryptocurrency cloud data lake.
 - [Schemas](#schemas)
 
 ## Background
-This repository hosts the codebase for L3 Atom's exchange collectors -- Python processes which connect to cryptocurrency exchanges via Websocket and continuously collect market data from them. The collected data is processed in a cloud-native data lake, which will be made available to the public. It works by connecting to a variety of different market data APIs, sending that raw data over Kafka to another process which standardises it into consistent schemas, publishing that back into Kafka topics separated by event type.
+This repository hosts the codebase for L3 Atom's exchange collectors -- Python processes which connect to cryptocurrency exchanges via Websocket and continuously collect market data from them. The collected data is processed in a cloud-native data lake, which will be made available to the public. It works by connecting to a variety of different market data APIs / blockchains, sending that raw data over Kafka to another process which standardises it into consistent schemas, and then publishing that back into Kafka topics separated by event type.
 
 ## Setup
 Clone the repository and install the necessary dependencies with `pip`. This project relies on Kafka for messaging, so if you want to run it locally, you're going to have to set up Kafka. There are many ways to do so -- the easiest we've found is to follow [confluent's guide](https://docs.confluent.io/confluent-cli/current/install.html) to quickly get a cluster up and running. If you want to use the stream processing component of L3 Atom, you'll also have to set up Schema Registry and the necessary [Avro schemas](#schemas) so that the stream processing layer knows how to SerDe data. Installing Confluent also installs Schema Registry, so you can set it up there.
@@ -33,6 +33,16 @@ KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
 SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
 ```
 
+That will be sufficient to ingest and process off-chain data, but to process on-chain data, you will also need access to an ethereum node, preferably Infura. Once you have it, add it to the `.env` file as well:
+
+```ini
+ETHEREUM_NODE_HTTP_URL=<URL of your Ethereum node via HTTP>
+ETHEREUM_NODE_WS_URL=<URL of your Ethereum node via Websockets>
+ETHEREUM_NODE_SECRET=<Secret for Ethereum node authentication (if required)>
+```
+
+Both HTTP and Websockets are required.
+
 In `config.ini`, we have some example symbols for each exchange. You can use these when running the application, but feel free to use any supported by the exchanges.
 
 The entry point for running the application is `runner.py`, which can be used in the following two ways:
@@ -44,13 +54,17 @@ python3 runner.py processor
 
 Where the first option runs the raw data collector for the given exchange, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
 
+Note that unlike other data sources, blockchains won't require a `--symbol` argument when running the application, as it will collect data for the entire chain on its own. Individual DEXes, symbol pairs, e.t.c. are handled by the stream processor.
+
 If you want to run the full application, you'll want to have three processes running:
 
-1. The raw data collection for a single exchange
+1. The raw data collection for a single source
 2. The stream processor
 3. A Kafka consumer on one of the normalised topics (e.g. `lob`)
 
 From there, you'll start to see a standardised orderbook feed coming in at low latency. Note that the data will be in Avro, so you'll probably want to have some kind of deserializer to make it human-readable.
+
+Eventually a more "mini" version of L3 Atom will be developed which supports smaller use cases that can be handled on one machine. The current application is designed for a more distributed setup as the data volumes are simply too high for one machine to handle.
 
 ## Schemas
 

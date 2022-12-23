@@ -176,7 +176,6 @@ class Ethereum(ChainFeed):
             }])
         return res['result']
 
-    # TODO: Implement these to send data to Kafka after preprocessing
     async def _transactions(self, conn: RPC, transactions: list, ts: int):
         for transaction in transactions:
             del transaction['v']

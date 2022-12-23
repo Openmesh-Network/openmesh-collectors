@@ -11,17 +11,19 @@ class EthereumStandardiser(Standardiser):
 
     def __init__(self) -> None:
         super().__init__()
-        self.start_exchange()
-        self.web3_endpoint = self.exchange.node_conf['node_http_url']
-        self.web3 = web3.Web3(web3.HTTPProvider(self.web3_endpoint))
-        self.log_handlers = {
-            handler.topic0: handler(self) for handler in log_handlers
-        }
         self.feeds = ['dex_trades']
         self.normalised_topics = {
             feed: None for feed in self.feeds
         }
         self.graph_connected = False
+
+    def start_exchange(self):
+        self.exchange = self.exchange()
+        self.web3 = web3.Web3(web3.Web3.HTTPProvider(self.exchange.node_conf['node_http_url']))
+        self.log_handlers = {
+            handler.topic0: handler(self) for handler in log_handlers
+        }
+        self.exchange_started = True
 
     async def _open_graph_conn(self):
         self.graph_conn = aiohttp.ClientSession()
