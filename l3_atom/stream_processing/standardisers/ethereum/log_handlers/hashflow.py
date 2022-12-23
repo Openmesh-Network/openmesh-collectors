@@ -26,11 +26,9 @@ class HashflowTradeHandler(HashflowHandler):
         args = event.args
         poolAddr = event.address
         tokenSoldAddr = args.baseToken
-        print(tokenSoldAddr)
         tokenSold = self.get_symbol(tokenSoldAddr)
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
         tokenBoughtAddr = args.quoteToken
-        print(tokenBoughtAddr)
         tokenBought = self.get_symbol(tokenBoughtAddr)
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
 
@@ -58,7 +56,5 @@ class HashflowTradeHandler(HashflowHandler):
             amountSold=amountSold,
             taker=taker
         )
-
-        print(msg)
 
         await self.standardiser.send_to_topic('dex_trades', key_field='pairAddr', **msg)
