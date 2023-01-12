@@ -9,6 +9,7 @@
     1. [Setup](#setup)
 8. [Adding Additional Sources](#adding-additional-sources)
     1. [Off Chain](#off-chain)
+    2. [On Chain](#on-chain)
 9. [References](#references)
 
 # Contributing to L3 Atom
@@ -75,6 +76,8 @@ ETHEREUM_NODE_SECRET=<Secret for Ethereum node authentication (if required)>
 
 Both HTTP and Websockets are required.
 
+Additionally, in `config.ini`, you'll want to set `num_replications` to be equal to the number of brokers you have running. Most likely, in a local development environment, you'll only be running 1. If `num_replications` is greater than the number of brokers, an error will be thrown as the program will be unable to create the necessary Kafka topics.
+
 Symbols take the form of `<base>.<quote>`, e.g. `BTC.USD`, `ETH.USD`, `BTC.EUR` for spots, and `<base>.<quote>-PERP` for perpetual futures, e.g. `BTC.USDT-PERP`. L3 Atom supports every symbol listed on the given exchanges.
 
 The entry point for running the application is `runner.py`, which can be used in of the following ways:
@@ -85,7 +88,7 @@ python3 runner.py connector --source <blockchain>
 python3 runner.py processor
 ```
 
-Where the first two options run the raw data collector for the given blockchain, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
+Where the first two options run the raw data collector for the given exchange or blockchain, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
 
 Note that unlike other data sources, blockchains won't require a `--symbol` argument when running the application, as it will collect data for the entire chain on its own. Individual DEXes, symbol pairs, e.t.c. are handled by the stream processor. Standard orderbook-style exchanges (including some DEXes like DyDx) will require a symbol when specified as a source.
 
@@ -430,6 +433,9 @@ class Trade(BaseCEXRecord, serializer='trades'):
 So when we extract the values from the raw Coinbase message and create a `Record` object from it, that data is validated and serialised automatically. You can view the full list of `Record` definitions [here](l3_atom/stream_processing/records.py).
 
 We also define a key for the message, which is typically the data source followed by some unique identifier for that type of message. In the case of Coinbase, say we had a trade for BTC.USD, the key would then be `'coinbase_BTC.USD'`, letting Kafka parallelise the messages and distribute them to the correct partitions. This is important for performance, as it allows us to scale the system horizontally and distribute the load across multiple machines. As messages with the same keys are guaranteed to be processed in order, all BTC.USD trades on Coinbase will be processed sequentially.
+
+### On Chain
+TODO
 
 ## References
 This document was adapted from the open-source contribution guidelines for [Facebook's Draft](https://github.com/facebook/draft-js/blob/a9316a723f9e918afde44dea68b5f9f39b7d9b00/CONTRIBUTING.md)
