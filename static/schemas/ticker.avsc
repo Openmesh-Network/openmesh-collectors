@@ -1,0 +1,42 @@
+{
+    "type": "record",
+    "name": "Ticker",
+    "namespace": "com.acme.avro",
+    "fields": [
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "bid_price",
+            "type": "double"
+        },
+        {
+            "name": "bid_size",
+            "type": "double"
+        },
+        {
+            "name": "ask_price",
+            "type": "double"
+        },
+        {
+            "name": "ask_size",
+            "type": "double"
+        },
+        {
+            "name": "event_timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "atom_timestamp",
+            "type": "long"
+        }
+    ]
+}

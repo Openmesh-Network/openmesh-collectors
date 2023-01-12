@@ -30,6 +30,7 @@ class Kafka(SinkMessageHandler):
     def __init__(self, *args, topic="raw", **kwargs):
         super().__init__(*args, **kwargs)
         conf = get_kafka_config()
+        self.num_replications = conf['num_replications']
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
         self.sasl_username = conf['KAFKA_SASL_KEY'] if 'KAFKA_SASL_KEY' in conf else None
         self.sasl_password = conf['KAFKA_SASL_SECRET'] if 'KAFKA_SASL_SECRET' in conf else None
@@ -122,7 +123,7 @@ class KafkaConnector(Kafka):
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
         if include_raw and "raw" not in topic_metadata.topics:
-            topics.append(NewTopic(f"{prefix}raw", 100, 3))
+            topics.append(NewTopic(f"{prefix}raw", 100, self.num_replications))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
             feed = prefix + feed if prefix else feed
@@ -131,7 +132,7 @@ class KafkaConnector(Kafka):
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
-                    NewTopic(feed, num_partitions=50, replication_factor=3))
+                    NewTopic(feed, num_partitions=50, replication_factor=self.num_replications))
             else:
                 logging.info(f"{self.exchange}: Topic {feed} already exists")
 

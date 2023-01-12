@@ -1,0 +1,30 @@
+{
+    "type": "record",
+    "name": "open_interest",
+    "namespace": "com.acme.avro",
+    "fields": [
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "open_interest",
+            "type": "double"
+        },
+        {
+            "name": "event_timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "atom_timestamp",
+            "type": "long"
+        }
+    ]
+}

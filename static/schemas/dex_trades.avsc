@@ -1,0 +1,91 @@
+{
+    "doc": "Trades that occur on Ethereum DEXes",
+    "fields": [
+      {
+        "name": "atomTimestamp",
+        "type": "long"
+      },
+      {
+        "name": "blockTimestamp",
+        "type": {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      },
+      {
+        "name": "exchange",
+        "type": "string"
+      },
+      {
+        "name": "maker",
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      {
+        "name": "taker",
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      {
+        "name": "tokenBought",
+        "type": "string"
+      },
+      {
+        "name": "tokenSold",
+        "type": "string"
+      },
+      {
+        "name": "tokenBoughtAddr",
+        "type": "string"
+      },
+      {
+        "name": "tokenSoldAddr",
+        "type": "string"
+      },
+      {
+        "name": "amountBought",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 24,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "amountSold",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 24,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "logIndex",
+        "type": "long"
+      },
+      {
+        "name": "transactionHash",
+        "type": "string"
+      },
+      {
+        "name": "blockHash",
+        "type": "string"
+      },
+      {
+        "name": "blockNumber",
+        "type": "long"
+      },
+      {
+        "name": "pairAddr",
+        "type": "string"
+      }
+    ],
+    "name": "dex_trades",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+  }

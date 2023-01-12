@@ -1,0 +1,38 @@
+{
+    "type": "record",
+    "name": "LOB",
+    "namespace": "com.acme.avro",
+    "fields": [
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "price",
+            "type": "double"
+        },
+        {
+            "name": "size",
+            "type": "double"
+        },
+        {
+            "name": "side",
+            "type": "string"
+        },
+        {
+            "name": "event_timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "atom_timestamp",
+            "type": "long"
+        }
+    ]
+}
