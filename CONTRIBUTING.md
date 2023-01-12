@@ -1,3 +1,16 @@
+# Table of Contents
+1. [Contributing to L3 Atom](#contributing-to-l3-atom)
+2. [We Develop with Github](#we-develop-with-github)
+3. [All Code Changes Happen Through Pull Requests](#all-code-changes-happen-through-pull-requests)
+4. [Any contributions you make will be under the MIT Software License](#any-contributions-you-make-will-be-under-the-mit-software-license)
+5. [Use a Consistent Coding Style](#use-a-consistent-coding-style)
+6. [License](#license)
+7. [Local Development](#local-development)
+    1. [Setup](#setup)
+8. [Adding Additional Sources](#adding-additional-sources)
+    1. [Off Chain](#off-chain)
+9. [References](#references)
+
 # Contributing to L3 Atom
 We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
 
