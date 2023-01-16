@@ -9,6 +9,7 @@
     1. [Setup](#setup)
 8. [Adding Additional Sources](#adding-additional-sources)
     1. [Off Chain](#off-chain)
+    2. [On Chain](#on-chain)
 9. [References](#references)
 
 # Contributing to L3 Atom
@@ -75,6 +76,8 @@ ETHEREUM_NODE_SECRET=<Secret for Ethereum node authentication (if required)>
 
 Both HTTP and Websockets are required.
 
+Additionally, in `config.ini`, you'll want to set `num_replications` to be equal to the number of brokers you have running. Most likely, in a local development environment, you'll only be running 1. If `num_replications` is greater than the number of brokers, an error will be thrown as the program will be unable to create the necessary Kafka topics.
+
 Symbols take the form of `<base>.<quote>`, e.g. `BTC.USD`, `ETH.USD`, `BTC.EUR` for spots, and `<base>.<quote>-PERP` for perpetual futures, e.g. `BTC.USDT-PERP`. L3 Atom supports every symbol listed on the given exchanges.
 
 The entry point for running the application is `runner.py`, which can be used in of the following ways:
@@ -85,7 +88,7 @@ python3 runner.py connector --source <blockchain>
 python3 runner.py processor
 ```
 
-Where the first two options run the raw data collector for the given blockchain, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
+Where the first two options run the raw data collector for the given exchange or blockchain, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
 
 Note that unlike other data sources, blockchains won't require a `--symbol` argument when running the application, as it will collect data for the entire chain on its own. Individual DEXes, symbol pairs, e.t.c. are handled by the stream processor. Standard orderbook-style exchanges (including some DEXes like DyDx) will require a symbol when specified as a source.
 
