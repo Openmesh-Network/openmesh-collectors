@@ -431,5 +431,231 @@ So when we extract the values from the raw Coinbase message and create a `Record
 
 We also define a key for the message, which is typically the data source followed by some unique identifier for that type of message. In the case of Coinbase, say we had a trade for BTC.USD, the key would then be `'coinbase_BTC.USD'`, letting Kafka parallelise the messages and distribute them to the correct partitions. This is important for performance, as it allows us to scale the system horizontally and distribute the load across multiple machines. As messages with the same keys are guaranteed to be processed in order, all BTC.USD trades on Coinbase will be processed sequentially.
 
+### On-Chain
+On-chain data collection follows a similar flow and structure to off-chain data collection, so you should read the [Off Chain](#off-chain) section above before you dive into this one.
+
+On-chain data has a similar flow to off-chain data; i.e. `raw data collecting -> stream processing -> kafka consuming`, but there are a few differences:
+ - Unlike CEXes, we consume data from entire blockchains at a time, i.e., we don't specify a `symbol` or an exchange to collect from. This is because the volumes are simply much lower
+ - "Raw" blockchain data is intrinsically more structured than raw CEX data, so we predefine schemas for them, similar to the normalised topics like `lob`, `ticker`, e.t.c. For example, look at the schema for [Ethereum blocks](static/schemas/ethereum_blocks.avsc).
+
+For this example, we'll look at adding Uniswap V3 data. As mentioned above, the raw Ethereum data is already being collected, we just need to define the specific processor to filter out what events correspond to activity on Uniswap V3. To understand this we need to do a quick deep dive on how Ethereum events and logs work. [This article](https://medium.com/mycrypto/understanding-event-logs-on-the-ethereum-blockchain-f4ae7ba50378) is a good starting point, but we'll go over the basics here.
+
+Smart contracts on Ethereum have functions, and some of those functions emit "events" when they're called. These events are essentially logs that are stored on the blockchain, and can be used to track the state of the contract. For example, if you wanted to track the state of a token contract, you could listen for the `Transfer` event, which is emitted whenever a token is transferred. You can then use the data from the event to track the state of the token contract. In the case of Uniswap V3, we're interested in the `Swap` event, which is emitted whenever a swap occurs on the exchange. The `Swap` event has the following signature:
+
+```solidity
+event Swap(
+    address indexed sender,
+    address indexed recipient,
+    int256 amount0,
+    int256 amount1,
+    uint160 sqrtPriceX96,
+    uint128 liquidity,
+    int24 tick
+);
+```
+
+This means that when the `Swap` event is emitted, it will contain the following data:
+ - `sender`: The address of the sender of the swap
+ - `recipient`: The address of the recipient of the swap
+ - `amount0`: The amount of token0 in the swap
+ - `amount1`: The amount of token1 in the swap
+ - `sqrtPriceX96`: The square root of the price of the swap
+ - `liquidity`: The amount of liquidity in the swap
+ - `tick`: The tick of the swap
+
+This is everything we need to get full details of the swap, but there's one catch -- when given this event (also called a log), the entirety of the data is raw encoded in a `data` field. For example, look at the following log:
+
+```json
+{
+  "atomTimestamp": 1673859038014502,
+  "blockTimestamp": 1673859035000,
+  "logIndex": 251,
+  "transactionIndex": 105,
+  "transactionHash": "0x930abc7d6dafdf0bcbbb1a9e814d3a360d984119627341d7718c767e63d21fef",
+  "blockHash": "0x1ef5633ce51200c7f2b70a2ffe5d523e4787821b787afe89ffdac865345bc0a0",
+  "blockNumber": 16418266,
+  "address": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+  "data": "0x00000000000000000000000000000000000000000000000021979f38ca407fe7ffffffffffffffffffffffffffffffffffffffffffffffffffffffff21eb06fa000000000000000000000000000000000000000000029261aad628fecce5ed2300000000000000000000000000000000000000000000000024759af0832ed494fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffce752",
+  "topic0": "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67",
+  "topic1": "0x00000000000000000000000068b3465833fb72a70ecdf485e0e4c7bd8665fc45",
+  "topic2": "0x00000000000000000000000078387dae0367743e77137e100c94a2edd182a2e4",
+  "topic3": null
+}
+```
+
+`topic0` is a hash of the event signature, a way you can identify what the event is. `topic1`, `topic2`, and `topic3` are those arguments that use the `indexed` keyword. As you can see, the `data` field is just raw hex data. To make it readable, we need to decode it using something called an "Application Binary Interface", or ABI. Ethereum contracts deploy with one, and its essentially a dictionary that defines how we can transform the raw encoded data into something more useful. For an example, look at the [Uniswap V3 Pool ABI](static/abis/uniswap_v3_pool.json). The entry for the `Swap` event looks like this
+
+```json
+{
+  "anonymous": false,
+  "inputs": [
+    {
+      "indexed": true,
+      "internalType": "address",
+      "name": "sender",
+      "type": "address"
+    },
+    {
+      "indexed": true,
+      "internalType": "address",
+      "name": "recipient",
+      "type": "address"
+    },
+    {
+      "indexed": false,
+      "internalType": "int256",
+      "name": "amount0",
+      "type": "int256"
+    },
+    {
+      "indexed": false,
+      "internalType": "int256",
+      "name": "amount1",
+      "type": "int256"
+    },
+    {
+      "indexed": false,
+      "internalType": "uint160",
+      "name": "sqrtPriceX96",
+      "type": "uint160"
+    },
+    {
+      "indexed": false,
+      "internalType": "uint128",
+      "name": "liquidity",
+      "type": "uint128"
+    },
+    {
+      "indexed": false,
+      "internalType": "int24",
+      "name": "tick",
+      "type": "int24"
+    }
+  ],
+  "name": "Swap",
+  "type": "event"
+}
+```
+
+Using that as a guide, we can decode the raw event log and get the data we're looking for. Now, let's get into the code.
+
+The off-chain standardisers sit in the base directory `l3_atom/stream_processing/standardisers`. For on-chain data, each blockchain has its own directory which contain `LogHandler`s, processors for specific contract events. Let's look at Uniswap V3's `LogHandler`s, found in [`l3_atom/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py`](l3_atom/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py):
+
+```python
+from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
+from yapic import json
+from decimal import Decimal
+
+
+class UniswapV3Handler(EthereumLogHandler):
+    exchange = 'uniswap-v3'
+    graph_endpoint: str = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3'
+```
+
+We start off by defining the exchange name as `uniswap-v3`, and providing an endpoint for the Uniswap V3 subgraph. We don't actually need it right now, but it's nice to have as a backup for querying Uniswap data if we're in a pinch.
+
+```python
+class UniswapV3SwapHandler(UniswapV3Handler):
+    topic0 = "0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67"
+    event_name = "Swap"
+    abi_name = 'uniswap_v3_pool'
+    example_contract = '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640'
+```
+
+For handling the swaps themselves, we define:
+ - `topic0`: The hash of the event signature, used to identify the event as logs come in
+ - `event_name`: The name of the event
+ - `abi_name`: The name of the ABI file to use for decoding the event
+ - `example_contract`: An example contract address. The web3 library we're using requires an actual contract address to help parsing events, so we just use one of the Uniswap V3 pools.
+
+```python
+def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.loaded_pool_data = False
+
+def _load_pool_data(self):
+    self.pool_data = json.loads(
+        open('static/lists/uniswap_v3_pools.json').read())
+    self.load_erc20_data()
+    self.loaded_pool_data = True
+```
+
+In the `static/lists` directory, there are lists of tokens, pools, pairs e.t.c. that provide useful information for standardising data. For adding a new DEX, you might find it necessary to get some of this data yourself. The Graph can be a good place to find this information, but it can be from anywhere.
+
+```python
+    async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
+        if not self.loaded_pool_data:
+            self._load_pool_data()
+        args = event.args
+        poolAddr = event.address
+        pairDetails = self.pool_data.get(poolAddr, None)
+        if pairDetails is None:
+            return
+        token0 = pairDetails['token0']
+        token1 = pairDetails['token1']
+        token0Sym = token0['symbol']
+        token1Sym = token1['symbol']
+        token0Id = token0['id']
+        token1Id = token1['id']
+        if args['amount0'] > 0:
+            tokenBought = token0Sym
+            tokenBoughtAddr = token0Id
+            tokenSold = token1Sym
+            tokenSoldAddr = token1Id
+            amountBought = args['amount0']
+            amountSold = abs(args['amount1'])
+        else:
+            tokenBought = token1Sym
+            tokenBoughtAddr = token1Id
+            tokenSold = token0Sym
+            tokenSoldAddr = token0Id
+            amountBought = args['amount1']
+            amountSold = abs(args['amount0'])
+
+        tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
+        tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
+        amountBought = Decimal(amountBought) / \
+            Decimal(10 ** tokenBoughtDecimals)
+        amountSold = Decimal(amountSold) / Decimal(10 ** tokenSoldDecimals)
+        taker = args.recipient
+
+        msg = dict(
+            blockNumber=event.blockNumber,
+            blockHash=event.blockHash,
+            transactionHash=event.transactionHash,
+            logIndex=event.logIndex,
+            pairAddr=poolAddr,
+            tokenBought=tokenBought,
+            tokenBoughtAddr=tokenBoughtAddr,
+            tokenSold=tokenSold,
+            tokenSoldAddr=tokenSoldAddr,
+            blockTimestamp=blockTimestamp,
+            atomTimestamp=atomTimestamp,
+            exchange=self.exchange,
+            amountBought=amountBought,
+            amountSold=amountSold,
+            taker=taker,
+        )
+
+        await self.standardiser.send_to_topic('dex_trades', key_field='pairAddr', **msg)
+```
+
+Every `LogHandler`, like every `Standardiser`, must have an asynchronous `event_callback(self, event, blockTimestamp=None, atomTimestamp=None)` function defined. This is the function called whenever a log is received whose `topic0` is the same as the `LogHandler`'s `topic0`. The logic here is pretty straightforward and similar to the structure of an off-chain callback function; we simply extract the fields we want from the event data and construct a `Record` object to send to the `dex_trades` topic.
+
+The last step is to modify the `__init__.py` file in the `log_handlers` directory to include the new `LogHandler`:
+
+```python
+from .uniswap_v3 import *
+from .uniswap_v2 import *
+from .dodo import *
+from .curve import *
+from .hashflow import *
+
+log_handlers = [UniswapV3SwapHandler, UniswapV2SwapHandler,
+                DodoexSellHandler, DodoexBuyHandler, DodoexSwapHandler, CurveSwapHandler, HashflowTradeHandler]
+```
+
+This will signal the Ethereum `Standardiser` to use our new `LogHandler` when it receives a log with the correct `topic0`.
+
 ## References
 This document was adapted from the open-source contribution guidelines for [Facebook's Draft](https://github.com/facebook/draft-js/blob/a9316a723f9e918afde44dea68b5f9f39b7d9b00/CONTRIBUTING.md)
