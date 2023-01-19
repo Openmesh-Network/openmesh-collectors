@@ -20,7 +20,7 @@
             "type": "double"
         },
         {
-            "name": "side",
+            "name": "taker_side",
             "type": "string"
         },
         {

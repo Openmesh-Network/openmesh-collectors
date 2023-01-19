@@ -11,7 +11,7 @@ class EthereumStandardiser(Standardiser):
 
     def __init__(self) -> None:
         super().__init__()
-        self.feeds = ['dex_trades']
+        self.feeds = ['dex_trades', 'dex_liquidity']
         self.normalised_topics = {
             feed: None for feed in self.feeds
         }

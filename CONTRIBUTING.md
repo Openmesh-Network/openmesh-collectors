@@ -44,9 +44,9 @@ By contributing, you agree that your contributions will be licensed under its MI
 
 ## Local Development
 ### Setup
-Install all needed dependencies via `pip install -r requirements.txt`. This project relies on Kafka for messaging, so if you want to run it locally, Kafka will need to be running. Eventually there will be a version of L3 Atom designed to run on a single process for local development (as well as tools to automatically set up Kafka + other tools for simulating a distributed setup), but for now you'll have to set up Kafka yourself. There are many ways to do so -- the easiest we've found is to follow [confluent's guide](https://docs.confluent.io/confluent-cli/current/install.html) to quickly get a cluster up and running. If you want to use the stream processing component of L3 Atom, you'll also have to set up Schema Registry and the necessary [Avro schemas](static/schemas/) so that the stream processing layer knows how to SerDe data. Installing Confluent also installs Schema Registry, so you can set it up there.
+Install all needed dependencies via `pip install -r requirements.txt`. This project relies on Kafka for messaging, so if you want to run it locally, Kafka will need to be running. Eventually there will be a version of L3 Atom designed to run on a single process for local development, but for now we'll require a Kafka setup. Everything required is included in the `docker-compose.yml` file, so you can run `docker-compose up` to get a local Kafka setup running. This will setup one instance of Zookeeper, 3 brokers, and Schema Registry.
 
-Once you've set up the necessary externalities, you need to tell the app where it can connect to Kafka. Make a `.env` file in `keys/`, and fill it in with the following:
+Once Kafka is set up you need to tell the application how it can connect. Make a `.env` file in the `keys/` directory, and fill it in with the following:
 
 If your Kafka requires SASL authentication:
 ```ini
@@ -59,14 +59,22 @@ SCHEMA_REGISTRY_API_KEY=<Username for Schema Registry Authentication>
 SCHEMA_REGISTRY_API_SECRET=<Secret for Schema Registry Authentication>
 ```
 
-If your Kafka does not require authentication:
+If your Kafka does not require SASL authentication:
 ```ini
 KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
 
 SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
 ```
 
-That will be sufficient to ingest and process off-chain data, but to process on-chain data, you will also need access to an ethereum node, preferably Infura. Once you have it, add it to the `.env` file as well:
+If you're using the `docker-compose.yml` setup, you can use the following values:
+
+```ini
+KAFKA_BOOTSTRAP_SERVERS=localhost:29092,localhost:39092,localhost:49092
+
+SCHEMA_REGISTRY_URL=http://localhost:8081
+```
+
+That will be sufficient to ingest and process off-chain data, but to process on-chain data, you will also need access to an ethereum node. Once you have it, add it to the `.env` file as well:
 
 ```ini
 ETHEREUM_NODE_HTTP_URL=<URL of your Ethereum node via HTTP>
@@ -76,11 +84,11 @@ ETHEREUM_NODE_SECRET=<Secret for Ethereum node authentication (if required)>
 
 Both HTTP and Websockets are required.
 
-Additionally, in `config.ini`, you'll want to set `num_replications` to be equal to the number of brokers you have running. Most likely, in a local development environment, you'll only be running 1. If `num_replications` is greater than the number of brokers, an error will be thrown as the program will be unable to create the necessary Kafka topics.
+Additionally, in `config.ini`, you'll want to set `num_replications` to be equal to the number of brokers you have running. By default, this is set to 3, which will work with the 3-broker setup in the `docker-compose.yml` file. If you're using a custom configuration with less brokers, make sure to set this value to be, at maximum, the number of brokers you have running.
 
 Symbols take the form of `<base>.<quote>`, e.g. `BTC.USD`, `ETH.USD`, `BTC.EUR` for spots, and `<base>.<quote>-PERP` for perpetual futures, e.g. `BTC.USDT-PERP`. L3 Atom supports every symbol listed on the given exchanges.
 
-The entry point for running the application is `runner.py`, which can be used in of the following ways:
+The entry point for running the application is `runner.py`, which can be used in one of the following ways:
 
 ```bash
 python3 runner.py connector --source <exchange> --symbol <symbol>
@@ -100,7 +108,29 @@ If you want to run the full application, you'll want to have three processes run
 
 From there, you'll start to see a standardised orderbook feed coming in at low latency. Note that the data will be in Avro, so you'll probably want to have some kind of deserializer to make it human-readable.
 
-Eventually a more "mini" version of L3 Atom will be developed which supports smaller use cases that can be handled on one machine. The current application is designed for a more distributed setup as the data volumes are simply too high for one machine to handle.
+The following commands will set up the application with as little steps as possible, assuming you've set up the `.env` file to work with the docker-compose.yaml file:
+
+In one terminal:
+```bash
+docker-compose up
+```
+
+In a second terminal:
+```bash
+python3 runner.py connector --source coinbase --symbol BTC.USD
+```
+
+In a third terminal:
+```bash
+python3 runner.py processor
+```
+
+Finally, install the Kafka cli tools, and run the following in a fourth terminal:
+```bash
+kafka-avro-console-consumer --topic lob_l3 --bootstrap-server localhost:29092 --property schema.registry.url=http://localhost:8081
+```
+
+You can of course run all of these in the background, but this will show you the full logs of what each process is doing. You will start to see Coinbase orderbook data coming in.
 
 ## Adding additional sources
 ### Off-Chain
