@@ -74,6 +74,7 @@ class UniswapV3LiquidityHandler(UniswapV3PoolHandler):
             atomTimestamp=atomTimestamp,
             eventType=self.liquidity_event_type,
             exchange=self.exchange,
+            owner=args.owner
         )
 
         await self.standardiser.send_to_topic('dex_liquidity', key_field='pairAddr', **msg)
@@ -85,7 +86,7 @@ class UniswapV3MintHandler(UniswapV3LiquidityHandler):
     
 
 class UniswapV3BurnHandler(UniswapV3LiquidityHandler):
-    topic0 = "0x2e2b2f2f9a9e0e1b0a1b2b2b0a0a2f2f2e2f2f2e2f2f2f2f2f2f2f2f2f2f2f2f"
+    topic0 = "0x0c396cd989a39f4459b5fa1aed6a9a8dcdbc45908acfd67e028cd568da98982c"
     event_name = "Burn"
     liquidity_event_type = 'remove'
 
