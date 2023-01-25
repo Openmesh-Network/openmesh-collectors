@@ -31,7 +31,7 @@ resources:
   repositories:
   - repository: pipeline-utilities
     type: github
-    name: GDA-Fund2/pipeline-utilities
+    name: L3A-Protocol/pipeline-utilities
     ref: main
     endpoint: GDA-Fund2
 
