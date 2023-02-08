@@ -33,7 +33,7 @@ resources:
     type: github
     name: L3A-Protocol/pipeline-utilities
     ref: main
-    endpoint: GDA-Fund2
+    endpoint: L3A-Protocol
 
 trigger:
 - main
