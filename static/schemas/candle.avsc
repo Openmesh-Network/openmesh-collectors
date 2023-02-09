@@ -1,0 +1,72 @@
+{
+    "type": "record",
+    "name": "Candle",
+    "namespace": "com.acme.avro",
+    "fields": [
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "start",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "end",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "interval",
+            "type": "string"
+        },
+        {
+            "name": "trades",
+            "type": "int"
+        },
+        {
+            "name": "closed",
+            "type": "boolean"
+        },
+        {
+            "name": "o",
+            "type": "double"
+        },
+        {
+            "name": "h",
+            "type": "double"
+        },
+        {
+            "name": "l",
+            "type": "double"
+        },
+        {
+            "name": "c",
+            "type": "double"
+        },
+        {
+            "name": "v",
+            "type": "double"
+        },
+        {
+            "name": "event_timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "atom_timestamp",
+            "type": "long"
+        }
+    ]
+}

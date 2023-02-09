@@ -168,31 +168,96 @@ class OpenInterest(BaseCEXRecord, serializer='open_interest'):
 class BaseChainRecord(faust.Record):
     """
     Base record for all on-chain messages.
+
+    :param blockTimestamp: The timestamp of the block (in milliseconds)
+    :type blockTimestamp: int
+    :param atomTimestamp: The timestamp of when the message was received (in microseconds)
+    :type atomTimestamp: int
     """
     blockTimestamp: int
     atomTimestamp: int
 
-
-class DexTrade(BaseChainRecord, serializer='dex_trades'):
+class BaseDexRecord(BaseChainRecord):
     """
-    Record for a DEX trade.
-    """
+    Base record for all DEX events
 
+    :param exchange: The name of the exchange
+    :type exchange: str
+    :param pairAddr: The address of the pair
+    :type pairAddr: str
+    :param transactionHash: The hash of the transaction
+    :type transactionHash: str
+    :param logIndex: The index of the log in the transaction
+    :type logIndex: int
+    :param blockNumber: The number of the block
+    :type blockNumber: int
+    :param blockHash: The hash of the block
+    :type blockHash: str
+    """
     exchange: str
     pairAddr: str
+    transactionHash: str
+    logIndex: int
+    blockNumber: int
+    blockHash: str
+
+class DexTrade(BaseDexRecord, serializer='dex_trades'):
+    """
+    Record for a DEX trade.
+
+    :param tokenBought: The token bought
+    :type tokenBought: str
+    :param tokenSold: The token sold
+    :type tokenSold: str
+    :param tokenBoughtAddr: The address of the token bought
+    :type tokenBoughtAddr: str
+    :param tokenSoldAddr: The address of the token sold
+    :type tokenSoldAddr: str
+    :param amountBought: The amount of the token bought
+    :type amountBought: Decimal
+    :param amountSold: The amount of the token sold
+    :type amountSold: Decimal
+    :param maker: The address of the maker
+    :type maker: str
+    :param taker: The address of the taker
+    :type taker: str
+    """
     tokenBought: str
     tokenSold: str
     tokenBoughtAddr: str
     tokenSoldAddr: str
     amountBought: Decimal
     amountSold: Decimal
-    transactionHash: str
-    logIndex: int
-    blockNumber: int
-    blockHash: str
     maker: str = None
     taker: str = None
 
+class DexLiquidity(BaseDexRecord, serializer='dex_liquidity'):
+    """
+    Record for DEX liquidity events.
+
+    :param token0: The first token in the pair
+    :type token0: str
+    :param token1: The second token in the pair
+    :type token1: str
+    :param token0Addr: The address of the first token in the pair
+    :type token0Addr: str
+    :param token1Addr: The address of the second token in the pair
+    :type token1Addr: str
+    :param amount0: The amount of the first token in the pair used in the liquidity event
+    :type amount0: Decimal
+    :param amount1: The amount of the second token in the pair used in the liquidity event
+    :type amount1: Decimal
+    :param owner: The address of the owner of the liquidity position
+    :type owner: str
+    """
+    eventType: Literal['add', 'remove']
+    token0: str
+    token1: str
+    token0Addr: str
+    token1Addr: str
+    amount0: Decimal
+    amount1: Decimal
+    owner: str=None
 
 class EthereumLogRecord(EthereumLog, faust.Record, serializer='ethereum_logs'):
     """
@@ -211,5 +276,6 @@ record_mapping = {
     'funding_rate': FundingRate,
     'open_interest': OpenInterest,
     'ethereum_logs': EthereumLogRecord,
-    'dex_trades': DexTrade
+    'dex_trades': DexTrade,
+    'dex_liquidity': DexLiquidity
 }

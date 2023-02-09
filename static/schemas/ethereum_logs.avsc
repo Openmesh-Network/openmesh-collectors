@@ -1,0 +1,75 @@
+{
+    "doc": "Logs for Ethereum Events",
+    "fields": [
+      {
+        "name": "atomTimestamp",
+        "type": "long"
+      },
+      {
+        "name": "blockTimestamp",
+        "type": {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      },
+      {
+        "name": "logIndex",
+        "type": "long"
+      },
+      {
+        "name": "transactionIndex",
+        "type": "long"
+      },
+      {
+        "name": "transactionHash",
+        "type": "string"
+      },
+      {
+        "name": "blockHash",
+        "type": "string"
+      },
+      {
+        "name": "blockNumber",
+        "type": "long"
+      },
+      {
+        "name": "address",
+        "type": "string"
+      },
+      {
+        "name": "data",
+        "type": "string"
+      },
+      {
+        "name": "topic0",
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      {
+        "name": "topic1",
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      {
+        "name": "topic2",
+        "type": [
+          "null",
+          "string"
+        ]
+      },
+      {
+        "name": "topic3",
+        "type": [
+          "null",
+          "string"
+        ]
+      }
+    ],
+    "name": "ethereum_logs",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+  }

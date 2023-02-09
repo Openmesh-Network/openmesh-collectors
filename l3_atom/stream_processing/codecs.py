@@ -9,8 +9,11 @@ def initialise():
     """Initialises the serialisation codecs for Faust"""
     config = get_kafka_config()
 
-    client = SchemaRegistryClient(url=config['SCHEMA_REGISTRY_URL'], auth=Auth(
-        username=config['SCHEMA_REGISTRY_API_KEY'], password=config['SCHEMA_REGISTRY_API_SECRET']))
+    if 'SCHEMA_REGISTRY_API_KEY' in config:
+        client = SchemaRegistryClient(url=config['SCHEMA_REGISTRY_URL'], auth=Auth(
+            username=config['SCHEMA_REGISTRY_API_KEY'], password=config['SCHEMA_REGISTRY_API_SECRET']))
+    else:
+        client = SchemaRegistryClient(url=config['SCHEMA_REGISTRY_URL'])
 
     schemas = {
         feed: client.get_schema(feed).schema for feed in record_mapping.keys()

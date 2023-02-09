@@ -1,0 +1,85 @@
+{
+    "doc": "Liquidity events that occur on Ethereum DEXes",
+    "fields": [
+      {
+        "name": "eventType",
+        "type": "string"
+      },
+      {
+        "name": "atomTimestamp",
+        "type": "long"
+      },
+      {
+        "name": "blockTimestamp",
+        "type": {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      },
+      {
+        "name": "exchange",
+        "type": "string"
+      },
+      {
+        "name": "pairAddr",
+        "type": "string"
+      },
+      {
+        "name": "transactionHash",
+        "type": "string"
+      },
+      {
+        "name": "logIndex",
+        "type": "int"
+      },
+      {
+        "name": "blockNumber",
+        "type": "int"
+      },
+      {
+        "name": "blockHash",
+        "type": "string"
+      },
+      {
+        "name": "token0",
+        "type": "string"
+      },
+      {
+        "name": "token1",
+        "type": "string"
+      },
+      {
+        "name": "token0Addr",
+        "type": "string"
+      },
+      {
+        "name": "token1Addr",
+        "type": "string"
+      },
+      {
+        "name": "amount0",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 24,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "amount1",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 24,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "owner",
+        "type": ["string", "null"]
+      }
+    ],
+    "name": "dex_liquidity",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+  }

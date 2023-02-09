@@ -1,463 +1,109 @@
 [![Build Status](https://dev.azure.com/gdafund/L3-public/_apis/build/status/GDA-Fund2.L3-Atom-Exchange-Collectors?repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)](https://dev.azure.com/gdafund/L3-public/_build/latest?definitionId=2&repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)
+
+![L3 Atom Logo](static/images/l3_atom_logo.png "L3 Atom")
+
 # L3 Atom
-A massive open source cryptocurrency cloud data lake.
+A massive cryptocurrency data lake and analytics platform.
 
 ## Table of Contents
-- [Background](#background)
-- [Setup](#setup)
-- [Schemas](#schemas)
+- [Why L3 Atom?](#why-l3-atom)
+- [Supported Data Sources](#supported-data-sources)
+- [Free Managed Service](#free-managed-service)
+- [Examples of Data](#examples-of-data)
+- [Contributor Guide](#contributor-guide)
 
-## Background
-This repository hosts the codebase for L3 Atom's exchange collectors -- Python processes which connect to cryptocurrency exchanges via Websocket and continuously collect market data from them. The collected data is processed in a cloud-native data lake, which will be made available to the public. It works by connecting to a variety of different market data APIs / blockchains, sending that raw data over Kafka to another process which standardises it into consistent schemas, and then publishing that back into Kafka topics separated by event type.
+## Why L3 Atom?
+L3 Atom is a comprehensive data platform that has been built from the ground up for scale and cloud-native architectures. It provides low-latency and real-time access to cryptocurrency data from both off-chain and on-chain sources, standardising and packaging the data into atomic events that can be easily transported and stored in virtually any format and data store thanks to an integration with an Apache Kafka back-end. L3 Atom is the first completely open cryptocurrency data initiative that allows a synthesis of off-chain technical analysis and on-chain analysis.
 
-## Setup
-Clone the repository and install the necessary dependencies with `pip`. This project relies on Kafka for messaging, so if you want to run it locally, you're going to have to set up Kafka. There are many ways to do so -- the easiest we've found is to follow [confluent's guide](https://docs.confluent.io/confluent-cli/current/install.html) to quickly get a cluster up and running. If you want to use the stream processing component of L3 Atom, you'll also have to set up Schema Registry and the necessary [Avro schemas](#schemas) so that the stream processing layer knows how to SerDe data. Installing Confluent also installs Schema Registry, so you can set it up there.
+## Supported Data Sources
+For off-chain data, the following exchanges are supported:
+ - Binance
+ - Binance Futures
+ - Bitfinex
+ - Bybit
+ - Coinbase
+ - Deribit
+ - FTX
+ - Gemini
+ - Kraken
+ - Kraken Futures
+ - Phemex
 
-Once you've set up the necessary externalities, you need to tell the app where it can connect to Kafka. Make a `.env` file in `keys/`, and fill it in with the following:
+For on-chain data, the following DeFi protocols are supported:
 
-If your Kafka requires SASL authentication:
-```ini
-KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
-KAFKA_SASL_KEY=<Username for SASL Authentication>
-KAFKA_SASL_SECRET=<Secret for SASL Authentication>
+**Ethereum**
+ - Curve Finance
+ - Dodoex
+ - Hashflow
+ - Sushiswap
+ - Uniswap V2
+ - Uniswap V3
 
-SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
-SCHEMA_REGISTRY_API_KEY=<Username for Schema Registry Authentication>
-SCHEMA_REGISTRY_API_SECRET=<Secret for Schema Registry Authentication>
-```
+## Free Managed Service
+L3 Atom is also hosted as a **free** managed service where you can tap into crypto market data via our Websocket API, or analyse historical data via our query tool. View the documentation [here](https://gda-fund.gitbook.io/l3-atom-v3-documentation/).
 
-If your Kafka does not require authentication:
-```ini
-KAFKA_BOOTSTRAP_SERVERS=<URL of your Kafka Broker(s)>
-
-SCHEMA_REGISTRY_URL=<URL of your Schema Registry setup>
-```
-
-That will be sufficient to ingest and process off-chain data, but to process on-chain data, you will also need access to an ethereum node, preferably Infura. Once you have it, add it to the `.env` file as well:
-
-```ini
-ETHEREUM_NODE_HTTP_URL=<URL of your Ethereum node via HTTP>
-ETHEREUM_NODE_WS_URL=<URL of your Ethereum node via Websockets>
-ETHEREUM_NODE_SECRET=<Secret for Ethereum node authentication (if required)>
-```
-
-Both HTTP and Websockets are required.
-
-In `config.ini`, we have some example symbols for each exchange. You can use these when running the application, but feel free to use any supported by the exchanges.
-
-The entry point for running the application is `runner.py`, which can be used in the following two ways:
-
-```bash
-python3 runner.py connector --source <exchange> --symbol <symbol>
-python3 runner.py processor
-```
-
-Where the first option runs the raw data collector for the given exchange, and the latter runs the Faust stream processor. A Dockerfile is also provided if you want to run the application in a Docker container, just make sure to load in the `.env` file you wrote earlier as a volume.
-
-Note that unlike other data sources, blockchains won't require a `--symbol` argument when running the application, as it will collect data for the entire chain on its own. Individual DEXes, symbol pairs, e.t.c. are handled by the stream processor.
-
-If you want to run the full application, you'll want to have three processes running:
-
-1. The raw data collection for a single source
-2. The stream processor
-3. A Kafka consumer on one of the normalised topics (e.g. `lob`)
-
-From there, you'll start to see a standardised orderbook feed coming in at low latency. Note that the data will be in Avro, so you'll probably want to have some kind of deserializer to make it human-readable.
-
-Eventually a more "mini" version of L3 Atom will be developed which supports smaller use cases that can be handled on one machine. The current application is designed for a more distributed setup as the data volumes are simply too high for one machine to handle.
-
-## Schemas
-
-### L3 Lob Event
+## Examples of Data
+### Binance Trade
 ```json
 {
-    "type": "record",
-    "name": "L3_LOB",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "price",
-            "type": "double"
-        },
-        {
-            "name": "size",
-            "type": "double"
-        },
-        {
-            "name": "side",
-            "type": "string"
-        },
-        {
-            "name": "order_id",
-            "type": "string"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
+    "exchange": "binance",
+    "symbol": "BTC.USDT",
+    "price": "18200.46",
+    "size": "0.00987",
+    "taker_side": "sell",
+    "trade_id": "2465019970",
+    "maker_order_id": "17236243366",
+    "taker_order_id": "17236243463",
+    "event_timestamp": "2023-01-12T11:44:40.270000Z",
+    "atom_timestamp": 1673523880325488
 }
 ```
 
-### L3 Trade Event
+### Uniswap V2 Swap
 ```json
 {
-    "type": "record",
-    "name": "L3_Trades",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "price",
-            "type": "double"
-        },
-        {
-            "name": "size",
-            "type": "double"
-        },
-        {
-            "name": "taker_side",
-            "type": "string"
-        },
-        {
-            "name": "trade_id",
-            "type": "string"
-        },
-        {
-            "name": "maker_order_id",
-            "type": "string"
-        },
-        {
-            "name": "taker_order_id",
-            "type": "string"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
+    "exchange": "uniswap-v2",
+    "atomTimestamp": 1673523937320352,
+    "blockTimestamp": "2023-01-12T11:45:35Z",
+    "maker": null,
+    "taker": "0xD6f3E785D2C8Fd698A2B341DDC860f291aB7fF61",
+    "tokenBought": "DAI",
+    "tokenSold": "WETH",
+    "tokenBoughtAddr": "0x6b175474e89094c44da98b954eedeac495271d0f",
+    "tokenSoldAddr": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "amountBought": "83.629106541068626336000000",
+    "amountSold": "0.060000000000000000000000",
+    "logIndex": 163,
+    "transactionHash": "0x098b29872b5a2bc4aaf93fc7cbbdaced677657c051338b54494352d9cffe1fcb",
+    "blockHash": "0xbcde35a84ed4985e8eafbc8409cda523268d1eece33b8ec5e7195a53897c66d4",
+    "blockNumber": 16390510,
+    "pairAddr": "0xa478c2975ab1ea89e8196811f51a7b7ade33eb11"
 }
 ```
 
-### Ticker
+### Ethereum Block
 ```json
 {
-    "type": "record",
-    "name": "Ticker",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "bid_price",
-            "type": "double"
-        },
-        {
-            "name": "bid_size",
-            "type": "double"
-        },
-        {
-            "name": "ask_price",
-            "type": "double"
-        },
-        {
-            "name": "ask_size",
-            "type": "double"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
+    "atomTimestamp": 1673523998673950,
+    "number": 16390515,
+    "hash": "0xc874e1704208666e624402f876cf2c0e6ef770f3135b259bb30508d0706942b3",
+    "parentHash": "0x46a16ce33a2ba476762212e418171f43bf083f6060e3fc74efc5ab46eb619ce3",
+    "nonce": "0x0000000000000000",
+    "sha3Uncles": "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+    "logsBloom": "0x00200050a1000000121806008900000202024020000008a020010200040004140001092044081420800018000018010052000040088028002000000010a02000014000000020000828020048110000284094000068400000000004008002a20012040800020000010040800000000809c02000000080441041808011a2088820100003140080180004480000001010008000828129048208402000c0001200000200054240006201200000c40002100800200000203001801020000000880000a1009006000108100002200000000000001102400000005000000902000020001030b02a04400100000112800000080002120000400040400000004048001000",
+    "transactionsRoot": "0xb5801367d4d95058a24ff7aec1f5711e01cb8d4130c88eda7444d0b685e751c6",
+    "stateRoot": "0x8fa22d1026db5f7f615392cc83290ea46c91b8a72e75a9397dee77ad88d40b52",
+    "receiptsRoot": "0xd19d05a65e76d2133af12d7d32cbec58ffe8616924ead5c7c7571e3d07aafd73",
+    "miner": "0x2f9fc79066bb3ffb072bcf4e26b635436d026ce5",
+    "difficulty": 0,
+    "totalDifficulty": "58750003716598355984384",
+    "extraData": "0x",
+    "size": 6491,
+    "gasLimit": "30000000",
+    "gasUsed": "1755498",
+    "blockTimestamp": "2023-01-12T11:46:35Z"
 }
 ```
 
-### Lob Event
-```json
-{
-    "type": "record",
-    "name": "LOB",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "price",
-            "type": "double"
-        },
-        {
-            "name": "size",
-            "type": "double"
-        },
-        {
-            "name": "side",
-            "type": "string"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
-}
-```
-
-### Trade Event
-```json
-{
-    "type": "record",
-    "name": "Trade",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "price",
-            "type": "double"
-        },
-        {
-            "name": "size",
-            "type": "double"
-        },
-        {
-            "name": "taker_side",
-            "type": "string"
-        },
-        {
-            "name": "trade_id",
-            "type": "string"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
-}
-```
-
-### Candlestick
-```json
-{
-    "type": "record",
-    "name": "Candle",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "start",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "end",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "interval",
-            "type": "string"
-        },
-        {
-            "name": "trades",
-            "type": "int"
-        },
-        {
-            "name": "closed",
-            "type": "boolean"
-        },
-        {
-            "name": "o",
-            "type": "double"
-        },
-        {
-            "name": "h",
-            "type": "double"
-        },
-        {
-            "name": "l",
-            "type": "double"
-        },
-        {
-            "name": "c",
-            "type": "double"
-        },
-        {
-            "name": "v",
-            "type": "double"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
-}
-```
-
-### Funding Rate
-```json
-{
-    "type": "record",
-    "name": "funding_rate",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "mark_price",
-            "type": "double"
-        },
-        {
-            "name": "funding_rate",
-            "type": "double"
-        },
-        {
-            "name": "next_funding_time",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "predicted_rate",
-            "type": "double"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
-}
-```
-
-### Open Interest
-```json
-{
-    "type": "record",
-    "name": "open_interest",
-    "namespace": "com.acme.avro",
-    "fields": [
-        {
-            "name": "exchange",
-            "type": "string"
-        },
-        {
-            "name": "symbol",
-            "type": "string"
-        },
-        {
-            "name": "open_interest",
-            "type": "double"
-        },
-        {
-            "name": "event_timestamp",
-            "type": {
-                "type": "long",
-                "logicalType": "timestamp-millis"
-            }
-        },
-        {
-            "name": "atom_timestamp",
-            "type": "long"
-        }
-    ]
-}
-```
-
+## Contributor Guide
+If you would like to contribute to L3 Atom, please read our [contributor guide](CONTRIBUTING.md). It'll show you how to set up the environment locally and help you better understand how you can contribute to the project.

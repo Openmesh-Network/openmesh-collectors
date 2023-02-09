@@ -1,0 +1,89 @@
+{
+    "doc": "Ethereum Transaction Objects",
+    "fields": [
+      {
+        "name": "atomTimestamp",
+        "type": "long"
+      },
+      {
+        "name": "blockTimestamp",
+        "type": {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      },
+      {
+        "name": "hash",
+        "type": "string"
+      },
+      {
+        "name": "nonce",
+        "type": "string"
+      },
+      {
+        "name": "blockHash",
+        "type": "string"
+      },
+      {
+        "name": "blockNumber",
+        "type": "long"
+      },
+      {
+        "name": "transactionIndex",
+        "type": "long"
+      },
+      {
+        "name": "fromAddr",
+        "type": "string"
+      },
+      {
+        "name": "toAddr",
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      {
+        "name": "value",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 0,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "gas",
+        "type": "long"
+      },
+      {
+        "name": "gasPrice",
+        "type": "long"
+      },
+      {
+        "name": "input",
+        "type": "string"
+      },
+      {
+        "name": "maxFeePerGas",
+        "type": [
+          "long",
+          "null"
+        ]
+      },
+      {
+        "name": "maxPriorityFeePerGas",
+        "type": [
+          "long",
+          "null"
+        ]
+      },
+      {
+        "name": "type",
+        "type": "string"
+      }
+    ],
+    "name": "ethereum_transactions",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+  }

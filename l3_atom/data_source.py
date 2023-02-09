@@ -272,6 +272,7 @@ class DataFeed(DataSource):
         """
         logging.info('%s: Starting Kafka Connector', self.name)
         self.kafka_connector = KafkaConnector(self.__class__)
+        self.kafka_connector.register_schemas()
         self.kafka_connector.create_exchange_topics(
             [*self.ws_channels.keys(), *self.rest_channels.keys()])
         self.kafka_connector.start(loop)

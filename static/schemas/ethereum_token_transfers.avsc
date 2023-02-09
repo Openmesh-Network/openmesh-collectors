@@ -1,0 +1,56 @@
+{
+    "doc": "Ethereum Token Transfer Objects",
+    "fields": [
+      {
+        "name": "atomTimestamp",
+        "type": "long"
+      },
+      {
+        "name": "blockTimestamp",
+        "type": {
+          "logicalType": "timestamp-millis",
+          "type": "long"
+        }
+      },
+      {
+        "name": "tokenAddr",
+        "type": "string"
+      },
+      {
+        "name": "fromAddr",
+        "type": "string"
+      },
+      {
+        "name": "toAddr",
+        "type": "string"
+      },
+      {
+        "name": "value",
+        "type": {
+          "logicalType": "decimal",
+          "precision": 38,
+          "scale": 0,
+          "type": "bytes"
+        }
+      },
+      {
+        "name": "transactionHash",
+        "type": "string"
+      },
+      {
+        "name": "logIndex",
+        "type": "long"
+      },
+      {
+        "name": "blockNumber",
+        "type": "long"
+      },
+      {
+        "name": "blockHash",
+        "type": "string"
+      }
+    ],
+    "name": "ethereum_token_transfers",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+  }

@@ -1,0 +1,45 @@
+{
+    "type": "record",
+    "name": "funding_rate",
+    "namespace": "com.acme.avro",
+    "fields": [
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "symbol",
+            "type": "string"
+        },
+        {
+            "name": "mark_price",
+            "type": "double"
+        },
+        {
+            "name": "funding_rate",
+            "type": "double"
+        },
+        {
+            "name": "next_funding_time",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "predicted_rate",
+            "type": "double"
+        },
+        {
+            "name": "event_timestamp",
+            "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+            }
+        },
+        {
+            "name": "atom_timestamp",
+            "type": "long"
+        }
+    ]
+}

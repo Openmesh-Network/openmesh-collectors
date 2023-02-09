@@ -2,7 +2,7 @@ import aiokafka
 import asyncio
 from yapic import json
 from confluent_kafka.admin import AdminClient, NewTopic
-from confluent_kafka.schema_registry import SchemaRegistryClient
+from confluent_kafka.schema_registry import SchemaRegistryClient, Schema
 from l3_atom.sink_connector.sink_connector import SinkMessageHandler
 from l3_atom.helpers.read_config import get_kafka_config
 import ssl
@@ -11,6 +11,7 @@ import logging
 from io import BytesIO
 from fastavro import schemaless_writer, parse_schema
 from struct import pack
+import os
 
 ssl_ctx = ssl.create_default_context()
 
@@ -30,6 +31,7 @@ class Kafka(SinkMessageHandler):
     def __init__(self, *args, topic="raw", **kwargs):
         super().__init__(*args, **kwargs)
         conf = get_kafka_config()
+        self.num_replications = int(conf['num_replications'])
         self.bootstrap = conf['KAFKA_BOOTSTRAP_SERVERS']
         self.sasl_username = conf['KAFKA_SASL_KEY'] if 'KAFKA_SASL_KEY' in conf else None
         self.sasl_password = conf['KAFKA_SASL_SECRET'] if 'KAFKA_SASL_SECRET' in conf else None
@@ -108,6 +110,24 @@ class KafkaConnector(Kafka):
                 "url": self.schema_url
             })
 
+    def register_schemas(self):
+        SCHEMA_PATH = 'static/schemas'
+        if not self.admin_client:
+            self._admin_init()
+        if not self.schema_client:
+            self._schema_init()
+        schemas = self.schema_client.get_subjects()
+        for schema_file in os.listdir(SCHEMA_PATH):
+            schema_name = schema_file.split('.')[0]
+            if schema_name not in schemas:
+                logging.info(f"Registering schema {schema_name} with schema registry...")
+                with open(f"{SCHEMA_PATH}/{schema_file}", 'r') as f:
+                    schema = Schema(f.read(), 'AVRO')
+                    self.schema_client.register_schema(schema_name, schema)
+                logging.info(f"Registered schema {schema_name}")
+            else:
+                logging.info(f"Schema {schema_name} already registered")
+
     def create_exchange_topics(self, feeds: list, prefix=None, include_raw=True):
         """
         Creates the topics and populates the schemas for the exchange's feeds. Also stores those schemas in memory.
@@ -122,7 +142,7 @@ class KafkaConnector(Kafka):
         topics = []
         topic_metadata = self.admin_client.list_topics(timeout=5)
         if include_raw and "raw" not in topic_metadata.topics:
-            topics.append(NewTopic(f"{prefix}raw", 100, 3))
+            topics.append(NewTopic(f"{prefix if prefix else ''}raw", 100, self.num_replications))
         schemas = self.schema_client.get_subjects()
         for feed in feeds:
             feed = prefix + feed if prefix else feed
@@ -131,7 +151,7 @@ class KafkaConnector(Kafka):
             if feed not in topic_metadata.topics:
                 logging.info(f"{self.exchange}: Creating topic {feed}")
                 topics.append(
-                    NewTopic(feed, num_partitions=50, replication_factor=3))
+                    NewTopic(feed, num_partitions=50, replication_factor=self.num_replications))
             else:
                 logging.info(f"{self.exchange}: Topic {feed} already exists")
 
@@ -166,6 +186,7 @@ class AvroKafkaConnector(KafkaConnector):
 
     def __init__(self, *args, record=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.register_schemas()
         self._init_topic_schema()
         self.record = record
 
