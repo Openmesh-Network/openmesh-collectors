@@ -20,6 +20,8 @@ variables:
   value: $[variables.AWS_SOURCE_ROLE_ARN] #derived from var group - aws-shared
 - name: awsRegion
   value: $[variables.AWS_REGION] #derived from var group - aws-shared
+- name: ecrPublicUrl
+  value: $[variables.ECR_PUBLIC_URL] #derived from var group - aws-shared
 - name: ecrUrl
   value: $[variables.ECR_URL] #derived from var group - aws-shared
 - name: serviceConnection
@@ -84,8 +86,11 @@ stages:
                   --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
                   --output text))
                 aws ecr get-login-password | docker login --username AWS --password-stdin $(ecrUrl)
-                docker build -t $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -f ${{ parameters.images[image.key].pathToDockerFile }} ${{ parameters.images[image.key].pathToDockerContext}}
+                docker build -t $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -t $(ecrPublicUrl)/public-${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -f ${{ parameters.images[image.key].pathToDockerFile }} ${{ parameters.images[image.key].pathToDockerContext}}
                 docker push $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
+
+                aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(ecrPublicUrl)
+                docker push $(ecrPublicUrl)/public-${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
               failOnStdErr: true
               targetType: inline
               workingDirectory: ${{ variables.WORKING_DIRECTORY }}
