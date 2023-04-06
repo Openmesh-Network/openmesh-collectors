@@ -15,6 +15,7 @@ variables:
 
 - group: aws-shared
 - group: service-connection
+- group: dockerhub
 
 - name: awsSourceRoleArn
   value: $[variables.AWS_SOURCE_ROLE_ARN] #derived from var group - aws-shared
@@ -26,6 +27,10 @@ variables:
   value: $[variables.ECR_URL] #derived from var group - aws-shared
 - name: serviceConnection
   value: $[variables.SERVICE_CONNECTION] #derived from var group - service-connection
+- name: dockerhubUsername
+  value: $[variables.dockerhub_username] #derived from var group - dockerhub
+- name: dockerhubPat
+  value: $[variables.dockerhub_pat] #derived from var group - dockerhub
 - name: WORKING_DIRECTORY
   value: $(Build.SourcesDirectory)
 
@@ -73,24 +78,16 @@ stages:
       - ${{ each image in parameters.images }}:
         - ${{ if eq(parameters.images[image.key].build, true) }}:
           - task: AWSShellScript@1
-            displayName: pushToECR ${{ parameters.images[image.key].name }}
+            displayName: pushContainer ${{ parameters.images[image.key].name }}
             inputs:
               awsCredentials: $(serviceConnection)
               regionName: $(awsRegion)
               scriptType: inline
               inlineScript: |
-                export $(printf "AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
-                $(aws sts assume-role \
-                  --role-arn $(awsSourceRoleArn) \
-                  --role-session-name AzureDevOps \
-                  --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
-                  --output text))
-                aws ecr get-login-password | docker login --username AWS --password-stdin $(ecrUrl)
-                docker build -t $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -t $(ecrPublicUrl)/public-${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -f ${{ parameters.images[image.key].pathToDockerFile }} ${{ parameters.images[image.key].pathToDockerContext}}
-                docker push $(ecrUrl)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
+                docker login -u $(dockerhubUsername) -p $(dockerhubPat)
+                docker build -t $(dockerhubUsername)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber) -f ${{ parameters.images[image.key].pathToDockerFile }} ${{ parameters.images[image.key].pathToDockerContext}}
+                docker push $(dockerhubUsername)/${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
 
-                aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin $(ecrPublicUrl)
-                docker push $(ecrPublicUrl)/public-${{ parameters.images[image.key].name }}:$(Build.BuildNumber)
               failOnStdErr: true
               targetType: inline
               workingDirectory: ${{ variables.WORKING_DIRECTORY }}
