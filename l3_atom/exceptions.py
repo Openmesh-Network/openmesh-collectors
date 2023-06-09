@@ -8,3 +8,7 @@ class TooManyRetries(Exception):
 
 class TokenNotFound(Exception):
     pass
+
+
+class APIKeyRequired(Exception):
+    pass

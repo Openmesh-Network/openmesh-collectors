@@ -177,6 +177,7 @@ class BaseChainRecord(faust.Record):
     blockTimestamp: int
     atomTimestamp: int
 
+
 class BaseDexRecord(BaseChainRecord):
     """
     Base record for all DEX events
@@ -200,6 +201,22 @@ class BaseDexRecord(BaseChainRecord):
     logIndex: int
     blockNumber: int
     blockHash: str
+
+
+class NFTTrade(BaseChainRecord, serializer='nft_trades'):
+    exchange: str
+    itemName: str
+    itemId: str
+    itemPermalink: str
+    amountBought: int
+    salePrice: Decimal
+    maker: str = None
+    taker: str = None
+    transactionHash: str = None
+    logIndex: int = None
+    blockNumber: int = None
+    blockHash: str = None
+
 
 class DexTrade(BaseDexRecord, serializer='dex_trades'):
     """
@@ -231,6 +248,7 @@ class DexTrade(BaseDexRecord, serializer='dex_trades'):
     maker: str = None
     taker: str = None
 
+
 class DexLiquidity(BaseDexRecord, serializer='dex_liquidity'):
     """
     Record for DEX liquidity events.
@@ -257,7 +275,8 @@ class DexLiquidity(BaseDexRecord, serializer='dex_liquidity'):
     token1Addr: str
     amount0: Decimal
     amount1: Decimal
-    owner: str=None
+    owner: str = None
+
 
 class EthereumLogRecord(EthereumLog, faust.Record, serializer='ethereum_logs'):
     """

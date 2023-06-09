@@ -39,6 +39,10 @@
             "type": "string"
         },
         {
+            "name": "itemType",
+            "type": "string"
+        },
+        {
             "name": "itemPermalink",
             "type": "string"
         },

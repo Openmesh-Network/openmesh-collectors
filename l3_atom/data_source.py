@@ -171,7 +171,7 @@ class DataSource:
                 key = None
         return key
 
-    # Overwrite this method if the exchange uses a different method of getting the msg symbol or msg type
+    # Override this method if the exchange uses a different method of getting the msg symbol or msg type
     @classmethod
     def get_sym_from_msg(cls, msg):
         return cls._get_field(msg, cls.sym_field)
@@ -236,6 +236,15 @@ class DataFeed(DataSource):
         :type feeds: list
         :param symbols: Symbols to subscribe to
         :type symbols: list
+        """
+        pass
+
+    def auth(self, conn: AsyncFeed):
+        """
+        Authenticates the provided connection
+
+        :param conn: Connection to authenticate
+        :type conn: AsyncFeed
         """
         pass
 
