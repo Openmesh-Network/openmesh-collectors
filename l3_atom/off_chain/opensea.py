@@ -5,7 +5,7 @@ from l3_atom.exceptions import APIKeyRequired
 from yapic import json
 import dotenv
 import os
-from json import dumps
+import logging
 
 class OpenSea(DataFeed):
     name = "opensea"
@@ -24,15 +24,9 @@ class OpenSea(DataFeed):
         if api_key is None:
             dotenv.load_dotenv('keys/.env')
             api_key = os.environ.get('L3A_OPENSEA_API_KEY', None)
-        if api_key is None:
-            raise APIKeyRequired("OpenSea API key required")
+        
         self.api_key = api_key
         self.symbols = {'all': 'all'}
-
-        # OpenSea requires that the auth token (generated manually on the site) be passed as a query param, so WS URL must be dynamically constructed
-        self.ws_endpoints = {
-            WSEndpoint(f"wss://stream.openseabeta.com/socket/websocket?token={self.api_key}"): ["nft_trades"]
-        }
 
     @classmethod
     def get_sym_from_msg(cls, msg):
@@ -70,4 +64,14 @@ class OpenSea(DataFeed):
             return
         msg = enrich_raw(msg, timestamp)
         await self.kafka_connector.write(json.dumps(msg))
+
+    def _pre_start(self, loop) -> None:
+        if self.api_key is None:
+            raise APIKeyRequired("OpenSea API key required")
+        
+        # OpenSea requires that the auth token (generated manually on the site) be passed as a query param, so WS URL must be dynamically constructed
+        self.ws_endpoints = {
+            WSEndpoint(f"wss://stream.openseabeta.com/socket/websocket?token={self.api_key}"): ["nft_trades"]
+        }
+        
         

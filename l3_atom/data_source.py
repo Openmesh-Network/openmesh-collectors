@@ -286,6 +286,15 @@ class DataFeed(DataSource):
             [*self.ws_channels.keys(), *self.rest_channels.keys()])
         self.kafka_connector.start(loop)
 
+    def _pre_start(self, loop: asyncio.AbstractEventLoop) -> None:
+        """
+        Function called before the exchange connection is started. Defaults to nothing, but can be overridden
+
+        :param loop: Event loop to run the connection on
+        :type loop: asyncio.AbstractEventLoop
+        """
+        pass
+
     def start(self, loop: asyncio.AbstractEventLoop):
         """
         Generic WS connection method -- sets up connection handlers for all desired channels and starts the data collection process
@@ -293,6 +302,7 @@ class DataFeed(DataSource):
         :param loop: Event loop to run the connection on
         :type loop: asyncio.AbstractEventLoop
         """
+        self._pre_start and self._pre_start(loop)
         symbols = []
         self._init_kafka(loop)
         rest_connections = self._init_rest()

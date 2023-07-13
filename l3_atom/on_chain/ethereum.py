@@ -206,6 +206,8 @@ class Ethereum(ChainFeed):
         del block['mixHash']
         del block['transactions']
         del block['uncles']
+        del block['withdrawals']
+        del block['withdrawalsRoot']
         block['blockTimestamp'] = self.hex_to_int(block.pop('timestamp')) * 1000
         block_obj = EthereumBlock(**block, atomTimestamp=ts)
         self.last_block_hash = block_obj.hash
