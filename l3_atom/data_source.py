@@ -171,7 +171,7 @@ class DataSource:
                 key = None
         return key
 
-    # Overwrite this method if the exchange uses a different method of getting the msg symbol or msg type
+    # Override this method if the exchange uses a different method of getting the msg symbol or msg type
     @classmethod
     def get_sym_from_msg(cls, msg):
         return cls._get_field(msg, cls.sym_field)
@@ -239,6 +239,15 @@ class DataFeed(DataSource):
         """
         pass
 
+    def auth(self, conn: AsyncFeed):
+        """
+        Authenticates the provided connection
+
+        :param conn: Connection to authenticate
+        :type conn: AsyncFeed
+        """
+        pass
+
     async def process_message(self, message: str, conn: AsyncFeed, timestamp: int):
         """
         First method called when a message is received from the exchange. Currently forwards the message to Kafka to be produced.
@@ -277,6 +286,15 @@ class DataFeed(DataSource):
             [*self.ws_channels.keys(), *self.rest_channels.keys()])
         self.kafka_connector.start(loop)
 
+    def _pre_start(self, loop: asyncio.AbstractEventLoop) -> None:
+        """
+        Function called before the exchange connection is started. Defaults to nothing, but can be overridden
+
+        :param loop: Event loop to run the connection on
+        :type loop: asyncio.AbstractEventLoop
+        """
+        pass
+
     def start(self, loop: asyncio.AbstractEventLoop):
         """
         Generic WS connection method -- sets up connection handlers for all desired channels and starts the data collection process
@@ -284,6 +302,7 @@ class DataFeed(DataSource):
         :param loop: Event loop to run the connection on
         :type loop: asyncio.AbstractEventLoop
         """
+        self._pre_start and self._pre_start(loop)
         symbols = []
         self._init_kafka(loop)
         rest_connections = self._init_rest()

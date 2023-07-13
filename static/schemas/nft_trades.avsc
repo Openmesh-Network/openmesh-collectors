@@ -1,0 +1,94 @@
+{
+    "doc": "Trades that occur on Ethereum NFT marketplaces",
+    "fields": [
+        {
+            "name": "atomTimestamp",
+            "type": "long"
+        },
+        {
+            "name": "blockTimestamp",
+            "type": {
+                "logicalType": "timestamp-millis",
+                "type": "long"
+            }
+        },
+        {
+            "name": "exchange",
+            "type": "string"
+        },
+        {
+            "name": "maker",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "taker",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "name": "itemName",
+            "type": "string"
+        },
+        {
+            "name": "itemId",
+            "type": "string"
+        },
+        {
+            "name": "itemType",
+            "type": "string"
+        },
+        {
+            "name": "itemPermalink",
+            "type": "string"
+        },
+        {
+            "name": "amountBought",
+            "type": "long"
+        },
+        {
+            "name": "salePrice",
+            "type": {
+                "logicalType": "decimal",
+                "precision": 38,
+                "scale": 24,
+                "type": "bytes"
+            }
+        },
+        {
+            "name": "logIndex",
+            "type": [
+                "long",
+                "null"
+            ]
+        },
+        {
+            "name": "transactionHash",
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        {
+            "name": "blockHash",
+            "type": [
+                "string",
+                "null"
+            ]
+        },
+        {
+            "name": "blockNumber",
+            "type": [
+                "long",
+                "null"
+            ]
+        }
+    ],
+    "name": "nft_trades",
+    "namespace": "com.mycorp.mynamespace",
+    "type": "record"
+}
