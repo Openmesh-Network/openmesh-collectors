@@ -41,7 +41,7 @@ class UniswapV2LiquidityHandler(UniswapV2PairHandler):
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         args = event.args
-        poolAddr = event.address
+        poolAddr = event['address']
         if poolAddr in self.uni_pool_data:
             exchange = 'uniswap-v2'
             pairDetails = self.uni_pool_data[poolAddr]
@@ -67,10 +67,10 @@ class UniswapV2LiquidityHandler(UniswapV2PairHandler):
         amount1 = Decimal(rawAmount1) / Decimal(10 ** token1Decimals)
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             token0=token0Sym,
             token0Addr=token0Id,
@@ -103,7 +103,7 @@ class UniswapV2SwapHandler(UniswapV2PairHandler):
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         args = event.args
-        poolAddr = event.address
+        poolAddr = event['address']
         if poolAddr in self.uni_pool_data:
             exchange = 'uniswap-v2'
             pairDetails = self.uni_pool_data[poolAddr]
@@ -136,10 +136,10 @@ class UniswapV2SwapHandler(UniswapV2PairHandler):
         taker = args.to
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

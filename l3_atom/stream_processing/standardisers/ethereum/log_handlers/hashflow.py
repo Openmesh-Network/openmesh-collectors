@@ -24,7 +24,7 @@ class HashflowTradeHandler(HashflowHandler):
         if not self.loaded_pool_data:
             self._load_pool_data()
         args = event.args
-        poolAddr = event.address
+        poolAddr = event['address']
         tokenSoldAddr = args.baseToken
         tokenSold = self.get_symbol(tokenSoldAddr)
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
@@ -40,10 +40,10 @@ class HashflowTradeHandler(HashflowHandler):
         taker = args.trader
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

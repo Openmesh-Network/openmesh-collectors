@@ -34,7 +34,7 @@ class DodoexSwapHandler(DodoexPairHandler):
         if not self.loaded_pool_data:
             self._load_pool_data()
         args = event.args
-        poolAddr = event.address
+        poolAddr = event['address']
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
             return
@@ -53,10 +53,10 @@ class DodoexSwapHandler(DodoexPairHandler):
         maker = args.trader
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,
@@ -81,8 +81,8 @@ class DodoexBuyHandler(DodoexPairHandler):
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         if not self.loaded_pool_data:
             self._load_pool_data()
-        args = event.args
-        poolAddr = event.address
+        args = ['args']
+        poolAddr = event['address']
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
             return
@@ -100,10 +100,10 @@ class DodoexBuyHandler(DodoexPairHandler):
         taker = args.buyer
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,
@@ -127,8 +127,8 @@ class DodoexSellHandler(DodoexPairHandler):
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         if not self.loaded_pool_data:
             self._load_pool_data()
-        args = event.args
-        poolAddr = event.address
+        args = ['args']
+        poolAddr = event['address']
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
             return
@@ -146,10 +146,10 @@ class DodoexSellHandler(DodoexPairHandler):
         taker = args.seller
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

@@ -28,7 +28,7 @@ class CurveSwapHandler(CurveHandler):
         if not self.loaded_pool_data:
             self._load_pool_data()
         args = event.args
-        poolAddr = event.address
+        poolAddr = event['address']
         tokens = self.pool_data.get(poolAddr, None)
         if tokens is None:
             return
@@ -47,10 +47,10 @@ class CurveSwapHandler(CurveHandler):
         taker = args.buyer
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

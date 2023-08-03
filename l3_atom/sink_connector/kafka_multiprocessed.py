@@ -203,5 +203,8 @@ class AvroKafkaConnector(KafkaConnector):
         res = BytesIO()
         msg_obj = self.record(**msg)
         res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, self.topic_schema_id))
-        schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
+        try:
+            schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
+        except ValueError as e:
+            logging.error(f"Failed to serialize message: {e}")
         return res.getvalue()
