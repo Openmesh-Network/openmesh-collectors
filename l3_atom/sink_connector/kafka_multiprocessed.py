@@ -59,12 +59,15 @@ class KafkaConnector(Kafka):
                 for message in messages:
                     msg = json.loads(message)
                     key = self.exchange_ref.get_key(msg)
-                    msg = self.serialize(msg)
-                    # Because block messages are so infrequent, we need to ensure the request goes through by waiting
-                    if self.topic == 'ethereum_blocks':
-                        await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
-                    else:
-                        await self.kafka_producer.send(self.topic, msg, key=key)
+                    try:
+                        msg = self.serialize(msg)
+                        # Because block messages are so infrequent, we need to ensure the request goes through by waiting
+                        if self.topic == 'ethereum_blocks':
+                            await self.kafka_producer.send_and_wait(self.topic, msg, key=key)
+                        else:
+                            await self.kafka_producer.send(self.topic, msg, key=key)
+                    except Exception as e:
+                        logging.error(f"Error sending message to Kafka: {e}")
         await self.kafka_producer.stop()
 
     def serialize(self, msg: dict):
@@ -203,5 +206,8 @@ class AvroKafkaConnector(KafkaConnector):
         res = BytesIO()
         msg_obj = self.record(**msg)
         res.write(pack('>bI', CONFLUENT_MAGIC_BYTE, self.topic_schema_id))
-        schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
+        try:
+            schemaless_writer(res, self.topic_schema, msg_obj.to_dict())
+        except ValueError as e:
+            logging.error(f"Failed to serialize message: {e}")
         return res.getvalue()

@@ -23,27 +23,27 @@ class HashflowTradeHandler(HashflowHandler):
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         if not self.loaded_pool_data:
             self._load_pool_data()
-        args = event.args
-        poolAddr = event.address
-        tokenSoldAddr = args.baseToken
+        args = event['args']
+        poolAddr = event['address']
+        tokenSoldAddr = args['baseToken']
         tokenSold = self.get_symbol(tokenSoldAddr)
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
-        tokenBoughtAddr = args.quoteToken
+        tokenBoughtAddr = args['quoteToken']
         tokenBought = self.get_symbol(tokenBoughtAddr)
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
 
-        amountSold = Decimal(args.baseTokenAmount) / \
+        amountSold = Decimal(args['baseTokenAmount']) / \
             Decimal(10 ** tokenSoldDecimals)
-        amountBought = Decimal(args.quoteTokenAmount) / \
+        amountBought = Decimal(args['quoteTokenAmount']) / \
             Decimal(10 ** tokenBoughtDecimals)
 
-        taker = args.trader
+        taker = args['trader']
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

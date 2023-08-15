@@ -27,30 +27,30 @@ class CurveSwapHandler(CurveHandler):
     async def event_callback(self, event, blockTimestamp=None, atomTimestamp=None):
         if not self.loaded_pool_data:
             self._load_pool_data()
-        args = event.args
-        poolAddr = event.address
+        args = event['args']
+        poolAddr = event['address']
         tokens = self.pool_data.get(poolAddr, None)
         if tokens is None:
             return
-        tokenSold = tokens[args.sold_id]['symbol']
-        tokenSoldAddr = tokens[args.sold_id]['id']
+        tokenSold = tokens[args['sold_id']]['symbol']
+        tokenSoldAddr = tokens[args['sold_id']]['id']
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
-        tokenBought = tokens[args.bought_id]['symbol']
-        tokenBoughtAddr = tokens[args.bought_id]['id']
+        tokenBought = tokens[args['bought_id']]['symbol']
+        tokenBoughtAddr = tokens[args['bought_id']]['id']
         tokenBoughtDecimals = self.get_decimals(tokenBoughtAddr)
 
-        amountSold = Decimal(args.tokens_sold) / \
+        amountSold = Decimal(args['tokens_sold']) / \
             Decimal(10 ** tokenSoldDecimals)
-        amountBought = Decimal(args.tokens_bought) / \
+        amountBought = Decimal(args['tokens_bought']) / \
             Decimal(10 ** tokenBoughtDecimals)
 
-        taker = args.buyer
+        taker = args['buyer']
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

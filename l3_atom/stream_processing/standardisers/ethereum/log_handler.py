@@ -63,7 +63,7 @@ class EthereumLogHandler:
             log = log.asdict()
             log['topics'] = [HexBytes(t) for t in [
                 log['topic0'], log['topic1'], log['topic2'], log['topic3']] if t]
-            event = self.contract.events[self.event_name]().processLog(log)
+            event = self.contract.events[self.event_name]().process_log(log)
             await self.event_callback(event, blockTimestamp=log['blockTimestamp'], atomTimestamp=log['atomTimestamp'])
         except TokenNotFound as e:
             logging.warning(e)

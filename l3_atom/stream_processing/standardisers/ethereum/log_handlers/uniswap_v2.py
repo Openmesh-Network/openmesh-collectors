@@ -40,8 +40,8 @@ class UniswapV2LiquidityHandler(UniswapV2PairHandler):
     liquidity_event_type = NotImplemented
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
-        args = event.args
-        poolAddr = event.address
+        args = event['args']
+        poolAddr = event['address']
         if poolAddr in self.uni_pool_data:
             exchange = 'uniswap-v2'
             pairDetails = self.uni_pool_data[poolAddr]
@@ -67,10 +67,10 @@ class UniswapV2LiquidityHandler(UniswapV2PairHandler):
         amount1 = Decimal(rawAmount1) / Decimal(10 ** token1Decimals)
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             token0=token0Sym,
             token0Addr=token0Id,
@@ -102,8 +102,8 @@ class UniswapV2SwapHandler(UniswapV2PairHandler):
     event_name = "Swap"
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
-        args = event.args
-        poolAddr = event.address
+        args = event['args']
+        poolAddr = event['address']
         if poolAddr in self.uni_pool_data:
             exchange = 'uniswap-v2'
             pairDetails = self.uni_pool_data[poolAddr]
@@ -114,18 +114,18 @@ class UniswapV2SwapHandler(UniswapV2PairHandler):
             return
         token0 = pairDetails['token0']
         token1 = pairDetails['token1']
-        if args.amount0In > 0:
-            amountSold = args.amount0In
+        if args['amount0In'] > 0:
+            amountSold = args['amount0In']
             tokenSold = token0['symbol']
             tokenSoldAddr = token0['id']
-            amountBought = args.amount1Out
+            amountBought = args['amount1Out']
             tokenBought = token1['symbol']
             tokenBoughtAddr = token1['id']
         else:
-            amountSold = args.amount1In
+            amountSold = args['amount1In']
             tokenSold = token1['symbol']
             tokenSoldAddr = token1['id']
-            amountBought = args.amount0Out
+            amountBought = args['amount0Out']
             tokenBought = token0['symbol']
             tokenBoughtAddr = token0['id']
 
@@ -133,13 +133,13 @@ class UniswapV2SwapHandler(UniswapV2PairHandler):
         tokenSoldDecimals = self.get_decimals(tokenSoldAddr)
         amountBought = Decimal(amountBought) / Decimal(10**tokenBoughtDecimals)
         amountSold = Decimal(amountSold) / Decimal(10**tokenSoldDecimals)
-        taker = args.to
+        taker = args['to']
 
         msg = dict(
-            blockNumber=event.blockNumber,
-            blockHash=event.blockHash,
-            transactionHash=event.transactionHash,
-            logIndex=event.logIndex,
+            blockNumber=event['blockNumber'],
+            blockHash=event['blockHash'],
+            transactionHash=event['transactionHash'],
+            logIndex=event['logIndex'],
             pairAddr=poolAddr,
             tokenBought=tokenBought,
             tokenBoughtAddr=tokenBoughtAddr,

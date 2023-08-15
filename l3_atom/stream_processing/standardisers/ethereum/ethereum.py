@@ -18,8 +18,12 @@ class EthereumStandardiser(Standardiser):
         self.graph_connected = False
 
     def start_exchange(self):
+        # Bandaid solution to the race condition
+        if isinstance(self.exchange, Ethereum):
+            return
         self.exchange = self.exchange()
         self.web3 = web3.Web3(web3.Web3.HTTPProvider(self.exchange.node_conf['node_http_url']))
+        self.web3.middleware_onion.add(web3.middleware.attrdict_middleware)
         self.log_handlers = {
             handler.topic0: handler(self) for handler in log_handlers
         }

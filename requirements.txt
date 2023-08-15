@@ -6,9 +6,9 @@ faust-streaming
 psutil>=5.9.1
 python-dotenv>=0.21.0
 python_dateutil>=2.8.2
-python_schema_registry_client>=2.4.0
+python_schema_registry_client==2.4.0
 requests>=2.22.0
-websockets>=9.1
+websockets>9.1
 yapic.json>=1.7.3
 uvloop
-web3>=5.24.0
+web3==6.7.0
