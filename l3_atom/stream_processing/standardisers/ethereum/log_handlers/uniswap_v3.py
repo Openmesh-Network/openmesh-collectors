@@ -37,7 +37,7 @@ class UniswapV3LiquidityHandler(UniswapV3PoolHandler):
     liquidity_event_type = NotImplemented
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
-        args = event.args
+        args = event['args']
         poolAddr = event['address']
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
@@ -74,7 +74,7 @@ class UniswapV3LiquidityHandler(UniswapV3PoolHandler):
             atomTimestamp=atomTimestamp,
             eventType=self.liquidity_event_type,
             exchange=self.exchange,
-            owner=args.owner
+            owner=args['owner']
         )
 
         await self.standardiser.send_to_topic('dex_liquidity', key_field='pairAddr', **msg)
@@ -96,7 +96,7 @@ class UniswapV3SwapHandler(UniswapV3PoolHandler):
     event_name = "Swap"
 
     async def uniswap_callback(self, event, blockTimestamp=None, atomTimestamp=None):
-        args = ['args']
+        args = event['args']
         poolAddr = event['address']
         pairDetails = self.pool_data.get(poolAddr, None)
         if pairDetails is None:
@@ -127,7 +127,7 @@ class UniswapV3SwapHandler(UniswapV3PoolHandler):
         amountBought = Decimal(amountBought) / \
             Decimal(10 ** tokenBoughtDecimals)
         amountSold = Decimal(amountSold) / Decimal(10 ** tokenSoldDecimals)
-        taker = args.recipient
+        taker = args['recipient']
 
         msg = dict(
             blockNumber=event['blockNumber'],
