@@ -3,7 +3,7 @@ from util import mock_process_message
 import asyncio
 from unittest.mock import Mock
 
-from l3_atom.off_chain import Gemini
+from openmesh.off_chain import Gemini
 
 
 @pytest.mark.asyncio()

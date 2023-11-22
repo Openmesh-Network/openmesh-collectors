@@ -1,5 +1,5 @@
 # Table of Contents
-1. [Contributing to L3 Atom](#contributing-to-l3-atom)
+1. [Contributing to Openmesh](#contributing-to-openmesh)
 2. [We Develop with Github](#we-develop-with-github)
 3. [All Code Changes Happen Through Pull Requests](#all-code-changes-happen-through-pull-requests)
 4. [Any contributions you make will be under the MIT Software License](#any-contributions-you-make-will-be-under-the-mit-software-license)
@@ -12,7 +12,7 @@
     2. [On Chain](#on-chain)
 9. [References](#references)
 
-# Contributing to L3 Atom
+# Contributing to Openmesh
 We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
 
 - Reporting a bug
@@ -44,7 +44,7 @@ By contributing, you agree that your contributions will be licensed under its MI
 
 ## Local Development
 ### Setup
-Install all needed dependencies via `pip install -r requirements.txt`. This project relies on Kafka for messaging, so if you want to run it locally, Kafka will need to be running. Eventually there will be a version of L3 Atom designed to run on a single process for local development, but for now we'll require a Kafka setup. Everything required is included in the `docker-compose.yml` file, so you can run `docker-compose up` to get a local Kafka setup running. This will setup one instance of Zookeeper, 3 brokers, and Schema Registry.
+Install all needed dependencies via `pip install -r requirements.txt`. This project relies on Kafka for messaging, so if you want to run it locally, Kafka will need to be running. Eventually there will be a version of Openmesh designed to run on a single process for local development, but for now we'll require a Kafka setup. Everything required is included in the `docker-compose.yml` file, so you can run `docker-compose up` to get a local Kafka setup running. This will setup one instance of Zookeeper, 3 brokers, and Schema Registry.
 
 Once Kafka is set up you need to tell the application how it can connect. Make a `.env` file in the `keys/` directory, and fill it in with the following:
 
@@ -86,7 +86,7 @@ Both HTTP and Websockets are required.
 
 Additionally, in `config.ini`, you'll want to set `num_replications` to be equal to the number of brokers you have running. By default, this is set to 3, which will work with the 3-broker setup in the `docker-compose.yml` file. If you're using a custom configuration with less brokers, make sure to set this value to be, at maximum, the number of brokers you have running.
 
-Symbols take the form of `<base>.<quote>`, e.g. `BTC.USD`, `ETH.USD`, `BTC.EUR` for spots, and `<base>.<quote>-PERP` for perpetual futures, e.g. `BTC.USDT-PERP`. L3 Atom supports every symbol listed on the given exchanges.
+Symbols take the form of `<base>.<quote>`, e.g. `BTC.USD`, `ETH.USD`, `BTC.EUR` for spots, and `<base>.<quote>-PERP` for perpetual futures, e.g. `BTC.USDT-PERP`. Openmesh supports every symbol listed on the given exchanges.
 
 The entry point for running the application is `runner.py`, which can be used in one of the following ways:
 
@@ -134,12 +134,12 @@ You can of course run all of these in the background, but this will show you the
 
 ## Adding additional sources
 ### Off-Chain
-Let's walk through an example of how an exchange is implemented. All exchanges have the same style and structure, so by diving into how one works, you can read through the others and get a good understanding of how each data source is structured. All off-chain sources are in `l3_atom/off_chain/`, each with their own file. Let's go through Coinbase for this example.
+Let's walk through an example of how an exchange is implemented. All exchanges have the same style and structure, so by diving into how one works, you can read through the others and get a good understanding of how each data source is structured. All off-chain sources are in `openmesh/off_chain/`, each with their own file. Let's go through Coinbase for this example.
 
 ```py
-from l3_atom.data_source import DataFeed
-from l3_atom.tokens import Symbol
-from l3_atom.feed import WSConnection, WSEndpoint, AsyncFeed
+from openmesh.data_source import DataFeed
+from openmesh.tokens import Symbol
+from openmesh.feed import WSConnection, WSEndpoint, AsyncFeed
 from yapic import json
 
 
@@ -160,7 +160,7 @@ class Coinbase(DataFeed):
     symbols_endpoint = "https://api.pro.coinbase.com/products"
 ```
 
-Each source extends the `DataFeed` class, which handles all of the back-end connection operations for us. What we need to do is define certain properties that `DataFeed`'s methods can use to handle the connection for our specific exchange. First we define the name, in this case, just `"coinbase"`. This is a unique identifier and appears in a bunch of places. By convention, this should always be lowercase. `sym_field` defines where we can acquire the symbol for each message. This is used for creating Kafka keys -- essentially we want messages for the same symbol to have the same key so that Kafka processes them in order. Since Coinbase always puts the symbol in a field accessed by `'product_id'`, that's what we set the sym_field as. What happens when this isn't the case? If you look in `l3_atom/data_source.py`, you'll see that `sym_field` (and another field, `type_field`) are used in the following way:
+Each source extends the `DataFeed` class, which handles all of the back-end connection operations for us. What we need to do is define certain properties that `DataFeed`'s methods can use to handle the connection for our specific exchange. First we define the name, in this case, just `"coinbase"`. This is a unique identifier and appears in a bunch of places. By convention, this should always be lowercase. `sym_field` defines where we can acquire the symbol for each message. This is used for creating Kafka keys -- essentially we want messages for the same symbol to have the same key so that Kafka processes them in order. Since Coinbase always puts the symbol in a field accessed by `'product_id'`, that's what we set the sym_field as. What happens when this isn't the case? If you look in `openmesh/data_source.py`, you'll see that `sym_field` (and another field, `type_field`) are used in the following way:
 
 ```py
     @classmethod
@@ -215,7 +215,7 @@ You can see that to get the key, `DataFeed` just calls the `get_sym_from_msg()` 
             return msg['type']
 ```
 
-Going back to the code before, next lets look at the `ws_endpoints` and `ws_channels` properties. `ws_endpoints` maps from an endpoint to connect to to a list of feeds to subscribe to on that endpoint. `ws_channels` effectively maps from L3 Atom's nomenclature to the exchange's, e.g. in this case, what we call `'lob_l3'`, Coinbase calls `'full'`, or, in other words, in order to get L3 limit order book data, we need to subscribe to the `'full'` channel over Coinbase's API. Coinbase is unique in that L3 trade messages are also sent over the `'full'` channel (most exchanges have different channels for order book and trade events), so even though `'trades_l3'` isn't specified in `ws_endpoints`, we show the mapping for it in `ws_channels`. Finally, `symbols_endpoint` is a HTTP endpoint we can query to get the full list of symbols from the exchange. Sometimes, this might be a list of endpoints, which means that we have to query every endpoint in the list to get the full list of symbols. This endpoint is queried and the results are passed to a processing function, which we have to define for each exchange (since each exchange has different formatting for their symbols):
+Going back to the code before, next lets look at the `ws_endpoints` and `ws_channels` properties. `ws_endpoints` maps from an endpoint to connect to to a list of feeds to subscribe to on that endpoint. `ws_channels` effectively maps from Openmesh's nomenclature to the exchange's, e.g. in this case, what we call `'lob_l3'`, Coinbase calls `'full'`, or, in other words, in order to get L3 limit order book data, we need to subscribe to the `'full'` channel over Coinbase's API. Coinbase is unique in that L3 trade messages are also sent over the `'full'` channel (most exchanges have different channels for order book and trade events), so even though `'trades_l3'` isn't specified in `ws_endpoints`, we show the mapping for it in `ws_channels`. Finally, `symbols_endpoint` is a HTTP endpoint we can query to get the full list of symbols from the exchange. Sometimes, this might be a list of endpoints, which means that we have to query every endpoint in the list to get the full list of symbols. This endpoint is queried and the results are passed to a processing function, which we have to define for each exchange (since each exchange has different formatting for their symbols):
 
 ```py
     def normalise_symbols(self, sym_list: list) -> dict:
@@ -230,7 +230,7 @@ Going back to the code before, next lets look at the `ws_endpoints` and `ws_chan
         return ret
 ```
 
-This method takes in a list of symbols (which is just the return value from making a GET request to the endpoint(s) defined in `symbols_endpoint`), and returns a dictionary that maps from L3 Atom's formatting for symbols (i.e. `<base>.<quote>`) to the exchange's formatting for symbols (i.e., in the case of Coinbase, `<base>-<quote>`). This is used to keep a standard symbol format across exchanges, and to allow for us to use a single format when subscribing to symbols across exchanges, even though those exchanges might use different formats themselves.
+This method takes in a list of symbols (which is just the return value from making a GET request to the endpoint(s) defined in `symbols_endpoint`), and returns a dictionary that maps from Openmesh's formatting for symbols (i.e. `<base>.<quote>`) to the exchange's formatting for symbols (i.e., in the case of Coinbase, `<base>-<quote>`). This is used to keep a standard symbol format across exchanges, and to allow for us to use a single format when subscribing to symbols across exchanges, even though those exchanges might use different formats themselves.
 
 Finally, we have to define how we actually subscribe to the Coinbase channels we've specified:
 
@@ -252,13 +252,13 @@ In `subscribe()`, we simply define how, given a list of feeds, symbols, and a re
 
 Processing the raw data happens completely seperately. The idea is that raw data collection and stream processing are completely decoupled for redundancy and scalability.
 
-Stream processing is contained in `l3_atom/stream_processing/`. For processing the data from Coinbase specifically, we enter [`l3_atom/stream_processing/standardisers/coinbase.py`](l3_atom/stream_processing/standardisers/coinbase.py). Like the raw data collection as contained in `l3_atom/off_chain`, with each source having its own class extending `DataFeed`, each source has an equivalent `Standardiser`. You can view the source for `Standardiser` in [`l3_atom/stream_processing/standardiser.py`](l3_atom/stream_processing/standardiser.py). Essentially it handles the processing of raw data into a standard, consistent format, which obviously differs per exchange. 
+Stream processing is contained in `openmesh/stream_processing/`. For processing the data from Coinbase specifically, we enter [`openmesh/stream_processing/standardisers/coinbase.py`](openmesh/stream_processing/standardisers/coinbase.py). Like the raw data collection as contained in `openmesh/off_chain`, with each source having its own class extending `DataFeed`, each source has an equivalent `Standardiser`. You can view the source for `Standardiser` in [`openmesh/stream_processing/standardiser.py`](openmesh/stream_processing/standardiser.py). Essentially it handles the processing of raw data into a standard, consistent format, which obviously differs per exchange. 
 
 Let's have a look at Coinbase's standardiser:
 
 ```py
-from l3_atom.stream_processing.standardiser import Standardiser
-from l3_atom.off_chain import Coinbase
+from openmesh.stream_processing.standardiser import Standardiser
+from openmesh.off_chain import Coinbase
 from decimal import Decimal
 from dateutil import parser
 import logging
@@ -460,7 +460,7 @@ class Trade(BaseCEXRecord, serializer='trades'):
 
 ```
 
-So when we extract the values from the raw Coinbase message and create a `Record` object from it, that data is validated and serialised automatically. You can view the full list of `Record` definitions [here](l3_atom/stream_processing/records.py).
+So when we extract the values from the raw Coinbase message and create a `Record` object from it, that data is validated and serialised automatically. You can view the full list of `Record` definitions [here](openmesh/stream_processing/records.py).
 
 We also define a key for the message, which is typically the data source followed by some unique identifier for that type of message. In the case of Coinbase, say we had a trade for BTC.USD, the key would then be `'coinbase_BTC.USD'`, letting Kafka parallelise the messages and distribute them to the correct partitions. This is important for performance, as it allows us to scale the system horizontally and distribute the load across multiple machines. As messages with the same keys are guaranteed to be processed in order, all BTC.USD trades on Coinbase will be processed sequentially.
 
@@ -572,10 +572,10 @@ This is everything we need to get full details of the swap, but there's one catc
 
 Using that as a guide, we can decode the raw event log and get the data we're looking for. Now, let's get into the code.
 
-The off-chain standardisers sit in the base directory `l3_atom/stream_processing/standardisers`. For on-chain data, each blockchain has its own directory which contain `LogHandler`s, processors for specific contract events. Let's look at Uniswap V3's `LogHandler`s, found in [`l3_atom/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py`](l3_atom/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py):
+The off-chain standardisers sit in the base directory `openmesh/stream_processing/standardisers`. For on-chain data, each blockchain has its own directory which contain `LogHandler`s, processors for specific contract events. Let's look at Uniswap V3's `LogHandler`s, found in [`openmesh/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py`](openmesh/stream_processing/standardisers/ethereum/log_handlers/uniswap_v3.py):
 
 ```python
-from l3_atom.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
+from openmesh.stream_processing.standardisers.ethereum.log_handler import EthereumLogHandler
 from yapic import json
 from decimal import Decimal
 

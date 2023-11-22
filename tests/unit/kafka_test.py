@@ -3,9 +3,9 @@ import json
 from unittest.mock import Mock, AsyncMock
 from multiprocessing import Pipe
 
-import l3_atom.sink_connector.kafka_multiprocessed as kafka_multiprocessed
-from l3_atom.sink_connector.kafka_multiprocessed import KafkaConnector
-from l3_atom.data_source import DataFeed
+import openmesh.sink_connector.kafka_multiprocessed as kafka_multiprocessed
+from openmesh.sink_connector.kafka_multiprocessed import KafkaConnector
+from openmesh.data_source import DataFeed
 
 
 class MockTopics:

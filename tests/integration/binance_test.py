@@ -3,7 +3,7 @@ from util import mock_process_message
 import asyncio
 from unittest.mock import Mock
 
-from l3_atom.off_chain import Binance
+from openmesh.off_chain import Binance
 
 
 @pytest.mark.asyncio()
