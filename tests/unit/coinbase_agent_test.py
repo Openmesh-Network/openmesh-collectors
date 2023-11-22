@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, Mock
 import json
 from decimal import Decimal
-from l3_atom.stream_processing.standardisers import CoinbaseStandardiser
+from openmesh.stream_processing.standardisers import CoinbaseStandardiser
 
 
 @pytest.mark.asyncio()

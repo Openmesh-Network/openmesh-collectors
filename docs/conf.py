@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'L3 Atom'
+project = 'Openmesh'
 copyright = '2022, Jay Taylor'
 author = 'Jay Taylor'
 

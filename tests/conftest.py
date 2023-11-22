@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 import pytest
-from l3_atom.stream_processing import app, codecs
+from openmesh.stream_processing import app, codecs
 import pytest_asyncio
 import asyncio
 from contextlib import suppress

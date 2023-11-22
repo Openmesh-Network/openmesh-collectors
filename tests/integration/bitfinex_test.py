@@ -3,7 +3,7 @@ import json
 import asyncio
 from unittest.mock import Mock
 
-from l3_atom.off_chain import Bitfinex
+from openmesh.off_chain import Bitfinex
 
 # Bitfinex's process message adds some metadata, so we have to replicate it
 

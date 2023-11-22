@@ -2,8 +2,8 @@ import asyncio
 import sys
 import argparse
 
-from l3_atom.off_chain import mapping as off_chain_mapping
-from l3_atom.on_chain import mapping as on_chain_mapping
+from openmesh.off_chain import mapping as off_chain_mapping
+from openmesh.on_chain import mapping as on_chain_mapping
 import logging
 
 
@@ -27,7 +27,7 @@ def set_logging(level=logging.INFO):
 
 
 def run_processor():
-    from l3_atom.stream_processing import app
+    from openmesh.stream_processing import app
 
     old_args = sys.argv[2:]
     sys.argv = [sys.argv[0]]
@@ -51,7 +51,7 @@ def main():
     }
 
     parser = argparse.ArgumentParser(
-        description='Run an L3 Atom process. Either a raw data consumer or a normalised data stream processor.')
+        description='Run an Openmesh process. Either a raw data consumer or a normalised data stream processor.')
 
     parser.add_argument('--logging', '-l', default='info',
                         help='Set the logging level', choices=logging_map.keys())
