@@ -8,7 +8,7 @@
 A massive cryptocurrency data lake and analytics platform.
 
 ## Table of Contents
-- [Why Openmesh](#why-openmesh?)
+- [Why Openmesh?](#why-openmesh?)
 - [Supported Data Sources](#supported-data-sources)
 - [Free Managed Service](#free-managed-service)
 - [Examples of Data](#examples-of-data)
