@@ -1,6 +1,7 @@
 [![Build Status](https://dev.azure.com/gdafund/L3-public/_apis/build/status/GDA-Fund2.L3-Atom-Exchange-Collectors?repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)](https://dev.azure.com/gdafund/L3-public/_build/latest?definitionId=2&repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)
 
-![image](https://github.com/Openmesh-Network/Openmesh-Collectors/assets/104076737/971fd81e-6c0d-4c9c-aa1d-d284ecade845)
+![image](https://github.com/Openmesh-Network/Openmesh-Collectors/assets/104076737/26ea6a2a-22d4-4142-83d3-fe2d462a8d79)
+
 
 
 
