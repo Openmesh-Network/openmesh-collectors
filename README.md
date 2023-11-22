@@ -5,7 +5,7 @@
 
 
 # Openmesh
-A massive cryptocurrency data lake and analytics platform.
+Openmesh is a full-stack, decentralized data cloud infrastructure built on a global network of bare metal servers. It is the largest open data lake, covering approximately 80% of the entire crypto and web3 ecosystem today. Openmesh enables anyone to create their own decentralized data cloud, connect globally, share data securely, slash deployment costs, and automate data cloud setup. The Openmesh Network is designed to collect, store, process, stream, and provide data connectivity for anyone, anywhere, anytime, without the need for registration, licensing, or payments. Think of Openmesh as the internet's open data fabric. It grants universal access and prevents interferences created by regulators, governments, corporations, and even its own creators. The possibilities are endless.
 
 ## Table of Contents
 - [Why Openmesh?](#why-openmesh?)
@@ -15,9 +15,8 @@ A massive cryptocurrency data lake and analytics platform.
 - [Contributor Guide](#contributor-guide)
 
 ## Why Openmesh?
-Openmesh is a full-stack, decentralized data cloud infrastructure built on a global network of bare metal servers. It is the largest open data lake, covering approximately 80% of the entire crypto and web3 ecosystem today. Openmesh enables anyone to create their own decentralized data cloud, connect globally, share data securely, slash deployment costs, and automate data cloud setup. The Openmesh Network is designed to collect, store, process, stream, and provide data connectivity for anyone, anywhere, anytime, without the need for registration, licensing, or payments. Think of Openmesh as the internet's open data fabric. It grants universal access and prevents interferences created by regulators, governments, corporations, and even its own creators. The possibilities are endless.
 
-Openmesh is also the first completely open cryptocurrency data initiative that allows the synthesis of off-chain technical analysis and on-chain analysis. It provides low-latency and real-time access to cryptocurrency data from both off-chain and on-chain sources, standardizing and packaging the data into atomic events that can be easily transported and stored in virtually any format and data store thanks to an integration with an Apache Kafka back-end. 
+Openmesh is the first completely open cryptocurrency data initiative that allows the synthesis of off-chain technical analysis and on-chain analysis. It provides low-latency and real-time access to cryptocurrency data from both off-chain and on-chain sources, standardizing and packaging the data into atomic events that can be easily transported and stored in virtually any format and data store thanks to an integration with an Apache Kafka back-end. 
 
 ## Supported Data Sources
 For off-chain data, the following exchanges are supported:
