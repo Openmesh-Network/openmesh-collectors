@@ -1,19 +1,23 @@
 [![Build Status](https://dev.azure.com/gdafund/L3-public/_apis/build/status/GDA-Fund2.L3-Atom-Exchange-Collectors?repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)](https://dev.azure.com/gdafund/L3-public/_build/latest?definitionId=2&repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)
 
-![L3 Atom Logo](static/images/l3_atom_logo.png "L3 Atom")
+![image](https://github.com/Openmesh-Network/Openmesh-Collectors/assets/104076737/26ea6a2a-22d4-4142-83d3-fe2d462a8d79)
 
-# L3 Atom
-A massive cryptocurrency data lake and analytics platform.
+
+
+
+# Openmesh
+Openmesh is a full-stack, decentralized data cloud infrastructure built on a global network of bare metal servers. It is the largest open data lake, covering approximately 80% of the entire crypto and web3 ecosystem today. Openmesh enables anyone to create their own decentralized data cloud, connect globally, share data securely, slash deployment costs, and automate data cloud setup. The Openmesh Network is designed to collect, store, process, stream, and provide data connectivity for anyone, anywhere, anytime, without the need for registration, licensing, or payments. Think of Openmesh as the internet's open data fabric. It grants universal access and prevents interferences created by regulators, governments, corporations, and even its own creators. The possibilities are endless.
 
 ## Table of Contents
-- [Why L3 Atom?](#why-l3-atom)
+- [Why Openmesh?](#why-openmesh?)
 - [Supported Data Sources](#supported-data-sources)
 - [Free Managed Service](#free-managed-service)
 - [Examples of Data](#examples-of-data)
 - [Contributor Guide](#contributor-guide)
 
-## Why L3 Atom?
-L3 Atom is a comprehensive data platform that has been built from the ground up for scale and cloud-native architectures. It provides low-latency and real-time access to cryptocurrency data from both off-chain and on-chain sources, standardising and packaging the data into atomic events that can be easily transported and stored in virtually any format and data store thanks to an integration with an Apache Kafka back-end. L3 Atom is the first completely open cryptocurrency data initiative that allows a synthesis of off-chain technical analysis and on-chain analysis.
+## Why Openmesh?
+
+Openmesh is the first completely open cryptocurrency data initiative that allows the synthesis of off-chain technical analysis and on-chain analysis. It provides low-latency and real-time access to cryptocurrency data from both off-chain and on-chain sources, standardizing and packaging the data into atomic events that can be easily transported and stored in virtually any format and data store thanks to an integration with an Apache Kafka back-end. 
 
 ## Supported Data Sources
 For off-chain data, the following exchanges are supported:
@@ -40,7 +44,7 @@ For on-chain data, the following DeFi protocols are supported:
  - Uniswap V3
 
 ## Free Managed Service
-L3 Atom is also hosted as a **free** managed service where you can tap into crypto market data via our Websocket API, or analyse historical data via our query tool. View the documentation [here](https://gda-fund.gitbook.io/l3-atom-v3-documentation/).
+Openmesh is also hosted as a **free** managed service where you can tap into crypto market data via our Websocket API, or analyze historical data via our query tool. View the documentation [here](https://open-mesh.gitbook.io/l3a-v3-documentation-2.0/products/unified-api).
 
 ## Examples of Data
 ### Binance Trade
@@ -106,4 +110,4 @@ L3 Atom is also hosted as a **free** managed service where you can tap into cryp
 ```
 
 ## Contributor Guide
-If you would like to contribute to L3 Atom, please read our [contributor guide](CONTRIBUTING.md). It'll show you how to set up the environment locally and help you better understand how you can contribute to the project.
+If you would like to contribute to Openmesh, please read our [contributor guide](CONTRIBUTING.md). It'll show you how to set up the environment locally and help you better understand how you can contribute to the project.
