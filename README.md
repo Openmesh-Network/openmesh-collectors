@@ -1,6 +1,7 @@
 [![Build Status](https://dev.azure.com/gdafund/L3-public/_apis/build/status/GDA-Fund2.L3-Atom-Exchange-Collectors?repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)](https://dev.azure.com/gdafund/L3-public/_build/latest?definitionId=2&repoName=GDA-Fund2%2FL3-Atom-Exchange-Collectors&branchName=main)
 
-![L3 Atom Logo](static/images/l3_atom_logo.png "L3 Atom")
+![image](https://github.com/Openmesh-Network/Openmesh-Collectors/assets/104076737/8958323f-763e-4d65-8f35-f4826e8f0931)
+
 
 # Openmesh
 A massive cryptocurrency data lake and analytics platform.
