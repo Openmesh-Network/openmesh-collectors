@@ -8,7 +8,7 @@ class Binance(DataFeed):
     name = "binance"
     sym_field = 's'
     ws_endpoints = {
-        WSEndpoint("wss://stream.binance.com:9443/ws"): ["lob", "ticker", "candle", "trades_l3"]
+        WSEndpoint("wss://stream.binance.com:9443/ws"): ["ticker", "candle", "trades_l3"]
     }
 
     ws_channels = {

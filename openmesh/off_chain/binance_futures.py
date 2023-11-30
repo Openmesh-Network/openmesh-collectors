@@ -6,7 +6,7 @@ from openmesh.feed import WSConnection, WSEndpoint, HTTPConnection
 class BinanceFutures(Binance):
     name = "binance-futures"
     ws_endpoints = {
-        WSEndpoint("wss://fstream.binance.com/ws"): ["lob", "ticker", "candle", "trades", "funding_rate"]
+        WSEndpoint("wss://fstream.binance.com/ws"): ["ticker", "candle", "trades", "funding_rate"]
     }
 
     rest_endpoints = {

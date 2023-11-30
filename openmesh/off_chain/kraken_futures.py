@@ -9,7 +9,7 @@ class KrakenFutures(DataFeed):
     sym_field = 'product_id'
     type_field = 'feed'
     ws_endpoints = {
-        WSEndpoint("wss://futures.kraken.com/ws/v1"): ["lob", 'trades', 'ticker']
+        WSEndpoint("wss://futures.kraken.com/ws/v1"): ['trades', 'ticker']
     }
 
     ws_channels = {

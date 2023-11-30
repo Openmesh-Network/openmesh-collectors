@@ -7,7 +7,7 @@ from yapic import json
 class Bybit(DataFeed):
     name = "bybit"
     ws_endpoints = {
-        WSEndpoint("wss://stream.bybit.com/spot/public/v3"): ["lob", "ticker", "candle", "trades"]
+        WSEndpoint("wss://stream.bybit.com/spot/public/v3"): ["ticker", "candle", "trades"]
     }
 
     ws_channels = {

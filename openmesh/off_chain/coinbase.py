@@ -8,13 +8,13 @@ class Coinbase(DataFeed):
     name = "coinbase"
     sym_field = 'product_id'
     ws_endpoints = {
-        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["lob_l3", "ticker"]
+        WSEndpoint("wss://ws-feed.pro.coinbase.com"): ["trades_l3", "ticker"]
     }
 
     ws_channels = {
         "lob_l3": "full",
         # Trade messages are sent in the full channel, but for consistency we keep it separate
-        "trades_l3": "full",
+        "trades_l3": "match",
         "ticker": "ticker"
     }
 

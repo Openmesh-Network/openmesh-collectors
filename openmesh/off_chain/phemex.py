@@ -8,7 +8,7 @@ class Phemex(DataFeed):
     name = "phemex"
     sym_field = 'symbol'
     ws_endpoints = {
-        WSEndpoint("wss://phemex.com/ws"): ["lob", "trades", "candle"]
+        WSEndpoint("wss://phemex.com/ws"): ["trades", "candle"]
     }
 
     ws_channels = {

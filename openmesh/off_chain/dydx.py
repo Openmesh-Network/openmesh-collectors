@@ -10,7 +10,7 @@ class Dydx(DataFeed):
     type_field = 'channel'
 
     ws_endpoints = {
-        WSEndpoint("wss://api.dydx.exchange/v3/ws"): ["lob", "trades"]
+        WSEndpoint("wss://api.dydx.exchange/v3/ws"): ["trades"]
     }
 
     ws_channels = {

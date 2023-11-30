@@ -19,7 +19,7 @@ class Bitfinex(DataFeed):
     type_field = -3
 
     ws_endpoints = {
-        WSEndpoint("wss://api.bitfinex.com/ws/2"): ["lob_l3", "ticker", "candle", "trades"]
+        WSEndpoint("wss://api.bitfinex.com/ws/2"): ["ticker", "candle", "trades"]
     }
 
     ws_channels = {

@@ -10,7 +10,7 @@ class Kraken(DataFeed):
     sym_field = -2
     type_field = -3
     ws_endpoints = {
-        WSEndpoint("wss://ws.kraken.com"): ["lob", "ticker", 'trades', 'candle']
+        WSEndpoint("wss://ws.kraken.com"): ["ticker", 'trades', 'candle']
     }
 
     ws_channels = {

@@ -7,7 +7,7 @@ from yapic import json
 class Deribit(DataFeed):
     name = "deribit"
     ws_endpoints = {
-        WSEndpoint("wss://www.deribit.com/ws/api/v2"): ["lob", "ticker", "trades", "candle"]
+        WSEndpoint("wss://www.deribit.com/ws/api/v2"): ["ticker", "trades", "candle"]
     }
 
     ws_channels = {
@@ -20,7 +20,7 @@ class Deribit(DataFeed):
     }
 
     symbols_endpoint = [
-        f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'SOL', 'USDC']]
+        f'https://www.deribit.com/api/v2/public/get_instruments?currency={sym}' for sym in ['BTC', 'ETH', 'USDT', 'USDC']]
 
     @classmethod
     def get_key(cls, msg):
