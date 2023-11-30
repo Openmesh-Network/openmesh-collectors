@@ -2,7 +2,7 @@
 
 FROM python:3.9.4-slim
 WORKDIR /src
-COPY l3_atom/ ./l3_atom
+COPY openmesh/ ./openmesh
 COPY static/ ./static
 COPY runner.py ./
 RUN apt-get update
