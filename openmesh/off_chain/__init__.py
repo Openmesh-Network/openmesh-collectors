@@ -7,7 +7,6 @@ from .bitfinex import Bitfinex
 from .gemini import Gemini
 from .deribit import Deribit
 from .bybit import Bybit
-from .ftx import FTX
 from .kraken import Kraken
 from .kraken_futures import KrakenFutures
 from .opensea import OpenSea
@@ -24,7 +23,6 @@ exch = [
     Gemini,
     Deribit,
     Bybit,
-    FTX,
     Kraken,
     KrakenFutures,
     Phemex,

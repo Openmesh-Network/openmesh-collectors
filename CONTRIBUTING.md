@@ -215,7 +215,12 @@ You can see that to get the key, `DataFeed` just calls the `get_sym_from_msg()` 
             return msg['type']
 ```
 
-Going back to the code before, next lets look at the `ws_endpoints` and `ws_channels` properties. `ws_endpoints` maps from an endpoint to connect to to a list of feeds to subscribe to on that endpoint. `ws_channels` effectively maps from Openmesh's nomenclature to the exchange's, e.g. in this case, what we call `'lob_l3'`, Coinbase calls `'full'`, or, in other words, in order to get L3 limit order book data, we need to subscribe to the `'full'` channel over Coinbase's API. Coinbase is unique in that L3 trade messages are also sent over the `'full'` channel (most exchanges have different channels for order book and trade events), so even though `'trades_l3'` isn't specified in `ws_endpoints`, we show the mapping for it in `ws_channels`. Finally, `symbols_endpoint` is a HTTP endpoint we can query to get the full list of symbols from the exchange. Sometimes, this might be a list of endpoints, which means that we have to query every endpoint in the list to get the full list of symbols. This endpoint is queried and the results are passed to a processing function, which we have to define for each exchange (since each exchange has different formatting for their symbols):
+Going back to the code before, next lets look at the `ws_endpoints` and `ws_channels` properties. 
+`ws_endpoints` maps from an endpoint to connect to to a list of feeds to subscribe to on that endpoint.
+`ws_channels` effectively maps from Openmesh's nomenclature to the exchange's, e.g. in this case, what we call `'lob_l3'`, Coinbase calls `'full'`, or, in other words, in order to get L3 limit order book data, we need to subscribe to the `'full'` channel over Coinbase's API.
+Coinbase is unique in that L3 trade messages are also sent over the `'full'` channel (most exchanges have different channels for order book and trade events), so even though `'trades_l3'` isn't specified in `ws_endpoints`, we show the mapping for it in `ws_channels`.
+Finally, `symbols_endpoint` is a HTTP endpoint we can query to get the full list of symbols from the exchange.
+Sometimes, this might be a list of endpoints, which means that we have to query every endpoint in the list to get the full list of symbols. This endpoint is queried and the results are passed to a processing function, which we have to define for each exchange (since each exchange has different formatting for their symbols):
 
 ```py
     def normalise_symbols(self, sym_list: list) -> dict:

@@ -8,8 +8,13 @@ import logging
 
 
 def run_connector(source, symbol):
-    connector = off_chain_mapping[source](
-        symbols=[symbol]) if source in off_chain_mapping else on_chain_mapping[source]()
+    connector = None
+
+    if source in off_chain_mapping:
+        connector = off_chain_mapping[source](symbols=[symbol])
+    else:
+        connector = on_chain_mapping[source]()
+
     loop = asyncio.get_event_loop()
 
     loop = asyncio.get_event_loop()
@@ -49,6 +54,8 @@ def main():
         'error': logging.ERROR,
         'critical': logging.CRITICAL
     }
+
+    return
 
     parser = argparse.ArgumentParser(
         description='Run an Openmesh process. Either a raw data consumer or a normalised data stream processor.')
