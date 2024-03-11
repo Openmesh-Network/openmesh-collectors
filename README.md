@@ -4,7 +4,7 @@
 
 ![image](https://github.com/Openmesh-Network/Openmesh-Collectors/assets/104076737/26ea6a2a-22d4-4142-83d3-fe2d462a8d79)
 
-Openmesh collectors turns streams from [many data sources](/##Supported-Data-Sources) into a single unified format to be used internally.
+Openmesh collectors turns streams from [many data sources](/##supported-data-sources) into a single unified format to be used internally.
 
 Currently the main data sources are Web3 financial data.
 

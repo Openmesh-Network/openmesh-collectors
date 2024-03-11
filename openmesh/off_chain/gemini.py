@@ -23,7 +23,8 @@ class Gemini(DataFeed):
     symbols_endpoint = "https://api.gemini.com/v1/symbols"
     symbols_info_endpoint = "https://api.gemini.com/v1/symbols/details/{}"
 
-    def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0):
+    def __init__(self,
+                 symbols=None, retries=3, interval=30, timeout=120, delay=0):
         selected_syms = symbols if symbols else []
         for sym in selected_syms:
             logging.info(f"{self.name} - using symbol {sym}")
@@ -46,7 +47,8 @@ class Gemini(DataFeed):
     def _get_sym_filters(self, sym_list):
         return [f'{"".join(sym.split("."))}' for sym in sym_list]
 
-    # Gemini requires us to query each symbol information separately, to avoid rate limits let's only request the symbols we need
+    # Gemini requires us to query each symbol information separately,
+    # to avoid rate limits let's only request the symbols we need
     def get_symbols(self, sym_list):
         sym_filters = self._get_sym_filters(sym_list)
         ret = []

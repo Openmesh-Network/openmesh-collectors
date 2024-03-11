@@ -214,7 +214,9 @@ class DataFeed(DataSource):
     :type delay: int, optional
     """
 
-    def __init__(self, symbols=None, retries=3, interval=30, timeout=120, delay=0, max_syms=10):
+    def __init__(self, symbols=None,
+                 mock_kafka=False, mock_kafka_callback=None,
+                 retries=3, interval=30, timeout=120, delay=0, max_syms=10, ):
         super().__init__(symbols=symbols)
         self.connection_handlers = []
         self.retries = retries
@@ -225,6 +227,10 @@ class DataFeed(DataSource):
         self.num_messages = 0
         self.tot_latency = 0
         self.max_syms = max_syms
+
+        # For debugging purposes
+        self.mock_kafka = mock_kafka
+        self.mock_kafka_callback = mock_kafka_callback
 
     async def subscribe(self, conn: AsyncFeed, feeds: list, symbols: list):
         """
@@ -261,7 +267,11 @@ class DataFeed(DataSource):
         """
         msg = json.loads(message)
         msg = enrich_raw(msg, timestamp)
-        await self.kafka_connector.write(json.dumps(msg))
+
+        if self.mock_kafka:
+            self.mock_kafka_callback(json.dumps(msg))
+        else:
+            await self.kafka_connector.write(json.dumps(msg))
 
     def _init_rest(self) -> list:
         """
@@ -304,7 +314,10 @@ class DataFeed(DataSource):
         """
         self._pre_start and self._pre_start(loop)
         symbols = []
-        self._init_kafka(loop)
+
+        if not self.mock_kafka:
+            self._init_kafka(loop)
+
         rest_connections = self._init_rest()
         for connection in rest_connections:
             self.connection_handlers.append(AsyncConnectionManager(
@@ -342,6 +355,7 @@ class DataFeed(DataSource):
         """
         logging.info('%s: Shutting down', self.name)
         tasks = []
+
         if self.kafka_connector:
             tasks.append(self.kafka_connector.stop())
         for handler in self.connection_handlers:

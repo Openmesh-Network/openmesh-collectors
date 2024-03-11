@@ -32,8 +32,8 @@ class Bitfinex(DataFeed):
     symbols_endpoint = ["https://api-pub.bitfinex.com/v2/conf/pub:list:pair:exchange",
                         "https://api-pub.bitfinex.com/v2/conf/pub:list:currency", "https://api-pub.bitfinex.com/v2/conf/pub:list:pair:futures"]
 
-    def __init__(self, symbols=None):
-        super().__init__(symbols)
+    def __init__(self, symbols=None, mock_kafka=False, mock_kafka_callback=None):
+        super().__init__(symbols, mock_kafka=mock_kafka, mock_kafka_callback=mock_kafka_callback)
         self.chan_ids = dict()
 
     def normalise_symbols(self, sym_list: list) -> dict:
@@ -114,4 +114,9 @@ class Bitfinex(DataFeed):
             msg.append(channel)
             msg.append(symbol)
         msg = enrich_raw(msg, timestamp)
-        await self.kafka_connector.write(json.dumps(msg))
+
+        if self.mock_kafka:
+            if self.mock_kafka_callback is not None:
+                self.mock_kafka_callback(json.dumps(msg))
+        else:
+            await self.kafka_connector.write(json.dumps(msg))
