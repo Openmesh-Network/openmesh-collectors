@@ -1,6 +1,8 @@
 import ccxt
 from abc import ABC, abstractmethod
 import psycopg2
+from dotenv import load_dotenv
+import os
 
 class BaseDataCollector(ABC):
 
@@ -39,14 +41,19 @@ class BaseDataCollector(ABC):
 
 
     def connect_to_postgres(self):
+
+        load_dotenv()
+        print("HEREEEEEEE")
+        print(os.getenv("DB_USER"))
+
         try:
             # Connect to your PostgreSQL database
             connection = psycopg2.connect(
-                user="postgres",
-                password="openmesh.collectors",
-                host="localhost",
-                port="5432",
-                database="pythia"
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                host=os.getenv("DB_HOST"),
+                port=os.getenv("DB_PORT"),
+                database=os.getenv("DB_NAME")
             )
             print("Connected to PostgreSQL successfully!")
             return connection

@@ -9,6 +9,7 @@ temp.txt
 .vscode
 script.py
 *_raw.json
+config.env
 
 # Log files
 *.ids 
