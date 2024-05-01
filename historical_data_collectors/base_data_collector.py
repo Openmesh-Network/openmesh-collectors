@@ -1,8 +1,11 @@
 import ccxt
 from abc import ABC, abstractmethod
 import psycopg2
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 import os
+import sys
+
+DOTENV_PATH = '/home/pythia/openmesh-collectors/historical_data_collectors/config.env'
 
 class BaseDataCollector(ABC):
 
@@ -15,23 +18,29 @@ class BaseDataCollector(ABC):
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
+        connection = self.connect_to_postgres()
+        count = 0
+
         for symbol in self.symbols:
 
             #assuming we only need spot data
             if self.markets[symbol]['type'] == 'spot':
                 print(symbol)
-                self.fetch_and_write_symbol_trades(symbol, start_date, end_date)
+                self.fetch_and_write_symbol_trades(symbol, start_date, end_date, connection)
+                # break
+
+            count += 1
+
+            if count >= 100:
                 break
     
     @abstractmethod
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
+    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
         """Fetch and write all trades of symbol from start_date to end_date into the database"""
 
     
-    def write_to_db(self, trades):
+    def write_to_db(self, trades, connection):
         """Writes the trades data into the database"""
-        
-        connection = self.connect_to_postgres()
 
         # trade = trades[0]
         # print("trade")
@@ -42,9 +51,7 @@ class BaseDataCollector(ABC):
 
     def connect_to_postgres(self):
 
-        load_dotenv()
-        print("HEREEEEEEE")
-        print(os.getenv("DB_USER"))
+        load_dotenv(DOTENV_PATH)
 
         try:
             # Connect to your PostgreSQL database

@@ -4,6 +4,7 @@ import sys
 import ccxt
 import datetime
 import pytz
+import time
 # import paramiko
 # from sshtunnel import SSHTunnelForwarder
 # from paramiko.rsakey import RSAKey
@@ -182,86 +183,48 @@ from historical_data_collectors.coinbase_data_collector import CoinbaseDataColle
 
 def main():
 
-    # # SSH connection details
-    # ssh_host = '67.219.99.204'
-    # ssh_port = 22
-    # ssh_username = 'root'
-    # ssh_private_key = '/Users/divya/.ssh/id_rsa'
-    # private_key = RSAKey.from_private_key_file(ssh_private_key)
-    #
-    # # PostgreSQL connection details
-    # postgres_host = 'localhost'  # Because the tunnel will forward the connection to localhost
-    # postgres_port = 5432  # Default PostgreSQL port
-    # postgres_username = 'postgres'
-    # postgres_password = ''
-    # postgres_db = 'postgres'
+    start_time = time.time()
 
-    # try:
-    #     # Establish SSH tunnel
-    #     with SSHTunnelForwarder(
-    #             (ssh_host, ssh_port),
-    #             ssh_username=ssh_username,
-    #             remote_bind_address=(postgres_host, postgres_port)
-    #     ) as tunnel:
-    #
-    #         try:
-    #             conn = psycopg2.connect(
-    #                 database=postgres_db,
-    #                 user=postgres_username,
-    #                 password=postgres_password,
-    #                 host=postgres_host,
-    #                 port=postgres_port
-    #             )
-    #
-    #             cursor = conn.cursor()
-    #             # Now you can execute SQL queries using the connection 'conn'
-    #
-    #         except psycopg2.Error as e:
-    #             print("Unable to connect to the PostgreSQL database:", e)
-    #
-    #         finally:
-    #             # Close the database connection
-    #             if conn:
-    #                 conn.close()
-    #
-    #             if cursor:
-    #                 cursor.close()
-    #
-    # except Exception as e:
-    #     print("Unable to establish SSH tunnel:", e)
+    try:
+        if len(sys.argv) != 4:
+            print("Usage: python3 historical_runner.py exchange_name start_date end_date")
+            sys.exit(1)
 
-    if len(sys.argv) != 4:
-        print("Usage: python3 historical_runner.py exchange_name start_date end_date")
-        sys.exit(1)
+        exchange_name = sys.argv[1].lower()
 
-    exchange_name = sys.argv[1].lower()
+        if exchange_name == 'binance':
+            data_collector = BinanceDataCollector()
+        elif exchange_name == 'coinbase':
+            # print("before")
+            data_collector = CoinbaseDataCollector()
+            # print("after")
+        elif exchange_name == 'dydx':
+            data_collector = DydxDataCollector()
+        elif exchange_name == 'bybit':
+            data_collector = BybitDataCollector()
+        elif exchange_name == 'okx':
+            data_collector = OkxDataCollector()
+        else:
+            print(f"Exchange {exchange_name} is not supported. Currently supported exchanges are Binance, Coinbase, Dydx, Bybit and Okx")
+            sys.exit(1)
 
-    if exchange_name == 'binance':
-        data_collector = BinanceDataCollector()
-    elif exchange_name == 'coinbase':
-        # print("before")
-        data_collector = CoinbaseDataCollector()
-        # print("after")
-    elif exchange_name == 'dydx':
-        data_collector = DydxDataCollector()
-    elif exchange_name == 'bybit':
-        data_collector = BybitDataCollector()
-    elif exchange_name == 'okx':
-        data_collector = OkxDataCollector()
-    else:
-        print(f"Exchange {exchange_name} is not supported. Currently supported exchanges are Binance, Coinbase, Dydx, Bybit and Okx")
-        sys.exit(1)
+        arg_date_format = "%Y/%m/%d"
 
-    arg_date_format = "%Y/%m/%d"
+        #inclusive
+        start_date = datetime.datetime.strptime(sys.argv[2], arg_date_format).date()
 
-    #inclusive
-    start_date = datetime.datetime.strptime(sys.argv[2], arg_date_format).date()
+        #exclusive
+        end_date = datetime.datetime.strptime(sys.argv[3], arg_date_format).date()
 
-    #exclusive
-    end_date = datetime.datetime.strptime(sys.argv[3], arg_date_format).date()
+        data_collector.fetch_and_write_trades(start_date, end_date)
+    
+    finally:
+        end_time = time.time()
 
-    data_collector.fetch_and_write_trades(start_date, end_date)
+        # Calculate the total execution time
+        execution_time = end_time - start_time
 
+        print("Script execution time: {:.2f} seconds".format(execution_time))
 
 if __name__ == "__main__":
     main()

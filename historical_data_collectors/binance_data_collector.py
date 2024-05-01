@@ -17,24 +17,34 @@ class BinanceDataCollector(BaseDataCollector):
 
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
-        # super().fetch_and_write_trades(start_date, end_date)
-        self.fetch_and_write_symbol_trades('BTC/USDT', start_date, end_date)
+        super().fetch_and_write_trades(start_date, end_date)
+        # self.fetch_and_write_symbol_trades('BTC/USDT', start_date, end_date)
 
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
+    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
 
         utc_timezone = pytz.utc
 
         # in milliseconds
-        start_time = int(
-            datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-        end_time = int(
-            datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # start_time = int(
+        #     datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # end_time = int(
+        #     datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
 
+        current_time = datetime.datetime.now()
+        end_time = int(current_time.timestamp()*1000)
 
-        count = 0
+        one_minute_before = current_time - datetime.timedelta(minutes=1)
+        one_second_before = current_time - datetime.timedelta(seconds=1)
+        start_time = int(one_second_before.timestamp() * 1000)
+
+        # print("start time", one_minute_before)
+        # print("end time", current_time)
+
+        # count = 2
         previous_trade_id = None
 
-        while start_time < end_time and count < 3:
+        # while start_time < end_time and count < 1:
+        while start_time < end_time:
 
             try:
 
@@ -52,10 +62,12 @@ class BinanceDataCollector(BaseDataCollector):
                 print(self.exchange.iso8601(start_time), len(trades), 'trades')
 
                 print("--FETCHED---")
-                print(len(trades))
-                print(trades[0])
-                print("-----")
-                print(trades[-1])
+                print(len(trades), "trades")
+
+                if len(trades):
+                    print(trades[0])
+                    print("-----")
+                    print(trades[-1])
 
                 if len(trades):
 
@@ -80,7 +92,7 @@ class BinanceDataCollector(BaseDataCollector):
                         previous_trade_id = last_trade['id']
 
                         l2_trades = self.normalize_to_l2(trades_to_write)
-                        self.write_to_db(l2_trades)
+                        self.write_to_database(connection, l2_trades)
 
                     # only one trade happened in the one hour since start_time. We've already written that trade to database.
                     # increase start_time by an horu
@@ -100,7 +112,7 @@ class BinanceDataCollector(BaseDataCollector):
 
             except ccxt.NetworkError as e:
                 print(type(e).__name__, str(e))
-            count += 1
+            # count += 1
 
     def filter_new_trades(self, trades, previous_trade_id):
         """Returns trades that have occured after the previous_trade_id trade. 
