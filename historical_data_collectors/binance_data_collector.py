@@ -45,9 +45,9 @@ class BinanceDataCollector(BaseDataCollector):
         one_second_before = current_time - datetime.timedelta(seconds=1)
 
         # start_time = int(one_second_before.timestamp() * 1000)
-        # start_time = int(one_minute_before.timestamp() * 1000)
+        start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
-        start_time = int(two_hour_before.timestamp() * 1000)
+        # start_time = int(two_hour_before.timestamp() * 1000)
 
         # print("start time", one_minute_before)
         # print("end time", current_time)
@@ -93,6 +93,7 @@ class BinanceDataCollector(BaseDataCollector):
                     # cursor = self.exchange.last_response_headers['CB-AFTER']
                     last_trade = trades[-1]
 
+                    #checks if we have fetched any new trades in this call
                     if previous_trade_id != last_trade['id']:
                         
                         start = time.time()
@@ -109,7 +110,7 @@ class BinanceDataCollector(BaseDataCollector):
                         start_time = last_trade['timestamp']
                         previous_trade_id = last_trade['id']
 
-                        l2_trades = self.normalize_to_l2(trades_to_write)
+                        l2_trades = super().normalize_to_l2(trades_to_write, 'Binance')
                         end = time.time()
                         print(f"filtering and normalising the trades took {end-start} time")
                         self.write_to_database(connection, l2_trades)
@@ -159,14 +160,14 @@ class BinanceDataCollector(BaseDataCollector):
     # def write_to_db(self, trades):
     #     super().write_to_db(trades)
 
-    def normalize_to_l2(self, trades):
+    # def normalize_to_l2(self, trades):
 
-        normalised_data = []
-        # trade = trades[0]
+    #     normalised_data = []
+    #     # trade = trades[0]
 
-        for trade in trades:
-            # trade_data = {'exchange': 'Binance', 'symbol': trade['symbol'], 'price': trade['price'], 'size': trade['amount'], 'taker_side': trade['side'], 'trade_id': trade['id'], 'timestamp': trade['timestamp']}
-            trade_data = ('Binance', trade['symbol'], trade['price'], trade['amount'], trade['side'], trade['id'], trade['timestamp'])
-            normalised_data.append(trade_data)
+    #     for trade in trades:
+    #         # trade_data = {'exchange': 'Binance', 'symbol': trade['symbol'], 'price': trade['price'], 'size': trade['amount'], 'taker_side': trade['side'], 'trade_id': trade['id'], 'timestamp': trade['timestamp']}
+    #         trade_data = ('Binance', trade['symbol'], trade['price'], trade['amount'], trade['side'], trade['id'], trade['timestamp'])
+    #         normalised_data.append(trade_data)
 
-        return normalised_data
+    #     return normalised_data

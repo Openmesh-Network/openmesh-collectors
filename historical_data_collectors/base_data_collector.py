@@ -50,6 +50,17 @@ class BaseDataCollector(ABC):
     #     # # data = {'exchange': trade, 'timestamp': trade['timestamp']}
     #     self.write_to_database(connection, trades)
 
+    def normalize_to_l2(self, trades, exchange_name):
+
+        normalised_data = []
+        # trade = trades[0]
+
+        for trade in trades:
+            # trade_data = {'exchange': 'Binance', 'symbol': trade['symbol'], 'price': trade['price'], 'size': trade['amount'], 'taker_side': trade['side'], 'trade_id': trade['id'], 'timestamp': trade['timestamp']}
+            trade_data = (exchange_name, trade['symbol'], trade['price'], trade['amount'], trade['side'], trade['id'], trade['timestamp'])
+            normalised_data.append(trade_data)
+
+        return normalised_data
 
     def connect_to_postgres(self):
 
