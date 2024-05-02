@@ -25,7 +25,7 @@ class BinanceDataCollector(BaseDataCollector):
         # self.fetch_and_write_symbol_trades('ETH/USDT', start_date, end_date, connection)
 
     def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
-
+        """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
         utc_timezone = pytz.utc
 
         # in milliseconds

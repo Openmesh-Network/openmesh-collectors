@@ -21,9 +21,9 @@ class CoinbaseDataCollector(BaseDataCollector):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
         super().fetch_and_write_trades(start_date, end_date)
 
-
     def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
-        
+        """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
+
         utc_timezone = pytz.utc
 
         # in milliseconds
@@ -36,7 +36,6 @@ class CoinbaseDataCollector(BaseDataCollector):
 
         current_time = datetime.datetime.now()
         end_time = int(current_time.timestamp()*1000)
-
 
         two_hour_before = current_time - datetime.timedelta(hours=2)
         one_hour_before = current_time - datetime.timedelta(hours=1)
@@ -51,7 +50,7 @@ class CoinbaseDataCollector(BaseDataCollector):
         # start_time = int(two_hour_before.timestamp() * 1000)
 
 
-        count = 0
+        # count = 0
 
         #this is the id of the first trade we fetched in the last api call
         previous_trade_id = None
