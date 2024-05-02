@@ -38,6 +38,7 @@ class BinanceDataCollector(BaseDataCollector):
         end_time = int(current_time.timestamp()*1000)
 
 
+        two_hour_before = current_time - datetime.timedelta(hours=2)
         one_hour_before = current_time - datetime.timedelta(hours=1)
         five_min_before = current_time - datetime.timedelta(minutes=5)
         one_minute_before = current_time - datetime.timedelta(minutes=1)
@@ -46,7 +47,7 @@ class BinanceDataCollector(BaseDataCollector):
         # start_time = int(one_second_before.timestamp() * 1000)
         # start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
-        start_time = int(one_hour_before.timestamp() * 1000)
+        start_time = int(two_hour_before.timestamp() * 1000)
 
         # print("start time", one_minute_before)
         # print("end time", current_time)
