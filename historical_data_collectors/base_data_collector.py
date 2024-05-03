@@ -18,11 +18,12 @@ class BaseDataCollector(ABC):
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         self.profiler = Profiler()
+        self.connection = None
 
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
-        connection = self.connect_to_postgres()
+        # self.connection = self.connect_to_postgres()
         # count = 0
 
         for symbol in self.symbols:
@@ -30,7 +31,7 @@ class BaseDataCollector(ABC):
             #assuming we only need spot data
             if self.markets[symbol]['type'] == 'spot':
                 print(symbol)
-                self.fetch_and_write_symbol_trades(symbol, start_date, end_date, connection)
+                self.fetch_and_write_symbol_trades(symbol, start_date, end_date)
                 # break
 
             # count += 1
@@ -40,7 +41,7 @@ class BaseDataCollector(ABC):
     
 
     @abstractmethod
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
+    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
         """Fetch and write all trades of symbol from start_date to end_date into the database"""
 
 
@@ -77,14 +78,17 @@ class BaseDataCollector(ABC):
             print("Error while connecting to PostgreSQL:", error)
             return None
 
-    def write_to_database(self, connection, data):
+    def write_to_database(self, data):
         """Writes the data to the database connected to by the connection object"""
+
+        if self.connection is None or self.connection.closed:
+            self.connection = self.connect_to_postgres()
 
         # call_start = time.time()
         self.profiler.start('database write')
 
         try:
-            cursor = connection.cursor()
+            cursor = self.connection.cursor()
 
             # SQL statement for batch insert
             sql = """
@@ -95,7 +99,7 @@ class BaseDataCollector(ABC):
             # Execute batch insert
             psycopg2.extras.execute_batch(cursor, sql, data)
 
-            connection.commit()
+            self.connection.commit()
 
             print("Data inserted successfully!")
         except (Exception, psycopg2.Error) as error:

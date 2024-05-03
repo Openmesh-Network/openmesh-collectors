@@ -9,6 +9,7 @@ RATE_LIMIT_SLEEP_TIME = 0.5
 
 class CoinbaseDataCollector(BaseDataCollector):
 
+
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         super.__init__()
@@ -18,11 +19,13 @@ class CoinbaseDataCollector(BaseDataCollector):
         self.symbols = self.exchange.symbols
         # self.profiler = Profiler()
 
+
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
         super().fetch_and_write_trades(start_date, end_date)
 
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
+
+    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
         utc_timezone = pytz.utc
@@ -79,7 +82,7 @@ class CoinbaseDataCollector(BaseDataCollector):
 
                     # write to database
                     l2_trades = super().normalize_to_l2(trades, 'Coinbase')
-                    super().write_to_database(connection, l2_trades)
+                    super().write_to_database(l2_trades)
 
                 # no more new trades left to be fetched since 'since' timestamp
                 else:

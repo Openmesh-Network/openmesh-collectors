@@ -48,6 +48,7 @@ def main():
         #exclusive
         end_date = datetime.datetime.strptime(sys.argv[3], arg_date_format).date()
 
+        
         data_collector.fetch_and_write_trades(start_date, end_date)
     
     finally:
@@ -57,6 +58,8 @@ def main():
         execution_time = end_time - start_time
 
         print("Script execution time: {:.2f} seconds".format(execution_time))
+
+    
 
 if __name__ == "__main__":
     main()
