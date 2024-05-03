@@ -6,16 +6,18 @@ from dotenv import load_dotenv, find_dotenv
 import os
 import sys
 import time
+from .helpers.profiler import Profiler
 
-DOTENV_PATH = '/home/pythia/openmesh-collectors/historical_data_collectors/config.env'
+ENV_FILE = 'config.env'
 
 class BaseDataCollector(ABC):
 
     exchange = None
     
-    @abstractmethod
+
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
+        self.profiler = Profiler()
 
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
@@ -36,35 +38,29 @@ class BaseDataCollector(ABC):
             # if count >= 20:
             #     break
     
+
     @abstractmethod
     def fetch_and_write_symbol_trades(self, symbol, start_date, end_date, connection):
         """Fetch and write all trades of symbol from start_date to end_date into the database"""
 
-    
-    # def write_to_db(self, trades, connection):
-    #     """Writes the trades data into the database"""
-
-    #     # trade = trades[0]
-    #     # print("trade")
-    #     # print(trade)
-    #     # # data = {'exchange': trade, 'timestamp': trade['timestamp']}
-    #     self.write_to_database(connection, trades)
 
     def normalize_to_l2(self, trades, exchange_name):
+        """Takes as arguments the fetched trades and the exchange name and returns the relevant data for the l2 trades schema
+        as a tuple"""
 
         normalised_data = []
-        # trade = trades[0]
 
         for trade in trades:
-            # trade_data = {'exchange': 'Binance', 'symbol': trade['symbol'], 'price': trade['price'], 'size': trade['amount'], 'taker_side': trade['side'], 'trade_id': trade['id'], 'timestamp': trade['timestamp']}
             trade_data = (exchange_name, trade['symbol'], trade['price'], trade['amount'], trade['side'], trade['id'], trade['timestamp'])
             normalised_data.append(trade_data)
 
         return normalised_data
 
-    def connect_to_postgres(self):
 
-        load_dotenv(DOTENV_PATH)
+    def connect_to_postgres(self):
+        """Establishes a connection with the database and returns a connection object"""
+
+        load_dotenv(os.path.join(os.path.dirname(__file__), ENV_FILE))
 
         try:
             # Connect to your PostgreSQL database
@@ -82,8 +78,11 @@ class BaseDataCollector(ABC):
             return None
 
     def write_to_database(self, connection, data):
+        """Writes the data to the database connected to by the connection object"""
 
-        call_start = time.time()
+        # call_start = time.time()
+        self.profiler.start('database write')
+
         try:
             cursor = connection.cursor()
 
@@ -96,12 +95,6 @@ class BaseDataCollector(ABC):
             # Execute batch insert
             psycopg2.extras.execute_batch(cursor, sql, data)
 
-
-            # cursor.execute("""
-            #     INSERT INTO l2_trades_test (exchange, symbol, price, size, taker_side, trade_id, timestamp)
-            #     VALUES (%s, %s, %s, %s, %s, %s, %s)
-            # """, (data['exchange'], data['symbol'], data['price'], data['size'], data['taker_side'], data['trade_id'], data['timestamp']))
-            
             connection.commit()
 
             print("Data inserted successfully!")
@@ -112,6 +105,4 @@ class BaseDataCollector(ABC):
             if cursor:
                 cursor.close()
 
-        call_end = time.time()
-        call_time = call_end - call_start
-        print(f"The database write took {call_time} to execute")
+        self.profiler.stop('database write')

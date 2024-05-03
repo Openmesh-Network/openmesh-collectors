@@ -18,3 +18,5 @@ class Profiler:
         
         print(f"{key} took {self.elapsed_times[key]} time")
 
+    def started(self, key):
+        return key in self.start_times.keys()
