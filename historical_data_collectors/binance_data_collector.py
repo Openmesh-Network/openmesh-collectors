@@ -41,6 +41,7 @@ class BinanceDataCollector(BaseDataCollector):
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
+        # print("ENTERED")
 
         current_time = datetime.datetime.now()
         # end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
@@ -53,7 +54,7 @@ class BinanceDataCollector(BaseDataCollector):
         one_second_before = current_time - datetime.timedelta(seconds=1)
 
         # start_time = int(one_second_before.timestamp() * 1000)
-        start_time = int(one_minute_before.timestamp() * 1000)
+        # start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
@@ -81,14 +82,14 @@ class BinanceDataCollector(BaseDataCollector):
                 self.profiler.stop('fetch_trades call')
                 self.profiler.start('time bw calls')
 
-                print(trades)
-                print("--FETCHED---")
-                print(len(trades), "trades")
+                # print(trades)
+                # print("--FETCHED---")
+                # print(len(trades), "trades")
 
-                if len(trades):
-                    print(trades[0])
-                    print("-----")
-                    print(trades[-1])
+                # if len(trades):
+                #     print(trades[0])
+                #     print("-----")
+                #     print(trades[-1])
 
                 if len(trades):
 

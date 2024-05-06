@@ -39,6 +39,9 @@ def test_fetch_and_write_symbol_trades():
     # start_time = int(two_hour_before.timestamp() * 1000)
     start_time = int(one_hour_before.timestamp() * 1000)
 
+    print(datetime.datetime.fromtimestamp(start_time/ONE_SECOND_IN_MILLISECONDS))
+    print(datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS))
+
     data_collector.total_fetched_trades = []
     logging.info(len(data_collector.total_fetched_trades))
 
