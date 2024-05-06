@@ -7,13 +7,17 @@ import os
 import sys
 import time
 from .helpers.profiler import Profiler
+import datetime
+import pytz
+
 
 ENV_FILE = 'config.env'
+ONE_SECOND_IN_MILLISECONDS = 1000
+
 
 class BaseDataCollector(ABC):
 
     exchange = None
-    
 
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
@@ -26,12 +30,20 @@ class BaseDataCollector(ABC):
         # self.connection = self.connect_to_postgres()
         # count = 0
 
+        utc_timezone = pytz.utc
+
+        start_time = int(
+            datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
+        end_time = int(
+            datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
+
+
         for symbol in self.symbols:
 
             #assuming we only need spot data
             if self.markets[symbol]['type'] == 'spot':
                 print(symbol)
-                self.fetch_and_write_symbol_trades(symbol, start_date, end_date)
+                self.fetch_and_write_symbol_trades(symbol, start_time, end_time)
                 # break
 
             # count += 1

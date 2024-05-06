@@ -25,21 +25,21 @@ class CoinbaseDataCollector(BaseDataCollector):
         super().fetch_and_write_trades(start_date, end_date)
 
 
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
+    def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
         utc_timezone = pytz.utc
 
         # in milliseconds
-        start_time = int(
-            datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-        end_time = int(
-            datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # start_time = int(
+        #     datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # end_time = int(
+        #     datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
 
         one_hour = 3600 * 1000
 
         current_time = datetime.datetime.now()
-        end_time = int(current_time.timestamp()*1000)
+        # end_time = int(current_time.timestamp()*1000)
 
         two_hour_before = current_time - datetime.timedelta(hours=2)
         one_hour_before = current_time - datetime.timedelta(hours=1)
@@ -50,7 +50,7 @@ class CoinbaseDataCollector(BaseDataCollector):
         # start_time = int(one_second_before.timestamp() * 1000)
         # start_time = int(one_min_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
-        start_time = int(one_hour_before.timestamp() * 1000)
+        # start_time = int(one_hour_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
 

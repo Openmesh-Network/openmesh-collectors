@@ -24,18 +24,18 @@ class BinanceDataCollector(BaseDataCollector):
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
-        # super().fetch_and_write_trades(start_date, end_date)
+        super().fetch_and_write_trades(start_date, end_date)
         # connection = super().connect_to_postgres()
 
         # in milliseconds
         utc_timezone = pytz.utc
 
-        start_time = int(
-            datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-        end_time = int(
-            datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # start_time = int(
+        #     datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+        # end_time = int(
+        #     datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
 
-        self.fetch_and_write_symbol_trades('LPT/USDT', start_time, end_time)
+        # self.fetch_and_write_symbol_trades('LPT/USDT', start_time, end_time)
 
 
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
@@ -44,7 +44,7 @@ class BinanceDataCollector(BaseDataCollector):
         # print("ENTERED")
 
         current_time = datetime.datetime.now()
-        # end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
+        end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
 
 
         two_hour_before = current_time - datetime.timedelta(hours=2)
@@ -56,6 +56,7 @@ class BinanceDataCollector(BaseDataCollector):
         # start_time = int(one_second_before.timestamp() * 1000)
         # start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
+        start_time = int(one_hour_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
         # print("start time", one_minute_before)
