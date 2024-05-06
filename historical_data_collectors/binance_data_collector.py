@@ -1,7 +1,7 @@
 import ccxt
 import datetime
 import pytz
-from historical_data_collectors.base_data_collector import BaseDataCollector
+from .base_data_collector import BaseDataCollector
 import time
 
 ONE_HOUR_IN_SECONDS = 3600
@@ -26,18 +26,21 @@ class BinanceDataCollector(BaseDataCollector):
 
         # super().fetch_and_write_trades(start_date, end_date)
         # connection = super().connect_to_postgres()
-        self.fetch_and_write_symbol_trades('LPT/USDT', start_date, end_date)
-
-
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
-        """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
-        utc_timezone = pytz.utc
 
         # in milliseconds
+        utc_timezone = pytz.utc
+
         start_time = int(
             datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
         end_time = int(
             datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
+
+        self.fetch_and_write_symbol_trades('LPT/USDT', start_time, end_time)
+
+
+    def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
+        """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
+
 
         current_time = datetime.datetime.now()
         # end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
@@ -50,7 +53,7 @@ class BinanceDataCollector(BaseDataCollector):
         one_second_before = current_time - datetime.timedelta(seconds=1)
 
         # start_time = int(one_second_before.timestamp() * 1000)
-        # start_time = int(one_minute_before.timestamp() * 1000)
+        start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
@@ -71,17 +74,14 @@ class BinanceDataCollector(BaseDataCollector):
 
                 # Binance api returns the lesser of the next 500 trades since start_time or all the trades in the hour
                 # since start_time
-                # call_start = time.time()
+
                 self.profiler.start('fetch_trades call')
                 trades = self.exchange.fetch_trades(symbol, since=start_time, limit = MAX_BINANCE_API_LIMIT)
 
-                # call_end = time.time()
-                # call_time = call_end - call_start
-                # print(f"The fetch call took {call_time} to execute")
                 self.profiler.stop('fetch_trades call')
                 self.profiler.start('time bw calls')
 
-
+                print(trades)
                 print("--FETCHED---")
                 print(len(trades), "trades")
 
