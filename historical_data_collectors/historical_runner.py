@@ -4,6 +4,7 @@ import time
 
 from historical_data_collectors.collectors.binance_data_collector import BinanceDataCollector
 from historical_data_collectors.collectors.coinbase_data_collector import CoinbaseDataCollector
+from historical_data_collectors.collectors.bybit_data_collector import BybitDataCollector
 
 def main():
 
@@ -38,6 +39,7 @@ def main():
         elif exchange_name == 'dydx':
             data_collector = DydxDataCollector()
         elif exchange_name == 'bybit':
+            print("Getting here")
             data_collector = BybitDataCollector()
         elif exchange_name == 'okx':
             data_collector = OkxDataCollector()

@@ -24,7 +24,6 @@ class BaseDataCollector(ABC):
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
-        # self.connection = self.connect_to_postgres()
         # count = 0
 
         utc_timezone = pytz.utc
@@ -34,18 +33,20 @@ class BaseDataCollector(ABC):
         end_time = int(
             datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
 
-
+        # print(self.symbols)
+        # print(len(self.symbols))
         for symbol in self.symbols:
 
+            # print("Getting here base", symbol)
             #assuming we only need spot data
             if self.markets[symbol]['type'] == 'spot':
-                print(symbol)
+                # print(symbol)
                 self.fetch_and_write_symbol_trades(symbol, start_time, end_time)
                 # break
 
             # count += 1
 
-            # if count >= 20:
+            # if count >= 30:
             #     break
     
 
