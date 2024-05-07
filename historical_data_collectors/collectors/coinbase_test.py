@@ -1,5 +1,5 @@
 import pytest
-from .binance_data_collector import BinanceDataCollector
+from .coinbase_data_collector import CoinbaseDataCollector
 import datetime
 from types import MethodType
 import logging
@@ -13,7 +13,7 @@ def test_fetch_and_write_symbol_trades():
        It fetched the trades data for LPT token for the last hour of 2024/01/01.
     """
     
-    data_collector = BinanceDataCollector()
+    data_collector = CoinbaseDataCollector()
 
     arg_date_format = "%Y/%m/%d"
 
@@ -41,23 +41,23 @@ def test_fetch_and_write_symbol_trades():
     print(datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS))
 
     data_collector.total_fetched_trades = []
-    logging.info(len(data_collector.total_fetched_trades))
+    print(len(data_collector.total_fetched_trades))
 
     def collect_trades(self, trades):
 
         self.total_fetched_trades += trades
-        # data_collector.total_fetched_trades.append(trades)        
+        print(len(self.total_fetched_trades))
 
     data_collector.write_to_database = MethodType(collect_trades, data_collector)
 
     # data_collector.write_to_database = collect_trades
-    data_collector.fetch_and_write_symbol_trades('LPT/USDT', start_time, end_time)
+    data_collector.fetch_and_write_symbol_trades('LPT/USD', start_time, end_time)
     
     first_trade = data_collector.total_fetched_trades[0]
     last_trade = data_collector.total_fetched_trades[-1]
 
-    assert first_trade[5] == '13679785'
-    assert last_trade[5] == '13680923'
+    assert first_trade[5] == '5235563'
+    assert last_trade[5] == '5235629'
 
     #tests that all trades b/w the first and last trade id is fetched
     assert len(data_collector.total_fetched_trades) == int(last_trade[5]) - int(first_trade[5]) + 1

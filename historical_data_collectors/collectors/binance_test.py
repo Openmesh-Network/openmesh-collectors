@@ -47,8 +47,7 @@ def test_fetch_and_write_symbol_trades():
 
     def collect_trades(self, trades):
 
-        self.total_fetched_trades += trades
-        # data_collector.total_fetched_trades.append(trades)        
+        self.total_fetched_trades += trades  
 
     data_collector.write_to_database = MethodType(collect_trades, data_collector)
 

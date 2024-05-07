@@ -2,7 +2,6 @@ import ccxt
 import datetime
 import pytz
 from .base_data_collector import BaseDataCollector
-import time
 
 ONE_HOUR_IN_SECONDS = 3600
 ONE_HOUR_IN_MILLISECONDS = ONE_HOUR_IN_SECONDS * 1000
@@ -41,10 +40,8 @@ class BinanceDataCollector(BaseDataCollector):
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
-        # print("ENTERED")
-
         current_time = datetime.datetime.now()
-        end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
+        # end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
 
 
         two_hour_before = current_time - datetime.timedelta(hours=2)
@@ -56,7 +53,7 @@ class BinanceDataCollector(BaseDataCollector):
         # start_time = int(one_second_before.timestamp() * 1000)
         # start_time = int(one_minute_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
-        start_time = int(one_hour_before.timestamp() * 1000)
+        # start_time = int(one_hour_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
         # print("start time", one_minute_before)
@@ -99,7 +96,6 @@ class BinanceDataCollector(BaseDataCollector):
                     #checks if we have fetched any new trades in this call
                     if previous_trade_id != last_trade['id']:
                         
-                        # start = time.time()
                         # print("previous_trade_id", previous_trade_id)
 
                         #filter out any trades we've already fetched/written to the db in a past api call
@@ -109,7 +105,6 @@ class BinanceDataCollector(BaseDataCollector):
                         previous_trade_id = last_trade['id']
 
                         l2_trades = super().normalize_to_l2(trades_to_write, 'Binance')
-                        # end = time.time()
                         # print(f"filtering and normalising the trades took {end-start} time")
 
                         self.write_to_database(l2_trades)

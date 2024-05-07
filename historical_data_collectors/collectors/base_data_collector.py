@@ -1,12 +1,9 @@
-import ccxt
 from abc import ABC, abstractmethod
 import psycopg2
 import psycopg2.extras
 from dotenv import load_dotenv, find_dotenv
 import os
-import sys
-import time
-from .helpers.profiler import Profiler
+from ..helpers.profiler import Profiler
 import datetime
 import pytz
 
@@ -96,7 +93,6 @@ class BaseDataCollector(ABC):
         if self.connection is None or self.connection.closed:
             self.connection = self.connect_to_postgres()
 
-        # call_start = time.time()
         self.profiler.start('database write')
 
         try:

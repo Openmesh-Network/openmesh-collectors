@@ -1,8 +1,9 @@
 import ccxt
 import datetime
 import pytz
-from historical_data_collectors.base_data_collector import BaseDataCollector
-from .helpers.profiler import Profiler
+# from historical_data_collectors.collectors.base_data_collector import BaseDataCollector
+from .base_data_collector import BaseDataCollector
+from ..helpers.profiler import Profiler
 import time
 
 RATE_LIMIT_SLEEP_TIME = 0.5
@@ -12,7 +13,7 @@ class CoinbaseDataCollector(BaseDataCollector):
 
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
-        super.__init__()
+        super().__init__()
         self.exchange = ccxt.coinbase()
         self.exchange.rateLimit = 150
         self.markets = self.exchange.load_markets()
@@ -82,20 +83,20 @@ class CoinbaseDataCollector(BaseDataCollector):
 
                     # write to database
                     l2_trades = super().normalize_to_l2(trades, 'Coinbase')
-                    super().write_to_database(l2_trades)
+                    self.write_to_database(l2_trades)
 
                 # no more new trades left to be fetched since 'since' timestamp
                 else:
                     end_time = start_time - 1
 
-                if (len(trades)):
-                    print(len(trades))
-                    print("-----")
-                    print(trades[0])
-                    print("-----")
-                    print(trades[-1])
+                # if (len(trades)):
+                #     print(len(trades))
+                #     print("-----")
+                #     print(trades[0])
+                #     print("-----")
+                #     print(trades[-1])
 
             except (ccxt.NetworkError, ccxt.BaseError) as e:
                 print(type(e).__name__, str(e))
                 time.sleep(RATE_LIMIT_SLEEP_TIME)
-            count += 1
+            # count += 1
