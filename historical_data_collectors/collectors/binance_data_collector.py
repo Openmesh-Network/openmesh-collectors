@@ -24,7 +24,6 @@ class BinanceDataCollector(BaseDataCollector):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
         super().fetch_and_write_trades(start_date, end_date)
-        # connection = super().connect_to_postgres()
 
         # in milliseconds
         utc_timezone = pytz.utc
@@ -101,13 +100,13 @@ class BinanceDataCollector(BaseDataCollector):
                         #filter out any trades we've already fetched/written to the db in a past api call
                         trades_to_write = self.filter_new_trades(trades, previous_trade_id)
 
+                        l2_trades = super().normalize_to_l2(trades_to_write, 'Binance')
+
+                        self.write_to_database(l2_trades)
+
                         start_time = last_trade['timestamp']
                         previous_trade_id = last_trade['id']
 
-                        l2_trades = super().normalize_to_l2(trades_to_write, 'Binance')
-                        # print(f"filtering and normalising the trades took {end-start} time")
-
-                        self.write_to_database(l2_trades)
 
                     # only one trade happened in the one hour since start_time. We've already written that trade to database.
                     # increase start_time by an horu
