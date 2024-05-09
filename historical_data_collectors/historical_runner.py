@@ -12,8 +12,10 @@ def main():
     start_time = time.time()
 
     try:
-        if len(sys.argv) != 4:
-            print("Usage: python3 historical_runner.py exchange_name start_date end_date")
+
+        if len(sys.argv) < 3:
+            print("Too few arguments entered. \n Usage: python3 historical_runner.py exchange_name start_date \n OR \n" +
+                  "Usage: python3 historical_runner.py exchange_name start_date end_date")
             sys.exit(1)
 
         arg_date_format = "%Y/%m/%d"
@@ -21,13 +23,16 @@ def main():
         #inclusive
         start_date = datetime.datetime.strptime(sys.argv[2], arg_date_format).date()
 
-        #exclusive
-        end_date = datetime.datetime.strptime(sys.argv[3], arg_date_format).date()
+        end_date = None
 
-        if start_date >= end_date:
+        #Get end date if it's been added 
+        if len(sys.argv) == 4:
+            end_date = datetime.datetime.strptime(sys.argv[3], arg_date_format).date()
+
+        #If end date is earlier or same as start date, print error
+        if end_date is not None and start_date >= end_date:
             print("Start date needs to be before end date, no data fetched")
             sys.exit(1)
-        
 
         exchange_name = sys.argv[1].lower()
 
@@ -44,7 +49,6 @@ def main():
         else:
             print(f"Exchange {exchange_name} is not supported. Currently supported exchanges are Binance, Coinbase, Dydx, Bybit and Okx")
             sys.exit(1)
-
         
         data_collector.fetch_and_write_trades(start_date, end_date)
     
@@ -53,7 +57,6 @@ def main():
 
         # Calculate the total execution time
         execution_time = end_time - start_time
-
         print("Script execution time: {:.2f} seconds".format(execution_time))
 
 if __name__ == "__main__":

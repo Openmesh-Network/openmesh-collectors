@@ -6,6 +6,7 @@ import os
 from ..helpers.profiler import Profiler
 import datetime
 import pytz
+import sys
 
 
 ENV_FILE = 'config.env'
@@ -20,8 +21,9 @@ class BaseDataCollector(ABC):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         self.profiler = Profiler()
         self.connection = None
+        
 
-    def fetch_and_write_trades(self, start_date, end_date):
+    def fetch_and_write_trades(self, start_date, end_date=None):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
 
         # count = 0
@@ -30,11 +32,18 @@ class BaseDataCollector(ABC):
 
         start_time = int(
             datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
-        end_time = int(
-            datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
 
-        # print(self.symbols)
-        # print(len(self.symbols))
+        #Set end date to the end time if supplied
+        if end_date is not None:
+            end_time = int(
+                datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
+        
+        #Else fetch records between start_date and now
+        else:
+            current_time = datetime.datetime.now()
+            end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
+
+
         for symbol in self.symbols:
 
             # print("Getting here base", symbol)
@@ -51,7 +60,8 @@ class BaseDataCollector(ABC):
     
 
     @abstractmethod
-    def fetch_and_write_symbol_trades(self, symbol, start_date, end_date):
+    # def fetch_and_write_symbol_trades(self, *args, **kwargs):
+    def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetch and write all trades of symbol from start_date to end_date into the database"""
 
 
@@ -91,17 +101,21 @@ class BaseDataCollector(ABC):
     def write_to_database(self, data):
         """Writes the data to the database connected to by the connection object"""
 
+        load_dotenv(os.path.join(os.path.dirname(__file__), ENV_FILE))
+
         if self.connection is None or self.connection.closed:
             self.connection = self.connect_to_postgres()
 
         self.profiler.start('database write')
 
+        print(os.getenv("TABLE_NAME"))
+
         try:
             cursor = self.connection.cursor()
 
             # SQL statement for batch insert
-            sql = """
-            INSERT INTO l2_trades_test (exchange, symbol, price, size, taker_side, trade_id, timestamp)
+            sql = f"""
+            INSERT INTO {os.getenv("TABLE_NAME")} (exchange, symbol, price, size, taker_side, trade_id, timestamp)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
 
@@ -113,6 +127,8 @@ class BaseDataCollector(ABC):
             print("Data inserted successfully!")
         except (Exception, psycopg2.Error) as error:
             print("Error while writing to PostgreSQL:", error)
+            print("data that was to be written \n", data)
+            sys.exit(1)
         finally:
             # Close the cursor 
             if cursor:
