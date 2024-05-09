@@ -6,38 +6,30 @@ from .base_data_collector import BaseDataCollector
 from ..helpers.profiler import Profiler
 import time
 
+#How many seconds to sleep in case we get rate limited
 RATE_LIMIT_SLEEP_TIME = 0.5
 
-class CoinbaseDataCollector(BaseDataCollector):
+#rate limit to set ccxt's rate limit to. This is in milliseconds. ccxt will send requests no earlier than RATE_LIMIT millseconds
+#According to coinbase documentation. This should be set to 100. But the calls are getting rate limited even at 150, so going with that
+RATE_LIMIT = 150
 
+
+class CoinbaseDataCollector(BaseDataCollector):
 
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         super().__init__()
         self.exchange = ccxt.coinbase()
-        self.exchange.rateLimit = 150
+        self.exchange.rateLimit = RATE_LIMIT
         self.markets = self.exchange.load_markets()
         self.symbols = self.exchange.symbols
-        # self.profiler = Profiler()
-
 
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
         super().fetch_and_write_trades(start_date, end_date)
 
-
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
-
-        utc_timezone = pytz.utc
-
-        # in milliseconds
-        # start_time = int(
-        #     datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-        # end_time = int(
-        #     datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-
-        one_hour = 3600 * 1000
 
         current_time = datetime.datetime.now()
         # end_time = int(current_time.timestamp()*1000)
@@ -57,7 +49,7 @@ class CoinbaseDataCollector(BaseDataCollector):
 
         # count = 0
 
-        #coinbase fetched the latest trades first and then paginates backwards, so we have to iterate the end_time
+        #coinbase fetched the latest trades before 'until' first and then paginates backwards, so we have to iterate the end_time
         while start_time < end_time:
         # while start_time < end_time and count < 3:
 
@@ -96,6 +88,7 @@ class CoinbaseDataCollector(BaseDataCollector):
                 #     print("-----")
                 #     print(trades[-1])
 
+            #If we get rate limited, pause for RATE_LIMIT_SLEEP_TIME before trying again
             except (ccxt.NetworkError, ccxt.BaseError) as e:
                 print(type(e).__name__, str(e))
                 time.sleep(RATE_LIMIT_SLEEP_TIME)

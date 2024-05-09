@@ -10,7 +10,6 @@ MAX_BINANCE_API_LIMIT = 1000
 
 class BinanceDataCollector(BaseDataCollector):
 
-
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         super().__init__()
@@ -70,6 +69,7 @@ class BinanceDataCollector(BaseDataCollector):
                 if (self.profiler.started('time bw calls')):
                     self.profiler.stop('time bw calls')
 
+
                 # Binance api returns the lesser of the next 500 trades since start_time or all the trades in the hour
                 # since start_time
 
@@ -88,6 +88,7 @@ class BinanceDataCollector(BaseDataCollector):
                 #     print("-----")
                 #     print(trades[-1])
 
+                
                 if len(trades):
 
                     last_trade = trades[-1]

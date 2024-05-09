@@ -8,14 +8,10 @@ import datetime
 import pytz
 import sys
 
-
 ENV_FILE = 'config.env'
 ONE_SECOND_IN_MILLISECONDS = 1000
 
-
 class BaseDataCollector(ABC):
-
-    exchange = None
 
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
@@ -30,10 +26,11 @@ class BaseDataCollector(ABC):
 
         utc_timezone = pytz.utc
 
+        #start time is the first second of the start date
         start_time = int(
             datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
 
-        #Set end date to the end time if supplied
+        #Set end time to the first second of the end date if supplied
         if end_date is not None:
             end_time = int(
                 datetime.datetime.combine(end_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * ONE_SECOND_IN_MILLISECONDS)
@@ -43,10 +40,9 @@ class BaseDataCollector(ABC):
             current_time = datetime.datetime.now()
             end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
 
-
+        #Iterate through all the symbols and fetch and write trades for the spot symbols
         for symbol in self.symbols:
 
-            # print("Getting here base", symbol)
             #assuming we only need spot data
             if self.markets[symbol]['type'] == 'spot':
                 # print(symbol)
@@ -81,6 +77,7 @@ class BaseDataCollector(ABC):
     def connect_to_postgres(self):
         """Establishes a connection with the database and returns a connection object"""
 
+        #load env variables from ENV_FILE
         load_dotenv(os.path.join(os.path.dirname(__file__), ENV_FILE))
 
         try:
@@ -99,7 +96,7 @@ class BaseDataCollector(ABC):
             return None
 
     def write_to_database(self, data):
-        """Writes the data to the database connected to by the connection object"""
+        """Writes the data to the table defined in the TABLE_NAME env variable in the database connected to by the connection object"""
 
         load_dotenv(os.path.join(os.path.dirname(__file__), ENV_FILE))
 
@@ -125,10 +122,12 @@ class BaseDataCollector(ABC):
             self.connection.commit()
 
             print("Data inserted successfully!")
+        
         except (Exception, psycopg2.Error) as error:
             print("Error while writing to PostgreSQL:", error)
             print("data that was to be written \n", data)
             sys.exit(1)
+        
         finally:
             # Close the cursor 
             if cursor:

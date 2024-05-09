@@ -49,9 +49,9 @@ def test_fetch_and_write_symbol_trades():
 
         self.total_fetched_trades += trades  
 
+    #replace write to database with custom collect_trades function to record the trades
     data_collector.write_to_database = MethodType(collect_trades, data_collector)
 
-    # data_collector.write_to_database = collect_trades
     data_collector.fetch_and_write_symbol_trades('LPT/USDT', start_time, end_time)
     
     first_trade = data_collector.total_fetched_trades[0]

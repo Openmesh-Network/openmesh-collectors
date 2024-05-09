@@ -10,7 +10,8 @@ ONE_SECOND_IN_MILLISECONDS = 1000
 
 def test_fetch_and_write_symbol_trades():
     """Tests the main function fetch_and_write_symbol_trades for the Okx Data Collector.
-       It fetches the trades data for BTC token for the previous 1 minute and checks if the pagination logic is.
+       It fetches the trades data for BTC token for the previous 1 minute and checks if the pagination logic is correct
+       by verifying that all trades bw the first and last were fetched and nothing was missed.
     """
     
     data_collector = OkxDataCollector()
@@ -29,8 +30,8 @@ def test_fetch_and_write_symbol_trades():
     one_second_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS) - datetime.timedelta(seconds=1)
 
     # start_time = int(one_second_before.timestamp() * 1000)
-    # start_time = int(one_minute_before.timestamp() * 1000)
-    start_time = int(five_min_before.timestamp() * 1000)
+    start_time = int(one_minute_before.timestamp() * 1000)
+    # start_time = int(five_min_before.timestamp() * 1000)
     # start_time = int(two_hour_before.timestamp() * 1000)
     # start_time = int(one_hour_before.timestamp() * 1000)
 

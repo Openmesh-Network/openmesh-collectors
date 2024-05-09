@@ -9,8 +9,8 @@ import pytz
 ONE_SECOND_IN_MILLISECONDS = 1000
 
 def test_fetch_and_write_symbol_trades():
-    """Tests the main function fetch_and_write_symbol_trades for the Binance Data Collector.
-       It fetched the trades data for LPT token for the last hour of 2024/01/01.
+    """Tests the main function fetch_and_write_symbol_trades for the Coinbase Data Collector.
+       It fetched the trades data for LPT/USD symbol for the last hour of 2024/01/01.
     """
     
     data_collector = CoinbaseDataCollector()
@@ -48,9 +48,9 @@ def test_fetch_and_write_symbol_trades():
         self.total_fetched_trades += trades
         print(len(self.total_fetched_trades))
 
+    #replace write to database with custom collect_trades function to record the trades
     data_collector.write_to_database = MethodType(collect_trades, data_collector)
 
-    # data_collector.write_to_database = collect_trades
     data_collector.fetch_and_write_symbol_trades('LPT/USD', start_time, end_time)
     
     first_trade = data_collector.total_fetched_trades[0]

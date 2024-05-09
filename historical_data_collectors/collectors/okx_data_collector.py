@@ -56,12 +56,16 @@ class OkxDataCollector(BaseDataCollector):
         # start_time = int(one_second_before.timestamp() * 1000)
         # start_time = int(one_min_before.timestamp() * 1000)
         # start_time = int(five_min_before.timestamp() * 1000)
-        start_time = int(one_hour_before.timestamp() * 1000)
+        # start_time = int(one_hour_before.timestamp() * 1000)
         # start_time = int(two_hour_before.timestamp() * 1000)
 
+        #pagination parameter. Need to pass to okx api to get pages before this id
         after_id = None
+
+        #params we pass to the okx api
         params = None
-        count = 0
+
+        # count = 0
 
         # fetched the latest trades first and then paginates backwards, so we have to iterate the end_time
         while start_time < end_time:
@@ -71,30 +75,31 @@ class OkxDataCollector(BaseDataCollector):
 
                 self.profiler.start('fetching call')
                 
+                #dont pass any pagination param for the first call
                 if after_id is None:
                     trades = self.exchange.fetch_trades(symbol, params = {'method': 'publicGetMarketHistoryTrades'})
+                
+                #pass after_id pagination param 
                 else:
                     params = {'after': after_id,
                               'method': 'publicGetMarketHistoryTrades'
                             }
                     trades = self.exchange.fetch_trades(symbol, params = params)
 
-                #fetches the most recent trades no later than 'until' and no earier than 'since'
                 self.profiler.stop('fetching call')
 
                 print(self.exchange.iso8601(start_time), len(trades), 'trades')
                 print(self.exchange.iso8601(end_time), len(trades), 'trades')
 
-                #we fetched new trades, keep fetching
+                #we fetched new trades, write these to db, update pagination param 
                 if len(trades):
                     
                     first_trade = trades[0]
+
+                    #we assign the id of the first trade as the pagination param. So next call will fetch pages containing
+                    #trades before this trade_id
                     after_id = first_trade['id']
                     end_time = first_trade['timestamp']
-
-                    # The until timestamp in the fetch_trades call is exclusive, so we don't fetch trades at 'until' timestamp
-                    # This means that all the trades we fetch in a new call are new, we can just write them all to the database
-                    # without having to filter out previously fetched trades like we have to with binance
 
                     # write to database
                     l2_trades = super().normalize_to_l2(trades, 'Okx')
@@ -111,8 +116,9 @@ class OkxDataCollector(BaseDataCollector):
                     print("-----")
                     print(trades[-1])
 
+            #If we get rate limited, pause for RATE_LIMIT_SLEEP_TIME before trying again
             except (ccxt.NetworkError, ccxt.BaseError) as e:
                 print(type(e).__name__, str(e))
                 time.sleep(RATE_LIMIT_SLEEP_TIME)
 
-            count += 1
+            # count += 1
