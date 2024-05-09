@@ -5,7 +5,6 @@ from types import MethodType
 import logging
 import pytz
 
-
 ONE_SECOND_IN_MILLISECONDS = 1000
 
 def test_fetch_and_write_symbol_trades():

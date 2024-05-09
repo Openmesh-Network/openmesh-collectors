@@ -31,30 +31,10 @@ class CoinbaseDataCollector(BaseDataCollector):
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
-        current_time = datetime.datetime.now()
-        # end_time = int(current_time.timestamp()*1000)
-
-        two_hour_before = current_time - datetime.timedelta(hours=2)
-        one_hour_before = current_time - datetime.timedelta(hours=1)
-        five_min_before = current_time - datetime.timedelta(minutes=5)
-        one_min_before = current_time - datetime.timedelta(minutes=1)
-        one_second_before = current_time - datetime.timedelta(seconds=1)
-
-        # start_time = int(one_second_before.timestamp() * 1000)
-        # start_time = int(one_min_before.timestamp() * 1000)
-        # start_time = int(five_min_before.timestamp() * 1000)
-        # start_time = int(one_hour_before.timestamp() * 1000)
-        # start_time = int(two_hour_before.timestamp() * 1000)
-
-
-        # count = 0
-
         #coinbase fetched the latest trades before 'until' first and then paginates backwards, so we have to iterate the end_time
         while start_time < end_time:
-        # while start_time < end_time and count < 3:
-
+            
             try:
-
                 #fetches the most recent trades no later than 'until' and no earier than 'since'
                 self.profiler.start('fetching call')
                 trades = self.exchange.fetch_trades(symbol, since = start_time, limit = 1000, params = {"until": end_time})
@@ -92,4 +72,3 @@ class CoinbaseDataCollector(BaseDataCollector):
             except (ccxt.NetworkError, ccxt.BaseError) as e:
                 print(type(e).__name__, str(e))
                 time.sleep(RATE_LIMIT_SLEEP_TIME)
-            # count += 1

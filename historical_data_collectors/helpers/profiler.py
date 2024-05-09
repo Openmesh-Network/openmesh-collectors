@@ -18,7 +18,7 @@ class Profiler:
         self.elapsed_times[key] = time.time() - self.start_times[key]
         del self.start_times[key]
         
-        print(f"{key} took {self.elapsed_times[key]} time")
+        print(f"{key} took {self.elapsed_times[key]} seconds")
 
     def started(self, key):
         """Returns true if the profiler is currently running for the given key"""

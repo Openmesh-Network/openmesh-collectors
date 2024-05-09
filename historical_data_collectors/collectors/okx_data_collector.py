@@ -17,23 +17,12 @@ class OkxDataCollector(BaseDataCollector):
         self.exchange.rateLimit = 100
         self.markets = self.exchange.load_markets()
         self.symbols = self.exchange.symbols
-
+        
 
     def fetch_and_write_trades(self, start_date, end_date):
         """Fetches the L2 trades data from the relevant exchange API and writes that to the given database"""
         
         super().fetch_and_write_trades(start_date, end_date)
-
-        # # in milliseconds
-        # utc_timezone = pytz.utc
-
-        # start_time = int(
-        #     datetime.datetime.combine(start_date, datetime.datetime.min.time(), tzinfo=utc_timezone).timestamp() * 1000)
-        
-        # current_time = datetime.datetime.now()
-        # end_time = int(current_time.timestamp()*1000)
-
-        # self.fetch_and_write_symbol_trades('BTC/USDT', start_time, end_time)
 
 
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
@@ -41,35 +30,14 @@ class OkxDataCollector(BaseDataCollector):
            Okx api only supports fetching from the most recent trade and paginating backwards.
            It also only supports past 3 months of data"""
 
-
-        # one_hour = 3600 * 1000
-
-        current_time = datetime.datetime.now()
-        # end_time = int(current_time.timestamp()*1000)
-
-        two_hour_before = current_time - datetime.timedelta(hours=2)
-        one_hour_before = current_time - datetime.timedelta(hours=1)
-        five_min_before = current_time - datetime.timedelta(minutes=5)
-        one_min_before = current_time - datetime.timedelta(minutes=1)
-        one_second_before = current_time - datetime.timedelta(seconds=1)
-
-        # start_time = int(one_second_before.timestamp() * 1000)
-        # start_time = int(one_min_before.timestamp() * 1000)
-        # start_time = int(five_min_before.timestamp() * 1000)
-        # start_time = int(one_hour_before.timestamp() * 1000)
-        # start_time = int(two_hour_before.timestamp() * 1000)
-
         #pagination parameter. Need to pass to okx api to get pages before this id
         after_id = None
 
         #params we pass to the okx api
         params = None
 
-        # count = 0
-
         # fetched the latest trades first and then paginates backwards, so we have to iterate the end_time
         while start_time < end_time:
-        # while start_time < end_time and count < 3:
 
             try:
 
@@ -109,16 +77,14 @@ class OkxDataCollector(BaseDataCollector):
                 else:
                     end_time = start_time - 1
 
-                if (len(trades)):
-                    print(len(trades))
-                    print("-----")
-                    print(trades[0])
-                    print("-----")
-                    print(trades[-1])
+                # if (len(trades)):
+                #     print(len(trades))
+                #     print("-----")
+                #     print(trades[0])
+                #     print("-----")
+                #     print(trades[-1])
 
             #If we get rate limited, pause for RATE_LIMIT_SLEEP_TIME before trying again
             except (ccxt.NetworkError, ccxt.BaseError) as e:
                 print(type(e).__name__, str(e))
                 time.sleep(RATE_LIMIT_SLEEP_TIME)
-
-            # count += 1

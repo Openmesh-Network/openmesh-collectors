@@ -7,9 +7,14 @@ from historical_data_collectors.collectors.coinbase_data_collector import Coinba
 # from historical_data_collectors.collectors.bybit_data_collector import BybitDataCollector
 from historical_data_collectors.collectors.okx_data_collector import OkxDataCollector
 
+from historical_data_collectors.helpers.profiler import Profiler
+
+
 def main():
 
-    start_time = time.time()
+    profiler = Profiler()
+    profiler.start('program')
+    # start_time = time.time()
 
     try:
 
@@ -56,8 +61,9 @@ def main():
         end_time = time.time()
 
         # Calculate the total execution time
-        execution_time = end_time - start_time
-        print("Script execution time: {:.2f} seconds".format(execution_time))
+        # execution_time = end_time - start_time
+        # print("Script execution time: {:.2f} seconds".format(execution_time))
+        profiler.stop('program')
 
 if __name__ == "__main__":
     main()

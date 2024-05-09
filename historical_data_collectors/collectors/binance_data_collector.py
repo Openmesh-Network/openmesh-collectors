@@ -38,29 +38,8 @@ class BinanceDataCollector(BaseDataCollector):
     def fetch_and_write_symbol_trades(self, symbol, start_time, end_time):
         """Fetches and writes the l2 trades for the given symbol and inserts it into the database"""
 
-        current_time = datetime.datetime.now()
-        # end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
-
-
-        two_hour_before = current_time - datetime.timedelta(hours=2)
-        one_hour_before = current_time - datetime.timedelta(hours=1)
-        five_min_before = current_time - datetime.timedelta(minutes=5)
-        one_minute_before = current_time - datetime.timedelta(minutes=1)
-        one_second_before = current_time - datetime.timedelta(seconds=1)
-
-        # start_time = int(one_second_before.timestamp() * 1000)
-        # start_time = int(one_minute_before.timestamp() * 1000)
-        # start_time = int(five_min_before.timestamp() * 1000)
-        # start_time = int(one_hour_before.timestamp() * 1000)
-        # start_time = int(two_hour_before.timestamp() * 1000)
-
-        # print("start time", one_minute_before)
-        # print("end time", current_time)
-
-        # count = 2
         previous_trade_id = None
 
-        # while start_time < end_time and count < 1:
         while start_time < end_time:
 
             try:
@@ -69,15 +48,13 @@ class BinanceDataCollector(BaseDataCollector):
                 if (self.profiler.started('time bw calls')):
                     self.profiler.stop('time bw calls')
 
-
                 # Binance api returns the lesser of the next 500 trades since start_time or all the trades in the hour
                 # since start_time
-
                 self.profiler.start('fetch_trades call')
                 trades = self.exchange.fetch_trades(symbol, since=start_time, limit = MAX_BINANCE_API_LIMIT)
-
                 self.profiler.stop('fetch_trades call')
-                self.profiler.start('time bw calls')
+                
+                self.profiler.start('time between calls')
 
                 # print(trades)
                 # print("--FETCHED---")
@@ -88,7 +65,7 @@ class BinanceDataCollector(BaseDataCollector):
                 #     print("-----")
                 #     print(trades[-1])
 
-                
+
                 if len(trades):
 
                     last_trade = trades[-1]
@@ -121,7 +98,6 @@ class BinanceDataCollector(BaseDataCollector):
 
             except ccxt.NetworkError as e:
                 print(type(e).__name__, str(e))
-            # count += 1
 
 
     def filter_new_trades(self, trades, previous_trade_id):
