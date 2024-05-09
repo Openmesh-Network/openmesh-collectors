@@ -6,6 +6,7 @@ from historical_data_collectors.collectors.binance_data_collector import Binance
 from historical_data_collectors.collectors.coinbase_data_collector import CoinbaseDataCollector
 # from historical_data_collectors.collectors.bybit_data_collector import BybitDataCollector
 from historical_data_collectors.collectors.okx_data_collector import OkxDataCollector
+from historical_data_collectors.collectors.mexc_data_collector import MexcDataCollector
 
 from historical_data_collectors.helpers.profiler import Profiler
 
@@ -51,6 +52,9 @@ def main():
             data_collector = BybitDataCollector()
         elif exchange_name == 'okx':
             data_collector = OkxDataCollector()
+        elif exchange_name == 'mexc':
+            data_collector = MexcDataCollector()
+        
         else:
             print(f"Exchange {exchange_name} is not supported. Currently supported exchanges are Binance, Coinbase, Dydx, Bybit and Okx")
             sys.exit(1)
