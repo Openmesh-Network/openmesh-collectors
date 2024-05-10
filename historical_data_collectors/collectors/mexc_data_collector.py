@@ -14,7 +14,9 @@ class MexcDataCollector(BaseDataCollector):
     def __init__(self):
         """Initialises the ccxt exchange object, should be implemented by the subclasses"""
         super().__init__()
-        self.exchange = ccxt.mexc()
+        self.exchange = ccxt.mexc({
+            # 'verbose': True
+        })
         self.exchange.rateLimit = MEXC_RATE_LIMIT
         self.markets = self.exchange.load_markets()
         self.symbols = self.exchange.symbols
@@ -44,7 +46,7 @@ class MexcDataCollector(BaseDataCollector):
         end_time = int(current_time.timestamp()*ONE_SECOND_IN_MILLISECONDS)
 
 
-        two_hour_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS) - datetime.timedelta(hours=2)
+        two_hour_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS) - datetime.timedelta(hours=5)
         one_hour_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS) - datetime.timedelta(hours=1)
         five_min_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS)  - datetime.timedelta(minutes=5)
         one_minute_before = datetime.datetime.fromtimestamp(end_time/ONE_SECOND_IN_MILLISECONDS) - datetime.timedelta(minutes=1)
