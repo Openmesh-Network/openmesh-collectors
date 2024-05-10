@@ -1,0 +1,7 @@
+ccxt==4.3.11
+docker==5.0.3
+docker-compose==1.29.2
+dockerpty==0.4.1
+pytest==8.2.0
+pytz==2022.1
+psycopg2-binary==2.9.9
