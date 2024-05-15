@@ -34,7 +34,7 @@ jobs:
       run: |
         pwd
         python -m pip install --upgrade pip
-        pip install -r historical_data_collectors/requirements.txt || { echo 'Dependency installation failed'; exit 1; }
+        pip install --no-binary :all: -r requirements.txt -v || { echo 'Dependency installation failed'; exit 1; }
       working-directory: historical_data_collectors
 
     - name: Verify installation
