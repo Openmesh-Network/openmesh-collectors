@@ -26,5 +26,5 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest -v
+        pytest -v #
       working-directory: historical_data_collectors
