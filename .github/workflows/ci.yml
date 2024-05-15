@@ -20,8 +20,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        # python -m pip install --upgrade pip
-        pip install -r requirements.txt  # Adjust the path to your requirements file
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt || { echo 'Dependency installation failed'; exit 1; }
       working-directory: historical_data_collectors
 
     - name: Verify installation
