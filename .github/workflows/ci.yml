@@ -20,6 +20,7 @@ jobs:
 
     - name: Print requirements.txt
       run: |
+        pwd
         cat historical_data_collectos/requirements.txt
       working-directory: historical_data_collectors
 
