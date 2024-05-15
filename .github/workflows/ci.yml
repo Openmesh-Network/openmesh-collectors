@@ -24,6 +24,11 @@ jobs:
         pip install -r requirements.txt  # Adjust the path to your requirements file
       working-directory: historical_data_collectors
 
+    - name: Verify installation
+      run: |
+        pip list
+      working-directory: historical_data_collectors
+
     - name: Run unit tests
       run: |
         pwd
