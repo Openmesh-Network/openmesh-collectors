@@ -57,13 +57,13 @@ class BinanceDataCollector(BaseDataCollector):
                 self.profiler.start('time between calls')
 
                 # print(trades)
-                # print("--FETCHED---")
-                # print(len(trades), "trades")
+                print("--FETCHED---")
+                print(len(trades), "trades")
 
-                # if len(trades):
-                #     print(trades[0])
-                #     print("-----")
-                #     print(trades[-1])
+                if len(trades):
+                    print(trades[0])
+                    print("-----")
+                    print(trades[-1])
 
 
                 if len(trades):
