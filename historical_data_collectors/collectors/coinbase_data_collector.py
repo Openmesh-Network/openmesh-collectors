@@ -61,12 +61,13 @@ class CoinbaseDataCollector(BaseDataCollector):
                 else:
                     end_time = start_time - 1
 
-                # if (len(trades)):
-                #     print(len(trades))
-                #     print("-----")
-                #     print(trades[0])
-                #     print("-----")
-                #     print(trades[-1])
+                print("--FETCHED---")
+                print(len(trades), "trades")
+
+                if len(trades):
+                    print(trades[0])
+                    print("-----")
+                    print(trades[-1])
 
             #If we get rate limited, pause for RATE_LIMIT_SLEEP_TIME before trying again
             except (ccxt.NetworkError, ccxt.BaseError) as e:
